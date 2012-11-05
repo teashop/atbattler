@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ATBattler v0.1</title>
+  <meta charset="UTF-8">
+  <!--<link rel="stylesheet" href="res/css/bootstrap.css">-->
+  <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+  <script src="js/underscore-min.js"></script>
+  <script src="js/clock.js"></script>
+  <script src="js/durationevent.js"></script>
+  <style>
+    span.connect{ color: #049cdb; font-weight:bold; }
+    span.disconnect{ color: #9d261d; font-weight:bold; }
+    span.whisper{ color: #7a43b6; font-weight:bold; }
+    span.emote { color: teal; font-style:italic; }
+    span.system { color: gray; font-style:italic; }
+
+    body {
+      font-family: arial, sans-serif;
+    }
+
+    #chatMembers {
+      box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.067);
+    }
+    .me { background-color: #ddddff; }
+
+    #chatContainer.disabled { background-color: #dddddd; }
+    #chatContainer {
+      box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.067);
+      height:400px;
+      overflow-y: scroll;
+      overflow-x: hidden;
+    }
+    #chatMessageInput {
+      width: 780px;
+    }
+
+    #chatLog {
+      width:100%;
+    }
+    #chatLog td {
+      border: none;
+    }
+
+    #chatLog td.timestamp {
+      width: 100px;
+      overflow: hidden;
+    }
+
+
+    .gauge {
+      width: 200px;
+    }
+
+    .gauge div {
+      background-color: gray;
+      height: 20px;
+      border: 1px solid black;
+    }
+
+    .gauge div.ready {
+      background-color: #ff9966;
+    }
+
+    .dead .gauge div {
+      background-color: white;
+    }
+
+    #enemy button {
+      display: none;
+    }
+
+    a.chat-link {
+      color: inherit;
+    }
+    a.chat-link:before {
+      content: '[';
+    }
+    a.chat-link:after {
+      content: ']';
+    }
+
+    canvas { border: 1px solid black; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ATBattler v0.1</h1>
+    <div>
+      
+      <canvas id="mainCanvas" width="800" height="480">
+      </canvas>
+      <div>
+      <div style="width:400px; border:1px solid gray; float:left">
+        <table id="party">
+          <thead>
+            <th>Name</th>
+            <th>HP</th>
+            <th>Gauge</th>
+            <th></th>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+      <div style="width:400px; border:1px solid gray; float:left">
+        <table id="enemy">
+          <thead>
+            <th>Name</th>
+            <th>HP</th>
+            <th>Gauge</th>
+            <th></th>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div> 
+      <br style="clear:both;"/>
+      <p id="postCounter">POST</p>
+      <br style="clear:both;"/>
+      <label for="chatMessageInput">Chat Message</label>
+      <input id="chatMessageInput" name="chatMessageInput" type="textarea" size="50" />
+      <p>Press enter to submit your message</p>
+      </div>
+    </div>
+    <script>  
+      var canvas = document.getElementById('mainCanvas').getContext('2d');
+      var CANVAS_WIDTH=800;
+      var CANVAS_HEIGHT=480;
+
+      var FPS = 30;
+      var SECOND = 1000;
+
+      var YOU = null;
+      var ENEMY = null;
+
+      var postGameOverCounter =0;
+
+      var gameLoop = setInterval(function() {
+        update();
+        draw();
+        }, 1000/FPS);
+
+      /** === DOMAIN === **/
+
+      function rollPlayerHero(id, name) {
+        var attributes = {
+          speed: _.random(100, 130), 
+          attack: _.random(200, 220), 
+          hp: _.random(1000, 1300) 
+          };
+        return new Hero(id, name, attributes);
+      }
+      function rollCpuHero(id, name) {
+        var attributes = {
+          speed: _.random(80, 100), 
+          attack: _.random(50, 90), 
+          hp: _.random(1200, 1700) 
+          };
+        return new Hero(id, name, attributes);
+      }
+      /** Hero **/
+      function Hero(id, name, attributes) {
+        this.id = id;
+        this.name = name;
+
+        // TODO: put somewhere else
+        this.attributes = attributes;
+               this.statuses = {};        
+
+        // TODO: mechanics should be managed by game state
+        this.turnGauge = 0.00;
+      }
+      /** END Hero **/
+
+      /** Party **/
+      function Party(id, maxSize) {
+        this.id = id;
+        this.maxSize = maxSize;
+
+        this.heroes = [];
+      }
+      var PARTY = Party.prototype;
+
+      // TODO: if position is OOB or party is full
+      PARTY.setHero = function(hero, position) {
+        var thePosition = position;
+        if (position) {
+          this.heroes[position] = hero;
+        } else {
+          for (var i = 0; i < this.maxSize; i++) {
+            if (!this.heroes[i]) {
+              this.heroes[i] = hero;
+              thePosition = i;
+              break;
+            }
+          }
+        }
+        return thePosition;
+      }
+      // TODO: if position is OOB or party is empty
+      PARTY.removeHero = function(position) {
+        if (position < this.maxSize) {
+          this.heroes[position] = null;
+        }
+        return hero;
+      }
+
+      PARTY.getHeroById = function(heroId) {
+        for (var i = 0; i < this.heroes.length; i++) {
+          if (this.heroes[i] && this.heroes[i].id == heroId) {
+            return this.heroes[i];
+          }
+        }
+        return null;
+      }
+
+      // TODO: JSONify
+      /** END Party **/
+
+      /** Player **/
+      function Player(id, name) {
+        this.id = id;
+        this.name = name;
+
+        this.party = null;
+      }
+
+      var PLAYER = Player.prototype;
+
+      PLAYER.setParty = function(party) {
+        this.party = party;
+      }
+
+      /** END Player **/
+
+      /** Game Event **/
+      // simple payload for a typed queue event
+      function gEvent(type, content) {
+        this.type = type;
+        this.content = content;
+      }
+      /** END Game Event **/
+
+      /** Event Queue (literally, a queue to hold Events and that will
+          fire an Event when a new item is added!) **/
+      function EventQueue() {
+        this.events = [];        
+      }
+      var EQ = EventQueue.prototype;
+      EQ.push = function(theEvent) {
+        this.events.push(theEvent);
+        $(this).trigger('queued');
+      }
+      EQ.shift = function() {
+        return this.events.shift();
+      }
+      EQ.clear = function() {
+        this.events = [];
+      }
+      /** END Event Queue */
+
+      /** Game Instance (Server) **/
+      function Game(clock) {
+        // the players
+        this.players = [];
+        // convenience map for direct access
+        this.heroes = {};
+
+        this.isGameOver = false;
+
+        // Game clock
+        this.clock = clock;
+        // 'Real Clock' Duration clock
+        this.durationClock = new Clock(SECOND*0.5);
+
+        // Event Queues 
+        this.eventsIn = new EventQueue();
+        this.eventsOut = new EventQueue();
+
+        // duration based events to keep track of
+        this.durationEventTracker = [];
+
+        // handlers
+        $(this.eventsIn).on('queued', this['processEvent'].bind(this));
+        $(this.clock).on('tick', this['onTick'].bind(this));
+        $(this.durationClock).on('tick', this['onDurationTick'].bind(this));
+      }
+
+      var GI = Game.prototype;
+
+      // adds the specified players to the game
+      GI.addPlayers = function(players) {
+        for (var i = 0; i < arguments.length; i++) {
+          var curPlayer = arguments[i];
+          this.players.push(curPlayer);
+          for (var j = 0; j < curPlayer.party.heroes.length; j++) {
+            var curHero = curPlayer.party.heroes[j];
+            this.heroes[curHero.id] = curHero;
+          }
+        }
+      }
+
+      /** Clock and Events */
+      GI.start = function() {
+        this.clock.start();
+        this.durationClock.start();
+      }
+      GI.stop = function() {
+        this.clock.stop();
+        this.durationClock.stop();
+      }
+      GI.onTick = function() {
+        this.eventsIn.push(new gEvent('tick'));
+      }
+      GI.onDurationTick = function() {
+        this.eventsIn.push(new gEvent('durationTick'));
+      }
+      GI.queueAction = function(action) {
+        this.eventsIn.push(new gEvent('action', action));
+      }
+
+      // Perform upkeep on a real-time tick basis
+      GI.doTickUpkeep = function() {
+        // TODO: do the rest of the stuff!
+        this.update();
+      }
+      // execute an action
+      GI.executeAction = function(action) {
+//        console.log(action.by + ' uses ' + action.type + ' on ' + action.target);
+        // TODO: these should be in handlers or something more organized
+        switch(action.type) {
+          case 'attack':
+            var attacker = this.heroes[action.by];
+            var target = this.heroes[action.target];
+            var dmg = attacker.attributes.attack;
+//            console.log(attacker.name + ' attacks ' + target.name + ' for ' + dmg + ' damage');
+            target.attributes.hp -= dmg;
+            if (target.attributes.hp <= 0) {
+              target.attributes.hp = 0;
+              target.statuses.dead = true;
+            }
+            break;
+          default:
+            console.log('Unknown action type ' + action.type);
+            break;
+        } // switch
+      }
+
+      // event processor
+      GI.processEvent = function() {
+        var theEvent = this.eventsIn.shift();
+        if (!theEvent || !theEvent.type) {
+          console.log('no event or event type, ignoring.');
+          return;
+        }
+
+        switch (theEvent.type) {
+          case 'tick':
+            // update real-tick-based stuff
+            this.doTickUpkeep();
+            break;
+          case 'durationTick':
+            // update duration-based stuff.  Filter out completed events.
+       //     this.durationEventTracker = this.durationEventTracker.filter(this.updateDurationEvent(theEvent));
+            counter += 0.5;
+            break;
+          case 'action':
+            // execute action
+            this.executeAction(theEvent.content);
+            break;
+          default:
+            console.log('Unknown event type: ' + theEvent.type);
+            break;
+        }
+      }
+
+      // Game-clock ticks
+      GI.update = function() {
+        if (this.isGameOver) {
+          postGameOverCounter++;
+          $('#postCounter').text(postGameOverCounter);
+          return;
+        }
+        for (var i = 0; i < this.players.length; i++) {
+          var curPlayer = this.players[i];
+
+          // game over condition:
+          if (_.all(_.pluck(curPlayer.party.heroes, 'statuses'), function(statuses) { return statuses.dead; })) {
+            this.gameOver();
+            return;
+          }
+          for (var j = 0; j < curPlayer.party.heroes.length; j++) {
+            var curHero = curPlayer.party.heroes[j];
+            if (curHero && !curHero.statuses.dead && !curHero.statuses.ready) {
+              curHero.turnGauge += curHero.attributes.speed / 100.00;
+              if (curHero.turnGauge >= 100) {
+                curHero.statuses.ready = true;
+                curHero.turnGauge = 100.00;
+              }
+            }
+            // TODO: view shit outta here
+            updateHero(curPlayer, curHero);
+          } // for j
+        } // for i
+      }
+
+
+      GI.getPlayerByHeroId = function(heroId) {
+        for(var i = 0; i < this.players.length; i++) {
+          for(var j = 0; j < this.players[i].party.heroes.length; j++) {
+            if (party.heroes[j] && party.heroes[j].id == heroId) {
+              return this.players[i];
+            }
+          }
+        }
+      }
+
+      GI.gameOver = function(winner) {
+        this.stop();
+        this.isGameOver = true;
+        this.eventsIn.clear();
+        $(this.eventsIn).off('queued');
+        $(this.clock).off('tick');
+        $(this.durationClock).off('tick');
+       alert('game over');
+//        alert(winner.name + ' has won!');
+      }
+      /** END Game Instance (server) **/
+
+      /** Game (Client) **/
+      function GameClient(account) {
+        this.players = [];
+      }
+      /** END Game (Client) **/
+
+
+      /** CPU Player (lololol) **/
+      function CpuPlayer(cpuPlayer, game) {
+        this.me = cpuPlayer;
+        this.game = game;
+        //TODO
+      }
+
+      /** END CPU Player
+
+      /***********************************************************************/
+
+
+      /** View stuff */
+      function updateHero(player, hero) {
+        var isYou = player == YOU;
+        var heroRow = $('#hero_' + hero.id);
+        var heroGauge = $('#hero_' + hero.id + ' .gauge div');
+        var heroHp = $('#hero_' + hero.id + ' .hp');
+        // don't update dead people!
+        if (hero.statuses.dead) {
+          if (!heroRow.hasClass('dead')) {
+            heroRow.addClass('dead');
+            heroHp.text(hero.attributes.hp);
+          }
+          return;
+        }
+        // update gauge
+        heroGauge.width(hero.turnGauge + '%');
+        // update hp
+        heroHp.text(hero.attributes.hp);
+        // update readiness
+        if (hero.statuses.ready && heroRow.children('td.action').is(':empty')) {
+          heroRow.children('.action').html('<button class="takeAction" heroId="' + hero.id + '">Action</button>');
+          heroGauge.addClass('ready');
+
+          // TODO: this belongs somewhere else
+          // enemy attacks immediately!
+          if (!isYou) {
+            var target = YOU.party.heroes[_.random(0, YOU.party.heroes.length-1)];
+            game.queueAction({type: 'attack', by: hero.id, target: target.id});
+            takeAction(hero);
+          }
+        }
+      }
+
+      // take action => reset gauge & action buttons
+      function takeAction(hero) {
+        var heroGauge = $('#hero_' + hero.id + ' .gauge div');
+        $('#hero_' + hero.id + ' .action').html('');
+        hero.statuses.ready = false;
+        hero.turnGauge = 0.00;
+        heroGauge.removeClass('ready');
+        updateHero(game.getPlayerByHeroId(hero.id), hero);
+      }
+
+      // action button => target list
+      $(document).on('click', '.hero .takeAction', function(event) {
+        var heroId = $(this).attr('heroId');
+        var targetList = '<span>';
+        for (var i = 0; i < ENEMY.party.heroes.length; i++) {
+          var curHero = ENEMY.party.heroes[i];
+          targetList += '<button class="attack" heroId="'+ heroId +'" targetId="' + curHero.id + '">' + curHero.name + ' </button>';
+        }
+        targetList += '</span>';
+        $(this).replaceWith(targetList);
+
+        });
+      // target list => take action
+      $(document).on('click', '.hero .attack', function(event) {
+        var hero = YOU.party.getHeroById($(this).attr('heroId'));
+        var target = ENEMY.party.getHeroById($(this).attr('targetId'));
+        game.queueAction({type: 'attack', by: hero.id, target: target.id});
+        takeAction(hero);
+        });
+      /** END View stuff */
+      
+
+      var clock = new Clock(SECOND/FPS);
+      var game = new Game(clock);
+      // *YOU
+      var player = new Player(1, 'milton');
+      var party = new Party(1, 4);
+      party.setHero(rollPlayerHero(1, 'Jergens'));
+      party.setHero(rollPlayerHero(2, 'Milton'));
+      party.setHero(rollPlayerHero(3, 'Haruka'));
+      player.setParty(party);
+      YOU = player;
+
+      // *OPPONENT
+      var enemy = new Player(2, 'enemy');
+      var enemyParty = new Party(1, 4);
+      enemyParty.setHero(rollCpuHero(100, 'Teh Badguy'));
+      enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
+      enemy.setParty(enemyParty);
+      ENEMY = enemy;
+
+      game.addPlayers(player, enemy);
+      game.start();
+
+      // TODO: this should be in view thing
+      for (var i = 0; i < YOU.party.heroes.length; i++) {
+        var curHero = YOU.party.heroes[i];
+        $("#party > tbody").append('<tr id="hero_'+ curHero.id +'" class="hero" position="'+ i +'" heroId="' + curHero.id +'"><td>' + curHero.name + '</td><td class="hp">' + curHero.attributes.hp + '</td><td class="gauge"><div></div></td><td class="action"></td></tr>');
+      }
+      for (var i = 0; i < ENEMY.party.heroes.length; i++) {
+        var curHero = ENEMY.party.heroes[i];
+        $("#enemy > tbody").append('<tr id="hero_'+ curHero.id +'" class="hero" position="'+ i +'"><td>' + curHero.name + '</td><td class="hp">' + curHero.attributes.hp + '</td><td class="gauge"><div></div></td><td class="action"></td></tr>');
+      }
+
+      // TODO: logic and state => engine
+      var textX = 50;
+      var textY = 50;
+      var counter = 0;
+      var msg = 'none';
+      var adj = 0;
+
+      // Internal game clock. TODO: make this an event.
+      var curTime = (new Date()).getTime();
+
+      function update() { 
+      }
+      function draw() {
+        canvas.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        canvas.fillStyle = "#000"; // Set color to black
+        canvas.fillText(counter, textX, textY);
+        canvas.fillText(msg, textX, textY+50);
+        canvas.fillText(adj, textX, textY+100);
+      }
+
+
+    </script>
+  </div>
+  </body>
+</html>
