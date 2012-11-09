@@ -4,9 +4,10 @@
   <title>ATBattler v0.1</title>
   <meta charset="UTF-8">
   <!--<link rel="stylesheet" href="res/css/bootstrap.css">-->
-  <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+  <!--<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>-->
+  <script src="js/jquery-1.8.2.min.js"></script>
   <script src="js/underscore-min.js"></script>
-  <script src="js/clock.js"></script>
+  <script src="js/util.js"></script>
   <script src="js/durationevent.js"></script>
   <style>
     span.connect{ color: #049cdb; font-weight:bold; }
@@ -136,10 +137,6 @@
 
       var postGameOverCounter =0;
 
-      var gameLoop = setInterval(function() {
-        update();
-        draw();
-        }, 1000/FPS);
 
       /** === DOMAIN === **/
 
@@ -236,7 +233,7 @@
 
       /** Game Event **/
       // simple payload for a typed queue event
-      function gEvent(type, content) {
+      function GameEvent(type, content) {
         this.type = type;
         this.content = content;
       }
@@ -261,7 +258,7 @@
       /** END Event Queue */
 
       /** Game Instance (Server) **/
-      function Game(clock) {
+      function GameInstance(clock) {
         // the players
         this.players = [];
         // convenience map for direct access
@@ -282,12 +279,13 @@
         this.durationEventTracker = [];
 
         // handlers
-        $(this.eventsIn).on('queued', this['processEvent'].bind(this));
+        $(this.eventsIn).on('queued', this['processInbound'].bind(this));
+        $(this.eventsOut).on('queued', this['processOutbound'].bind(this));
         $(this.clock).on('tick', this['onTick'].bind(this));
         $(this.durationClock).on('tick', this['onDurationTick'].bind(this));
       }
 
-      var GI = Game.prototype;
+      var GI = GameInstance.prototype;
 
       // adds the specified players to the game
       GI.addPlayers = function(players) {
@@ -311,13 +309,13 @@
         this.durationClock.stop();
       }
       GI.onTick = function() {
-        this.eventsIn.push(new gEvent('tick'));
+        this.eventsIn.push(new GameEvent('tick'));
       }
       GI.onDurationTick = function() {
-        this.eventsIn.push(new gEvent('durationTick'));
+        this.eventsIn.push(new GameEvent('durationTick'));
       }
       GI.queueAction = function(action) {
-        this.eventsIn.push(new gEvent('action', action));
+        this.eventsIn.push(new GameEvent('action', action));
       }
 
       // Perform upkeep on a real-time tick basis
@@ -347,8 +345,8 @@
         } // switch
       }
 
-      // event processor
-      GI.processEvent = function() {
+      // Inbound event processor
+      GI.processInbound = function() {
         var theEvent = this.eventsIn.shift();
         if (!theEvent || !theEvent.type) {
           console.log('no event or event type, ignoring.');
@@ -363,7 +361,7 @@
           case 'durationTick':
             // update duration-based stuff.  Filter out completed events.
        //     this.durationEventTracker = this.durationEventTracker.filter(this.updateDurationEvent(theEvent));
-            counter += 0.5;
+            this.eventsOut.push(new GameEvent('sync', ''));
             break;
           case 'action':
             // execute action
@@ -373,6 +371,14 @@
             console.log('Unknown event type: ' + theEvent.type);
             break;
         }
+      }
+
+      GI.processOutbound = function() {
+        var theEvent = this.eventsOut.shift();
+
+        // FIXME: this is just a simulated broadcast. 
+        // GLOBAL
+        gameClient.queueEvent(theEvent);
       }
 
       // Game-clock ticks
@@ -390,18 +396,26 @@
             this.gameOver();
             return;
           }
-          for (var j = 0; j < curPlayer.party.heroes.length; j++) {
-            var curHero = curPlayer.party.heroes[j];
+
+          // player ready condition
+          var newlyReady = _.filter(curPlayer.party.heroes, function(curHero) {
             if (curHero && !curHero.statuses.dead && !curHero.statuses.ready) {
               curHero.turnGauge += curHero.attributes.speed / 100.00;
               if (curHero.turnGauge >= 100) {
                 curHero.statuses.ready = true;
                 curHero.turnGauge = 100.00;
+                return true;
               }
             }
-            // TODO: view shit outta here
-            updateHero(curPlayer, curHero);
-          } // for j
+            return false;
+          });
+
+          // broadcast new ready players to clients
+          // TODO
+          if(newlyReady.length > 0) {
+            this.eventsOut.push(new GameEvent('heroes_ready', _.pluck(newlyReady, 'id')));
+            console.dir(newlyReady);
+          }
         } // for i
       }
 
@@ -421,19 +435,13 @@
         this.isGameOver = true;
         this.eventsIn.clear();
         $(this.eventsIn).off('queued');
+        $(this.eventsOff).off('queued');
         $(this.clock).off('tick');
         $(this.durationClock).off('tick');
-       alert('game over');
+        alert('game over');
 //        alert(winner.name + ' has won!');
       }
       /** END Game Instance (server) **/
-
-      /** Game (Client) **/
-      function GameClient(account) {
-        this.players = [];
-      }
-      /** END Game (Client) **/
-
 
       /** CPU Player (lololol) **/
       function CpuPlayer(cpuPlayer, game) {
@@ -443,6 +451,90 @@
       }
 
       /** END CPU Player
+
+      /** Game (Client) **/
+      function GameClient(myId) {
+        this.players = [];
+        this.gameInstance = null;
+        this.myId = myId;
+        this.me = null;
+
+        this.eventsIn = new EventQueue();
+
+        this.gameLoop = null;
+        
+        $(this.eventsIn).on('queued', this['processEvent'].bind(this));
+      }
+
+      var GC = GameClient.prototype;
+
+      // TODO: this should come 'down' from the server
+      GC.setup = function(gameInstance) {
+        this.gameInstance = gameInstance;
+
+        // TODO: here we are mimicking 'receiving' player data from server
+        for (var i = 0; i < this.gameInstance.players.length; i++) {
+          // take the raw JSON ver of the 'Player' and mash it into an empty 
+          // instance of the Domain Player class.  Wooo Javascript!
+          var rawPlayer = JSON.parse(JSON.stringify(this.gameInstance.players[i]));
+          var playerToAdd = new Player();
+          playerToAdd = _.extend(playerToAdd, rawPlayer);
+          this.players.push(playerToAdd);
+
+          // this is you!
+          if (playerToAdd.id == this.myId) {
+            this.me = playerToAdd;
+          }
+        }
+      }
+
+      GC.start = function() {
+        this.gameInstance.start();
+        this.gameLoop = setInterval(function() {
+            // TODO: factor this out?
+            update();
+            draw();
+
+            }, 1000/FPS);
+      }
+
+      GC.stop = function() {
+        this.gameInstance.stop();
+        stopInterval(this.gameLoop);
+      }
+
+      GC.queueEvent = function(gameEvent) {
+        this.eventsIn.push(gameEvent);
+      }
+
+      GC.processEvent = function() {
+        var theEvent = this.eventsIn.shift();
+        var args = theEvent.content;
+        if (!theEvent || !theEvent.type) {
+          console.log('no event or event type, ignoring.');
+          return;
+        }
+        switch (theEvent.type) {
+          case 'sync':
+            // sync player/hero status.
+            // TODO: view shit outta here?
+          //  updateHero(curPlayer, curHero);
+            counter += 0.5;
+            break;
+          case 'heroes_ready':
+            break;
+          case 'action':
+            // execute action
+            console.log('CLIENT action' + theEvent.content);
+            //this.executeAction(theEvent.content);
+            break;
+          default:
+            console.log('Unknown event type: ' + theEvent.type);
+            break;
+        }
+      }
+      /** END Game (Client) **/
+
 
       /***********************************************************************/
 
@@ -512,8 +604,9 @@
       /** END View stuff */
       
 
+      // TODO: much of this should be 'server side'.
       var clock = new Clock(SECOND/FPS);
-      var game = new Game(clock);
+      var gameInstance = new GameInstance(clock);
       // *YOU
       var player = new Player(1, 'milton');
       var party = new Party(1, 4);
@@ -531,8 +624,11 @@
       enemy.setParty(enemyParty);
       ENEMY = enemy;
 
-      game.addPlayers(player, enemy);
-      game.start();
+      gameInstance.addPlayers(player, enemy);
+
+      var gameClient = new GameClient(player.id);
+      gameClient.setup(gameInstance);
+      gameClient.start();
 
       // TODO: this should be in view thing
       for (var i = 0; i < YOU.party.heroes.length; i++) {
@@ -548,11 +644,6 @@
       var textX = 50;
       var textY = 50;
       var counter = 0;
-      var msg = 'none';
-      var adj = 0;
-
-      // Internal game clock. TODO: make this an event.
-      var curTime = (new Date()).getTime();
 
       function update() { 
       }
@@ -560,8 +651,6 @@
         canvas.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         canvas.fillStyle = "#000"; // Set color to black
         canvas.fillText(counter, textX, textY);
-        canvas.fillText(msg, textX, textY+50);
-        canvas.fillText(adj, textX, textY+100);
       }
 
 
