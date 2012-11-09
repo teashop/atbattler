@@ -163,7 +163,7 @@
 
         // TODO: put somewhere else
         this.attributes = attributes;
-               this.statuses = {};        
+        this.statuses = {};        
 
         // TODO: mechanics should be managed by game state
         this.turnGauge = 0.00;
@@ -397,22 +397,12 @@
           // TODO
           if(newlyReady.length > 0) {
             this.eventsOut.push(new GameEvent('heroes_ready', _.pluck(newlyReady, 'id')));
-            console.dir(newlyReady);
+//            console.dir(newlyReady);
           }
         } // for i
       }
 
-
-      GI.getPlayerByHeroId = function(heroId) {
-        for(var i = 0; i < this.players.length; i++) {
-          for(var j = 0; j < this.players[i].party.heroes.length; j++) {
-            if (party.heroes[j] && party.heroes[j].id == heroId) {
-              return this.players[i];
-            }
-          }
-        }
-      }
-
+      
       GI.gameOver = function(winner) {
         this.stop();
         this.isGameOver = true;
@@ -438,6 +428,7 @@
       /** Game (Client) **/
       function GameClient(myId) {
         this.players = [];
+        this.heroes = [];
         this.gameInstance = null;
         this.myId = myId;
         this.me = null;
@@ -457,12 +448,17 @@
 
         // TODO: here we are mimicking 'receiving' player data from server
         for (var i = 0; i < this.gameInstance.players.length; i++) {
-          // take the raw JSON ver of the 'Player' and mash it into an empty 
-          // instance of the Domain Player class.  Wooo Javascript!
+          // take the raw JSON ver of the 'Player' and mash its data into an 
+          // empty instance of the Domain Player class.  
           var rawPlayer = JSON.parse(JSON.stringify(this.gameInstance.players[i]));
-          var playerToAdd = new Player();
-          playerToAdd = _.extend(playerToAdd, rawPlayer);
-          this.players.push(playerToAdd);
+          // this is ugly as sin.
+          var playerToAdd = new Player(rawPlayer.id, rawPlayer.name);
+          var party = new Party(rawPlayer.party.id, rawPlayer.party.maxSize);
+          _.each(rawPlayer.party.heroes, function(rawHero) {
+              party.setHero(_.extend(new Hero(), rawHero));
+          });
+          playerToAdd.setParty(party);
+          this.addPlayers(playerToAdd);
 
           // this is you!
           if (playerToAdd.id == this.myId) {
@@ -501,10 +497,18 @@
           case 'sync':
             // sync player/hero status.
             // TODO: view shit outta here?
-          //  updateHero(curPlayer, curHero);
+          //  updateHero(curHero);
             counter += 0.5;
             break;
           case 'heroes_ready':
+            var readyHeroes = args;
+            for (var i = 0; i < readyHeroes.length; i++) {
+              var theHero = this.heroes[readyHeroes[i]];
+              theHero.statuses.ready = true;
+              theHero.turnGauge = 100.00;
+
+              updateHero(theHero);
+            }
             break;
           case 'action':
             // execute action
@@ -516,6 +520,28 @@
             break;
         }
       }
+      // adds the specified players to the game
+      GC.addPlayers = function(players) {
+        for (var i = 0; i < arguments.length; i++) {
+          var curPlayer = arguments[i];
+          this.players.push(curPlayer);
+          for (var j = 0; j < curPlayer.party.heroes.length; j++) {
+            var curHero = curPlayer.party.heroes[j];
+            this.heroes[curHero.id] = curHero;
+          }
+        }
+      }
+
+      GC.getPlayerByHeroId = function(heroId) {
+        for(var i = 0; i < this.players.length; i++) {
+          for(var j = 0; j < this.players[i].party.heroes.length; j++) {
+            if (party.heroes[j] && party.heroes[j].id == heroId) {
+              return this.players[i];
+            }
+          }
+        }
+      }
+
       /** END Game (Client) **/
 
 
@@ -523,7 +549,9 @@
 
 
       /** View stuff */
-      function updateHero(player, hero) {
+      function updateHero(hero) {
+        var player = gameClient.getPlayerByHeroId(hero.id);
+//        console.log(hero);
         var isYou = player == YOU;
         var heroRow = $('#hero_' + hero.id);
         var heroGauge = $('#hero_' + hero.id + ' .gauge div');
@@ -549,8 +577,8 @@
           // enemy attacks immediately!
           if (!isYou) {
             var target = YOU.party.heroes[_.random(0, YOU.party.heroes.length-1)];
-            game.queueAction({type: 'attack', by: hero.id, target: target.id});
-            takeAction(hero);
+//            game.queueAction({type: 'attack', by: hero.id, target: target.id});
+//            takeAction(hero);
           }
         }
       }
@@ -562,7 +590,7 @@
         hero.statuses.ready = false;
         hero.turnGauge = 0.00;
         heroGauge.removeClass('ready');
-        updateHero(game.getPlayerByHeroId(hero.id), hero);
+        updateHero(hero);
       }
 
       // action button => target list
