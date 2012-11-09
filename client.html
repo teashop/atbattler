@@ -239,23 +239,6 @@
       }
       /** END Game Event **/
 
-      /** Event Queue (literally, a queue to hold Events and that will
-          fire an Event when a new item is added!) **/
-      function EventQueue() {
-        this.events = [];        
-      }
-      var EQ = EventQueue.prototype;
-      EQ.push = function(theEvent) {
-        this.events.push(theEvent);
-        $(this).trigger('queued');
-      }
-      EQ.shift = function() {
-        return this.events.shift();
-      }
-      EQ.clear = function() {
-        this.events = [];
-      }
-      /** END Event Queue */
 
       /** Game Instance (Server) **/
       function GameInstance(clock) {
