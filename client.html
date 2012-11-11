@@ -344,7 +344,10 @@
           case 'durationTick':
             // update duration-based stuff.  Filter out completed events.
        //     this.durationEventTracker = this.durationEventTracker.filter(this.updateDurationEvent(theEvent));
-            this.eventsOut.push(new GameEvent('sync', ''));
+            var sync = _.map(this.heroes, function(theHero) {
+              return [theHero.id, theHero.turnGauge];
+            });
+            this.eventsOut.push(new GameEvent('heroes_sync', sync));
             break;
           case 'action':
             // execute action
@@ -471,10 +474,26 @@
         this.gameInstance.start();
         this.gameLoop = setInterval(function() {
             // TODO: factor this out?
+
+            // client-side 'smooth gauge'.  Use client speed values to 
+            // extrapolate gauge, subject to server-sync.
+            var toUpdate = _.filter(this.heroes, function(curHero) {
+                if (!curHero.statuses.dead && !curHero.statuses.ready) {
+                  curHero.turnGauge += curHero.attributes.speed / 100.00;
+                  if (curHero.turnGauge >= 100) {
+                    curHero.turnGauge = 100.00;
+                  }
+                  return true;
+                }
+                return false;
+              });
+            if (toUpdate && toUpdate.length > 0) {
+              _.each(toUpdate, updateHero);
+            }
             update();
             draw();
 
-            }, 1000/FPS);
+            }.bind(this), 1000/FPS);
       }
 
       GC.stop = function() {
@@ -494,10 +513,16 @@
           return;
         }
         switch (theEvent.type) {
-          case 'sync':
-            // sync player/hero status.
+          case 'heroes_sync':
+            // sync player/hero timing. Use as sanity check for gauge.
             // TODO: view shit outta here?
-          //  updateHero(curHero);
+            // TODO: need to do the smooth gauge, but use the sync as override
+            var heroesSync = args;
+            for (var i = 0; i < heroesSync.length; i++) {
+              var theHero = this.heroes[heroesSync[i][0]];
+              theHero.turnGauge = heroesSync[i][1];
+              updateHero(theHero);
+            }
             counter += 0.5;
             break;
           case 'heroes_ready':
@@ -506,7 +531,6 @@
               var theHero = this.heroes[readyHeroes[i]];
               theHero.statuses.ready = true;
               theHero.turnGauge = 100.00;
-
               updateHero(theHero);
             }
             break;
