@@ -391,7 +391,9 @@
 
           // game over condition:
           if (_.all(_.pluck(curPlayer.party.heroes, 'statuses'), function(statuses) { return statuses.dead; })) {
-            this.gameOver();
+            this.gameOver(_.filter(this.players, function(curPlayer) {
+                return(curPlayer.id != this.players[i].id);
+              }, this));
             return;
           }
 
@@ -421,12 +423,12 @@
         this.stop();
         this.isGameOver = true;
         this.eventsIn.clear();
+        this.eventsOut.push(new GameEvent('game_over', winner ? winner[0] : ''));
         $(this.eventsIn).off('queued');
-        $(this.eventsOff).off('queued');
+        $(this.eventsOut).off('queued');
         $(this.clock).off('tick');
         $(this.durationClock).off('tick');
-        alert('game over');
-//        alert(winner.name + ' has won!');
+
       }
       /** END Game Instance (server) **/
 
@@ -509,7 +511,7 @@
 
       GC.stop = function() {
         this.gameInstance.stop();
-        stopInterval(this.gameLoop);
+        clearInterval(this.gameLoop);
       }
 
       GC.queueEvent = function(gameEvent) {
@@ -558,7 +560,7 @@
             break;
           case 'action':
             // execute action
-            console.log('SERVER sent action: ' + theEvent.content);
+//            console.log('SERVER sent action: ' + JSON.stringify(theEvent.content));
             var source = this.heroes[args.by];
             var target = this.heroes[args.target];
             target.attributes.hp -= args.amount;
@@ -570,6 +572,9 @@
           case 'client_action':
             // send action to server
             this.sendToServer(theEvent);
+            break;
+          case 'game_over':
+            this.gameOver(args);
             break;
           default:
             console.log('Unknown event type: ' + theEvent.type);
@@ -606,6 +611,20 @@
         gameInstance.queueAction(theEvent);
       }
 
+      GC.gameOver = function(winner) {
+        var winner = _.find(this.players, function(thePlayer) { return thePlayer.id == winner.id; });
+
+        this.stop();
+        this.isGameOver = true;
+        this.eventsIn.clear();
+        $(this.eventsIn).off('queued');
+
+        if (winner) {
+          alert(winner.name + ' has won!');
+        } else {
+          alert('Game Over!');
+        }
+      }
       /** END Game (Client) **/
 
 
@@ -640,6 +659,9 @@
           // enemy attacks immediately!
           if (!isYou) {
             var target = YOU.party.heroes[_.random(0, YOU.party.heroes.length-1)];
+            if (target.statuses.dead) {
+              target = _.find(YOU.party.heroes, function(theHero) { return !theHero.statuses.dead });
+            }
             gameClient.queueEvent(new GameEvent('client_action', {type: 'attack', by: hero.id, target: target.id}));
 //            takeAction(hero);
           }
