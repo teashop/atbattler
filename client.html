@@ -298,7 +298,7 @@
         this.eventsIn.push(new GameEvent('durationTick'));
       }
       GI.queueAction = function(action) {
-        this.eventsIn.push(new GameEvent('action', action));
+        this.eventsIn.push(action);
       }
 
       // Perform upkeep on a real-time tick basis
@@ -309,30 +309,42 @@
       // execute an action
       GI.executeAction = function(action) {
 //        console.log(action.by + ' uses ' + action.type + ' on ' + action.target);
+        var results = [];
         // TODO: these should be in handlers or something more organized
         switch(action.type) {
           case 'attack':
             var attacker = this.heroes[action.by];
             var target = this.heroes[action.target];
             var dmg = attacker.attributes.attack;
+            var overkill = 0;
 //            console.log(attacker.name + ' attacks ' + target.name + ' for ' + dmg + ' damage');
             target.attributes.hp -= dmg;
+            results.push(new GameEvent('action', {type: 'attack', by: attacker.id, target: target.id, amount: dmg}));
             if (target.attributes.hp <= 0) {
+              overkill = -(target.attributes.hp);
               target.attributes.hp = 0;
               target.statuses.dead = true;
+              results.push(new GameEvent('heroes_dead', [target.id]));
             }
+            // reset actor
+            attacker.statuses.ready = false;
+            attacker.turnGauge = 0.00;
             break;
           default:
             console.log('Unknown action type ' + action.type);
             break;
         } // switch
+
+        for (var i = 0; i < results.length; i++) {
+          this.eventsOut.push(results[i]);
+        }
       }
 
       // Inbound event processor
       GI.processInbound = function() {
         var theEvent = this.eventsIn.shift();
         if (!theEvent || !theEvent.type) {
-          console.log('no event or event type, ignoring.');
+          console.log('Server: no event or event type, ignoring.');
           return;
         }
 
@@ -349,7 +361,7 @@
             });
             this.eventsOut.push(new GameEvent('heroes_sync', sync));
             break;
-          case 'action':
+          case 'client_action':
             // execute action
             this.executeAction(theEvent.content);
             break;
@@ -400,7 +412,6 @@
           // TODO
           if(newlyReady.length > 0) {
             this.eventsOut.push(new GameEvent('heroes_ready', _.pluck(newlyReady, 'id')));
-//            console.dir(newlyReady);
           }
         } // for i
       }
@@ -509,7 +520,8 @@
         var theEvent = this.eventsIn.shift();
         var args = theEvent.content;
         if (!theEvent || !theEvent.type) {
-          console.log('no event or event type, ignoring.');
+          console.log('Client: no event or event type, ignoring.');
+          console.log(theEvent);
           return;
         }
         switch (theEvent.type) {
@@ -534,16 +546,37 @@
               updateHero(theHero);
             }
             break;
+          case 'heroes_dead':
+            var deadHeroes = args;
+            for (var i = 0; i < deadHeroes.length; i++) {
+              var theHero = this.heroes[deadHeroes[i]];
+              theHero.statuses.dead = true;
+              theHero.turnGauge = 0.00;
+              theHero.attributes.hp = 0;
+              updateHero(theHero);
+            }
+            break;
           case 'action':
             // execute action
-            console.log('CLIENT action' + theEvent.content);
-            //this.executeAction(theEvent.content);
+            console.log('SERVER sent action: ' + theEvent.content);
+            var source = this.heroes[args.by];
+            var target = this.heroes[args.target];
+            target.attributes.hp -= args.amount;
+            if (target.attributes.hp < 0) {
+              target.attributes.hp = 0;
+            }
+            takeAction(source);
+            break;
+          case 'client_action':
+            // send action to server
+            this.sendToServer(theEvent);
             break;
           default:
             console.log('Unknown event type: ' + theEvent.type);
             break;
         }
       }
+
       // adds the specified players to the game
       GC.addPlayers = function(players) {
         for (var i = 0; i < arguments.length; i++) {
@@ -558,12 +591,19 @@
 
       GC.getPlayerByHeroId = function(heroId) {
         for(var i = 0; i < this.players.length; i++) {
-          for(var j = 0; j < this.players[i].party.heroes.length; j++) {
-            if (party.heroes[j] && party.heroes[j].id == heroId) {
+          var heroes = this.players[i].party.heroes;
+          for(var j = 0; j < heroes.length; j++) {
+            if (heroes[j] && heroes[j].id == heroId) {
               return this.players[i];
             }
           }
         }
+      }
+
+      // sends an action to the server.  
+      // FIXME: it writes directly to server's inbound event queue
+      GC.sendToServer = function(theEvent) {
+        gameInstance.queueAction(theEvent);
       }
 
       /** END Game (Client) **/
@@ -575,8 +615,7 @@
       /** View stuff */
       function updateHero(hero) {
         var player = gameClient.getPlayerByHeroId(hero.id);
-//        console.log(hero);
-        var isYou = player == YOU;
+        var isYou = player.id == gameClient.myId;
         var heroRow = $('#hero_' + hero.id);
         var heroGauge = $('#hero_' + hero.id + ' .gauge div');
         var heroHp = $('#hero_' + hero.id + ' .hp');
@@ -601,7 +640,7 @@
           // enemy attacks immediately!
           if (!isYou) {
             var target = YOU.party.heroes[_.random(0, YOU.party.heroes.length-1)];
-//            game.queueAction({type: 'attack', by: hero.id, target: target.id});
+            gameClient.queueEvent(new GameEvent('client_action', {type: 'attack', by: hero.id, target: target.id}));
 //            takeAction(hero);
           }
         }
@@ -633,8 +672,8 @@
       $(document).on('click', '.hero .attack', function(event) {
         var hero = YOU.party.getHeroById($(this).attr('heroId'));
         var target = ENEMY.party.getHeroById($(this).attr('targetId'));
-        game.queueAction({type: 'attack', by: hero.id, target: target.id});
-        takeAction(hero);
+        gameClient.queueEvent(new GameEvent('client_action', {type: 'attack', by: hero.id, target: target.id}));
+//        takeAction(hero);
         });
       /** END View stuff */
       
