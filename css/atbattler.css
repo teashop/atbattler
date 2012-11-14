@@ -30,22 +30,48 @@ width:100%;
   overflow: hidden;
 }
 
+.menu-pane {
+  background: #1e5799; /* Old browsers */
+  background: -moz-linear-gradient(top, #1e5799 0%, #2989d8 50%, #2680d0 51%, #7db9e8 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1e5799), color-stop(50%,#2989d8), color-stop(51%,#2680d0), color-stop(100%,#7db9e8)); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(top, #1e5799 0%,#2989d8 50%,#2680d0 51%,#7db9e8 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(top, #1e5799 0%,#2989d8 50%,#2680d0 51%,#7db9e8 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(top, #1e5799 0%,#2989d8 50%,#2680d0 51%,#7db9e8 100%); /* IE10+ */
+  background: linear-gradient(to bottom, #1e5799 0%,#2989d8 50%,#2680d0 51%,#7db9e8 100%); /* W3C */
+  border-radius: 4px;
+  color: #eee;
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#7db9e8',GradientType=0 ); /* IE6-9 */
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 10px 8px;
+  text-shadow: -1px 1px 1px rgba(0,0,0,0.5);
+}
 
 .gauge {
-  width: 200px;
+  width: 180px;
 }
 
-.gauge div {
-  background-color: gray;
-  height: 20px;
-  border: 1px solid black;
+.gauge-container {
+  background-color: none;
+  border: 1px solid white;
+  border-radius: 16px 4px 16px 4px;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
+  height: 14px;
+  padding: 1px;
 }
 
-.gauge div.ready {
-  background-color: #ff9966;
+.gauge-bar {
+  background-color: #cccccc;
+  border-radius: 18px 4px 18px 4px;
+  box-shadow: inset 0px -5px 8px rgba(80, 40, 0, 0.3);
+  height: 100%;
 }
 
-.dead .gauge div {
+.ready .gauge-bar {
+  background-color: #ff8877;
+}
+
+.dead .gauge-bar {
   background-color: white;
   width: 0px;
 }

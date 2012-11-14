@@ -4,7 +4,7 @@
   <title>ATBattler v0.1</title>
   <meta charset="UTF-8">
   <!--<link rel="stylesheet" href="res/css/bootstrap.css">-->
-  <link rel="stylesheet" href="css/atbattler.css">
+  <link rel="stylesheet" href="css/atbattler.css"/>
   <!--<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>-->
   <script src="js/jquery-1.8.2.min.js"></script>
   <script src="js/underscore-min.js"></script>
@@ -22,7 +22,7 @@
       <canvas id="mainCanvas" width="800" height="480">
       </canvas>
       <div>
-      <div style="width:400px; border:1px solid gray; float:left">
+      <div class="menu-pane" style="width:400px; float:left">
         <table id="party">
           <thead>
             <th>Name</th>
@@ -34,7 +34,7 @@
           </tbody>
         </table>
       </div>
-      <div style="width:400px; border:1px solid gray; float:left">
+      <div class="menu-pane" style="width:400px; float:left">
         <table id="enemy">
           <thead>
             <th>Name</th>
@@ -566,7 +566,7 @@
         var player = gameClient.getPlayerByHeroId(hero.id);
         var isYou = player.id == gameClient.myId;
         var heroRow = $('#hero_' + hero.id);
-        var heroGauge = $('#hero_' + hero.id + ' .gauge div');
+        var heroGauge = $('#hero_' + hero.id + ' div.gauge-bar');
         var heroHp = $('#hero_' + hero.id + ' .hp');
         // don't update dead people!
         if (hero.statuses.dead) {
@@ -583,7 +583,7 @@
         // update readiness
         if (hero.statuses.ready && heroRow.children('td.action').is(':empty')) {
           heroRow.children('.action').html('<button class="takeAction" heroId="' + hero.id + '">Action</button>');
-          heroGauge.addClass('ready');
+          heroRow.addClass('ready');
 
           // TODO: this belongs somewhere else
           // enemy attacks immediately!
@@ -600,11 +600,11 @@
 
       // take action => reset gauge & action buttons
       function takeAction(hero) {
-        var heroGauge = $('#hero_' + hero.id + ' .gauge div');
+        var heroRow = $('#hero_' + hero.id);
         $('#hero_' + hero.id + ' .action').html('');
         hero.statuses.ready = false;
         hero.turnGauge = 0.00;
-        heroGauge.removeClass('ready');
+        heroRow.removeClass('ready');
         updateHero(hero);
       }
 
@@ -659,11 +659,13 @@
       // TODO: this should be in view thing
       for (var i = 0; i < YOU.party.heroes.length; i++) {
         var curHero = YOU.party.heroes[i];
-        $("#party > tbody").append('<tr id="hero_'+ curHero.id +'" class="hero" position="'+ i +'" heroId="' + curHero.id +'"><td>' + curHero.name + '</td><td class="hp">' + curHero.attributes.hp + '</td><td class="gauge"><div></div></td><td class="action"></td></tr>');
+        $("#party > tbody").append('<tr id="hero_'+ curHero.id +'" class="hero" position="'+ i +'" heroId="' + curHero.id +'"><td>' + curHero.name + '</td><td class="hp">' + curHero.attributes.hp 
+          + '</td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>');
       }
       for (var i = 0; i < ENEMY.party.heroes.length; i++) {
         var curHero = ENEMY.party.heroes[i];
-        $("#enemy > tbody").append('<tr id="hero_'+ curHero.id +'" class="hero" position="'+ i +'"><td>' + curHero.name + '</td><td class="hp">' + curHero.attributes.hp + '</td><td class="gauge"><div></div></td><td class="action"></td></tr>');
+        $("#enemy > tbody").append('<tr id="hero_'+ curHero.id +'" class="hero" position="'+ i +'"><td>' + curHero.name + '</td><td class="hp">' + curHero.attributes.hp 
+          + '</td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>');
       }
 
       // TODO: logic and state => engine
