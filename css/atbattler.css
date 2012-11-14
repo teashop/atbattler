@@ -1,0 +1,63 @@
+body {
+  font-family: arial, sans-serif;
+}
+
+#chatMembers {
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.067);
+}
+.me { background-color: #ddddff; }
+
+#chatContainer.disabled { background-color: #dddddd; }
+#chatContainer {
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.067);
+height:400px;
+       overflow-y: scroll;
+       overflow-x: hidden;
+}
+#chatMessageInput {
+  width: 780px;
+}
+
+#chatLog {
+width:100%;
+}
+#chatLog td {
+  border: none;
+}
+
+#chatLog td.timestamp {
+  width: 100px;
+  overflow: hidden;
+}
+
+
+.gauge {
+  width: 200px;
+}
+
+.gauge div {
+  background-color: gray;
+  height: 20px;
+  border: 1px solid black;
+}
+
+.gauge div.ready {
+  background-color: #ff9966;
+}
+
+.dead .gauge div {
+  background-color: white;
+  width: 0px;
+}
+
+#enemy button {
+  display: none;
+}
+
+a.chat-link {
+  color: inherit;
+}
+a.chat-link:before {
+  content: '[';
+}
+
