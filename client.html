@@ -63,27 +63,28 @@
       var FPS = 30;
       var SECOND = 1000;
 
-      var YOU = null;
-      var ENEMY = null;
-
       var postGameOverCounter =0;
 
 
       /** === DOMAIN === **/
 
       function rollPlayerHero(id, name) {
+        var theHp =  _.random(1000, 1300);
         var attributes = {
           speed: _.random(100, 130), 
           attack: _.random(200, 220), 
-          hp: _.random(1000, 1300) 
+          hp: theHp,
+          maxHp: theHp
           };
         return new Hero(id, name, attributes);
       }
       function rollCpuHero(id, name) {
+        var theHp = _.random(1200, 1700);
         var attributes = {
           speed: _.random(80, 100), 
           attack: _.random(50, 90), 
-          hp: _.random(1200, 1700) 
+          hp: theHp,
+          maxHp: theHp
           };
         return new Hero(id, name, attributes);
       }
@@ -379,6 +380,7 @@
         this.gameInstance = null;
         this.myId = myId;
         this.me = null;
+        this.enemy = null;
 
         this.eventsIn = new EventQueue();
 
@@ -410,6 +412,9 @@
           // this is you!
           if (playerToAdd.id == this.myId) {
             this.me = playerToAdd;
+          } else {
+            // FIXME: works for 1 enemy only 
+            this.enemy = playerToAdd;
           }
         }
       }
@@ -523,18 +528,9 @@
           this.players.push(curPlayer);
           for (var j = 0; j < curPlayer.party.heroes.length; j++) {
             var curHero = curPlayer.party.heroes[j];
+            // augmenting hero with back-link to player
+            curHero.player = curPlayer;
             this.heroes[curHero.id] = curHero;
-          }
-        }
-      }
-
-      GC.getPlayerByHeroId = function(heroId) {
-        for(var i = 0; i < this.players.length; i++) {
-          var heroes = this.players[i].party.heroes;
-          for(var j = 0; j < heroes.length; j++) {
-            if (heroes[j] && heroes[j].id == heroId) {
-              return this.players[i];
-            }
           }
         }
       }
@@ -568,9 +564,8 @@
       var hpIncrementers = [];
       var heroRows = [];
 
-
       function updateHero(hero) {
-        var player = gameClient.getPlayerByHeroId(hero.id);
+        var player = hero.player;
         var isYou = player.id == gameClient.myId;
         var heroRow = heroRows[hero.id];
         var heroGauge = heroRow.find('div.gauge-bar');
@@ -592,9 +587,17 @@
           // TODO: this belongs somewhere else
           // enemy attacks immediately!
           if (!isYou) {
-            var target = YOU.party.heroes[_.random(0, YOU.party.heroes.length-1)];
+            var opponent = null;
+            // find a target opponent (obviously, this is you!)
+            for (var i = 0; i < gameInstance.players.length; i++) {
+              if (gameInstance.players[i].id != player.id) {
+                opponent = gameInstance.players[i];
+                break;
+              }
+            }
+            var target = opponent.party.heroes[_.random(0, opponent.party.heroes.length-1)];
             if (target.statuses.dead) {
-              target = _.find(YOU.party.heroes, function(theHero) { return !theHero.statuses.dead });
+              target = _.find(opponent.party.heroes, function(theHero) { return !theHero.statuses.dead });
             }
             gameClient.queueEvent(new GameEvent('client_action', {type: 'attack', by: hero.id, target: target.id}));
           }
@@ -629,8 +632,8 @@
       $(document).on('click', '.hero .takeAction', function(event) {
         var heroId = $(this).attr('heroId');
         var targetList = '<span>';
-        for (var i = 0; i < ENEMY.party.heroes.length; i++) {
-          var curHero = ENEMY.party.heroes[i];
+        for (var i = 0; i < gameClient.enemy.party.heroes.length; i++) {
+          var curHero = gameClient.enemy.party.heroes[i];
           if (!curHero.statuses.dead) {
             targetList += '<button class="attack" heroId="'+ heroId +'" targetId="' + curHero.id + '">' + curHero.name + ' </button>';
           }
@@ -641,8 +644,8 @@
         });
       // target list => take action
       $(document).on('click', '.hero .attack', function(event) {
-        var hero = YOU.party.getHeroById($(this).attr('heroId'));
-        var target = ENEMY.party.getHeroById($(this).attr('targetId'));
+        var hero = gameClient.heroes[$(this).attr('heroId')];
+        var target = gameClient.heroes[$(this).attr('targetId')];
         gameClient.queueEvent(new GameEvent('client_action', {type: 'attack', by: hero.id, target: target.id}));
         });
       /** END View stuff */
@@ -658,7 +661,6 @@
       party.setHero(rollPlayerHero(2, 'Milton'));
       party.setHero(rollPlayerHero(3, 'Haruka'));
       player.setParty(party);
-      YOU = player;
 
       // *OPPONENT
       var enemy = new Player(2, 'enemy');
@@ -666,7 +668,6 @@
       enemyParty.setHero(rollCpuHero(100, 'Teh Badguy'));
       enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
       enemy.setParty(enemyParty);
-      ENEMY = enemy;
 
       gameInstance.addPlayers(player, enemy);
 
@@ -675,37 +676,37 @@
       gameClient.start();
 
       // TODO: this should be somewhere better 
-      for (var i = 0; i < YOU.party.heroes.length; i++) {
-        var curHero = YOU.party.heroes[i];
+      for (var i = 0; i < gameClient.heroes.length; i++) {
+        var curHero = gameClient.heroes[i];
+        if (!curHero) { 
+          continue;
+        }
+        var isYou = curHero.player.id == gameClient.myId;
         var heroDomId = 'hero_'+ curHero.id;
         var heroHp = curHero.attributes.hp;
-        $("#party > tbody").append('<tr id="'+ heroDomId +'" class="hero" position="'+ i +'" heroId="' + curHero.id +'"><td>' + curHero.name + '</td><td class="hp">' + heroHp 
+
+        var heroPane = $("#party > tbody");
+        if (!isYou) {
+          heroPane = $("#enemy > tbody");
+        }
+        heroPane.append('<tr id="'+ heroDomId +'" class="hero" position="'+ i +'" heroId="' + curHero.id +'"><td>' + curHero.name + '</td><td class="hp">' + heroHp 
           + '</td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>');
 
+        heroRows[curHero.id] = $('#' + heroDomId);
         var onUpdate = function(val) { 
-          this.holder.text(val); 
-        };		
-        onUpdate = _.bind(onUpdate, { holder: $('#'+ heroDomId).find('.hp') });
-        hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
-		heroRows[curHero.id] = $('#' + heroDomId);
-      }
-
-      for (var i = 0; i < ENEMY.party.heroes.length; i++) {
-        var curHero = ENEMY.party.heroes[i];
-        var heroDomId = 'hero_'+ curHero.id;
-        var heroHp = curHero.attributes.hp;
-        $("#enemy > tbody").append('<tr id="'+ heroDomId +'" class="hero" position="'+ i +'"><td>' + curHero.name + '</td><td class="hp">' + heroHp 
-          + '</td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>');
-
-        var onUpdate = function(val) { 
-          this.holder.text(val); 
+          this.holder.text(val);
+          var percent = val/this.hero.attributes.maxHp;
+          var rgb = '#fff';
+          if (percent < 0.3) {
+            rgb = 'rgb(255,'+ (Math.round(percent/0.2*215)+40) + ',0)';
+          } else if (percent < 0.6) {
+            rgb = 'rgb(255,255,' + Math.round((percent-0.3)/0.3*255)+')';
+          }
+          this.holder.css('color', rgb);
         };
-        onUpdate = _.bind(onUpdate, { holder: $('#'+ heroDomId).find('.hp') });
+        onUpdate = _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), hero: curHero });
         hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
-		heroRows[curHero.id] = $('#' + heroDomId);
       }
-
-
       // TODO: logic and state => engine
       var textX = 50;
       var textY = 50;
