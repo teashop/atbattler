@@ -317,7 +317,7 @@
           $('#postCounter').text(postGameOverCounter);
           return;
         }
-        for (var i = 0; i < this.players.length; i++) {
+        for (var i = 0, len = this.players.length; i < len; i++) {
           var curPlayer = this.players[i];
 
           // game over condition:
@@ -433,7 +433,7 @@
               });
             if (toUpdate && toUpdate.length > 0) {
 //              _.each(toUpdate, updateHero);
-              for (var i = 0; i < toUpdate.length; i++) {
+              for (var i = 0, len = toUpdate.length; i < len; i++) {
                 updateHero(toUpdate[i]);
               }
             }
@@ -566,13 +566,14 @@
 
       /** View stuff */
       var hpIncrementers = [];
+      var heroRows = [];
 
 
       function updateHero(hero) {
         var player = gameClient.getPlayerByHeroId(hero.id);
         var isYou = player.id == gameClient.myId;
-        var heroRow = $('#hero_' + hero.id);
-        var heroGauge = $('#hero_' + hero.id + ' div.gauge-bar');
+        var heroRow = heroRows[hero.id];
+        var heroGauge = heroRow.find('div.gauge-bar');
         // don't update dead people!
         if (hero.statuses.dead) {
           if (!heroRow.hasClass('dead')) {
@@ -601,13 +602,13 @@
       }
 
       function updateHeroHp(hero, useIncrementer) {
-        var heroHp = $('#hero_' + hero.id + ' .hp');
         // update hp
         if (useIncrementer) {
           // let incrementer take care of update
           hpIncrementers[hero.id].setTarget(hero.attributes.hp);
         } else {
           // stop any existing incrementer, then set your value
+		  var heroHp = heroRows[hero.id].find('.hp');
           hpIncrementers[hero.id].complete();
           heroHp.text(hero.attributes.hp);
         }
@@ -615,8 +616,8 @@
 
       // take action => reset gauge & action buttons
       function takeAction(hero, target) {
-        var heroRow = $('#hero_' + hero.id);
-        $('#hero_' + hero.id + ' .action').html('');
+        var heroRow = heroRows[hero.id];
+        heroRow.find('.action').html('');
         hero.statuses.ready = false;
         hero.turnGauge = 0.00;
         heroRow.removeClass('ready');
@@ -630,7 +631,9 @@
         var targetList = '<span>';
         for (var i = 0; i < ENEMY.party.heroes.length; i++) {
           var curHero = ENEMY.party.heroes[i];
-          targetList += '<button class="attack" heroId="'+ heroId +'" targetId="' + curHero.id + '">' + curHero.name + ' </button>';
+          if (!curHero.statuses.dead) {
+            targetList += '<button class="attack" heroId="'+ heroId +'" targetId="' + curHero.id + '">' + curHero.name + ' </button>';
+          }
         }
         targetList += '</span>';
         $(this).replaceWith(targetList);
@@ -680,10 +683,11 @@
           + '</td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>');
 
         var onUpdate = function(val) { 
-          $('#'+ this.domId + ' .hp').text(val); 
-        };
-        onUpdate = _.bind(onUpdate, { domId: heroDomId });
-        hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 1);
+          this.holder.text(val); 
+        };		
+        onUpdate = _.bind(onUpdate, { holder: $('#'+ heroDomId).find('.hp') });
+        hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
+		heroRows[curHero.id] = $('#' + heroDomId);
       }
 
       for (var i = 0; i < ENEMY.party.heroes.length; i++) {
@@ -694,10 +698,11 @@
           + '</td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>');
 
         var onUpdate = function(val) { 
-          $('#'+ this.domId + ' .hp').text(val); 
+          this.holder.text(val); 
         };
-        onUpdate = _.bind(onUpdate, { domId: heroDomId });
-        hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 1);
+        onUpdate = _.bind(onUpdate, { holder: $('#'+ heroDomId).find('.hp') });
+        hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
+		heroRows[curHero.id] = $('#' + heroDomId);
       }
 
 
