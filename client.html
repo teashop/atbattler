@@ -55,56 +55,75 @@
       font-size: 12px;
       font-weight: normal;
     }
+
+    #combatLog {
+      background-color: #f6f6f6;
+      box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+      color: #344;
+      font-size: 14px;
+      height:200px;
+      overflow-y: scroll;
+      overflow-x: hidden;
+    }
+    #combatLog ul {
+      list-style-type: none;
+      list-style-position: inside;
+      margin: 0; 
+      padding: 0;
+    }
+    #combatLog li {
+      padding: 2px 10px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>ATBattler v0.1</h1>
     <div>
-      
       <canvas id="mainCanvas" width="800" height="480">
       </canvas>
       <div>
-      <div class="menu-pane encounter" style="width:400px; float:left;">
-        <div id="action-pane">
-          <ul>
-            <li><a href="#">Attack</a></li>
-            <li><a href="#">Skill</a></li>
-            <li><a href="#">Item</a></li>
-            <li><a href="#">Defend</a></li>
-          </ul>
-          <div id="target-pane"></div>
-          <p><a href="#" class="cancel">Cancel</a></p>
+        <div class="menu-pane encounter" style="width:400px; float:left;">
+          <div id="action-pane">
+            <ul>
+              <li><a href="#">Attack</a></li>
+              <li><a href="#">Skill</a></li>
+              <li><a href="#">Item</a></li>
+              <li><a href="#">Defend</a></li>
+            </ul>
+            <div id="target-pane"></div>
+            <p><a href="#" class="cancel">Cancel</a></p>
+          </div>
+          <table id="party">
+            <thead>
+              <th>Name</th>
+              <th>HP</th>
+              <th></th>
+              <th></th>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
         </div>
-        <table id="party">
-          <thead>
-            <th>Name</th>
-            <th>HP</th>
-            <th></th>
-            <th></th>
-          </thead>
-          <tbody>
-          </tbody>
-        </table>
-      </div>
-      <div class="menu-pane encounter" style="width:400px; float:left">
-        <table id="enemy">
-          <thead>
-            <th>Name</th>
-            <th>HP</th>
-            <th></th>
-            <th></th>
-          </thead>
-          <tbody>
-          </tbody>
-        </table>
-      </div> 
-      <br style="clear:both;"/>
-      <div><button id="start"/>Start Game</button></div>
-      <br style="clear:both;"/>
-      <label for="chatMessageInput">Chat Message</label>
-      <input id="chatMessageInput" name="chatMessageInput" type="textarea" size="50" />
-      <p>Press enter to submit your message</p>
+        <div class="menu-pane encounter" style="width:400px; float:left">
+          <table id="enemy">
+            <thead>
+              <th>Name</th>
+              <th>HP</th>
+              <th></th>
+              <th></th>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div> 
+        <br style="clear:both;"/>
+        <div><button id="start"/>Start Game</button></div>
+        <br style="clear:both;"/>
+        <div id="combatLog">
+          <ul>
+          </ul>
+        </div>
       </div>
     </div>
     <script>  
@@ -438,6 +457,8 @@
 
       /** END CPU Player
 
+      /***********************************************************************/
+
       /** Game (Client) **/
       function GameClient(myId) {
         this.players = [];
@@ -511,6 +532,7 @@
             draw();
 
             }.bind(this), 1000/FPS);
+        this.log('Game start!');
       }
 
       GC.stop = function() {
@@ -556,6 +578,7 @@
             var deadHeroes = args;
             for (var i = 0; i < deadHeroes.length; i++) {
               var theHero = this.heroes[deadHeroes[i]];
+              this.log(theHero.name + ' was slain!');
               theHero.statuses.dead = true;
               theHero.turnGauge = 0.00;
               theHero.attributes.hp = 0;
@@ -570,12 +593,14 @@
             var target = this.heroes[args.target];
             switch(args.type) {
               case 'attack':
+                this.log(source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.');
                 target.attributes.hp -= args.amount;
                 if (target.attributes.hp < 0) {
                   target.attributes.hp = 0;
                 }
                 break;
               case 'item':
+                this.log(source.name + ' uses item on ' + target.name + ', they were healed for ' + args.amount + '.');
                 target.attributes.hp += args.amount;
                 if (target.attributes.hp > target.attributes.maxHp) {
                   target.attributes.hp = target.attributes.maxHp;
@@ -628,11 +653,23 @@
         this.eventsIn.clear();
         $(this.eventsIn).off('queued');
 
+        var msg = null;
         if (winner) {
-          alert(winner.name + ' has won!');
+          if (winner == this.me) {
+            msg = 'You have won the battle!';
+          } else {
+            msg = 'Player ' + winner.name + ' has won the battle!';
+          }
         } else {
-          alert('Game Over!');
+          msg = 'Game Over!';
         }
+        this.log(msg);
+        alert(msg);
+      }
+
+      // a simple message log.  Allows listener to pickup and handle logging
+      GC.log = function(msg) {
+        $(this).trigger('clientLogEvent', msg)
       }
       /** END Game (Client) **/
 
@@ -744,11 +781,7 @@
           $(this).hide();
           });
 
-      // action pane option 'cancel' => close the pane
-      $(document).on('click', '#action-pane a.cancel', function(event) {
-          closeActionPane();
-      });
-      // action pane option => take action
+      // action pane option => target list (or execute command)
       $(document).on('click', '#action-pane a', function(event) {
           var actionPane = $('#action-pane');
           var heroId = actionPane.attr('heroId');
@@ -763,6 +796,9 @@
             case 'item':
               targets = gameClient.me.party.heroes;
               break;
+            case 'cancel':
+              closeActionPane();
+              return false;
             default:
               console.log('Action Not Yet Impl: ' + $(this).text());
               break;
@@ -780,7 +816,6 @@
             targetList += '</span>';
             $('#target-pane').html(targetList).show();
           }
-
           return false;
           });
 
@@ -842,6 +877,15 @@
         onUpdate = _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), hero: curHero });
         hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
       }
+
+      $(gameClient).on('clientLogEvent', function(event, msg) {
+          //console.log(msg);
+          // FIXME: no limit to messages!
+          var combatLog = $('#combatLog');
+          var combatLogList = combatLog.find('ul');
+          combatLogList.append('<li>'+msg+'</li>');
+          combatLog.scrollTop(combatLogList.height());
+        });
       // TODO: logic and state => engine
       var textX = 50;
       var textY = 50;
@@ -854,8 +898,6 @@
         canvas.fillStyle = "#000"; // Set color to black
         canvas.fillText(counter, textX, textY);
       }
-
-
     </script>
   </div>
   </body>
