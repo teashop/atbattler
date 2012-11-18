@@ -13,6 +13,48 @@
   <script src="js/view.js"></script>
   <style>
     canvas { border: 1px solid black; }
+    #action-pane {
+      background-color: #036;
+      border: 2px solid white;
+      border-radius: 4px;
+      box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
+      color:#eee;
+      display: none;
+      min-height: 120px;
+      left: 375px;
+      padding: 10px;
+      position: absolute;
+      width:120px;
+      z-index: 2;
+    }
+    #action-pane ul {
+      list-style-type: none;
+      list-style-position: inside;
+      margin: 0 0 0 20px;
+      padding: 0;
+    }
+    #action-pane li {
+      padding: 4px 10px;
+    }
+    #action-pane a {
+      color: #eee;
+      text-decoration: none;
+    }
+    #target-pane {
+      display: none;
+    }
+
+    .encounter {
+      height:150px;
+      position: relative;
+    }
+    .encounter td {
+      padding: 4px 10px;
+    }
+    .encounter th {
+      font-size: 12px;
+      font-weight: normal;
+    }
   </style>
 </head>
 <body>
@@ -23,24 +65,34 @@
       <canvas id="mainCanvas" width="800" height="480">
       </canvas>
       <div>
-      <div class="menu-pane" style="width:400px; float:left">
+      <div class="menu-pane encounter" style="width:400px; float:left;">
+        <div id="action-pane">
+          <ul>
+            <li><a href="#">Attack</a></li>
+            <li><a href="#">Skill</a></li>
+            <li><a href="#">Item</a></li>
+            <li><a href="#">Defend</a></li>
+          </ul>
+          <div id="target-pane"></div>
+          <p><a href="#" class="cancel">Cancel</a></p>
+        </div>
         <table id="party">
           <thead>
             <th>Name</th>
             <th>HP</th>
-            <th>Gauge</th>
+            <th></th>
             <th></th>
           </thead>
           <tbody>
           </tbody>
         </table>
       </div>
-      <div class="menu-pane" style="width:400px; float:left">
+      <div class="menu-pane encounter" style="width:400px; float:left">
         <table id="enemy">
           <thead>
             <th>Name</th>
             <th>HP</th>
-            <th>Gauge</th>
+            <th></th>
             <th></th>
           </thead>
           <tbody>
@@ -48,7 +100,7 @@
         </table>
       </div> 
       <br style="clear:both;"/>
-      <p id="postCounter">POST</p>
+      <div><button id="start"/>Start Game</button></div>
       <br style="clear:both;"/>
       <label for="chatMessageInput">Chat Message</label>
       <input id="chatMessageInput" name="chatMessageInput" type="textarea" size="50" />
@@ -245,13 +297,13 @@
         // TODO: these should be in handlers or something more organized
         switch(action.type) {
           case 'attack':
-            var attacker = this.heroes[action.by];
+            var actor = this.heroes[action.by];
             var target = this.heroes[action.target];
-            var dmg = attacker.attributes.attack;
+            var dmg = actor.attributes.attack;
             var overkill = 0;
-//            console.log(attacker.name + ' attacks ' + target.name + ' for ' + dmg + ' damage');
+//            console.log(actor.name + ' attacks ' + target.name + ' for ' + dmg + ' damage');
             target.attributes.hp -= dmg;
-            results.push(new GameEvent('action', {type: 'attack', by: attacker.id, target: target.id, amount: dmg}));
+            results.push(new GameEvent('action', {type: 'attack', by: actor.id, target: target.id, amount: dmg}));
             if (target.attributes.hp <= 0) {
               overkill = -(target.attributes.hp);
               target.attributes.hp = 0;
@@ -259,8 +311,23 @@
               results.push(new GameEvent('heroes_dead', [target.id]));
             }
             // reset actor
-            attacker.statuses.ready = false;
-            attacker.turnGauge = 0.00;
+            actor.statuses.ready = false;
+            actor.turnGauge = 0.00;
+            break;
+          case 'item':
+            // FIXME: this is a placeholder for 'heal'
+            // Heals 15% of maxHp
+            var actor = this.heroes[action.by];
+            var target = this.heroes[action.target];
+            var amount = Math.round(target.attributes.maxHp * 0.15);
+            target.attributes.hp += amount;
+            if (target.attributes.hp > target.attributes.maxHp) {
+              target.attributes.hp = target.attributes.maxHp;
+            }
+            results.push(new GameEvent('action', {type: 'item', by: actor.id, target: target.id, amount: amount}));
+            // reset actor
+            actor.statuses.ready = false;
+            actor.turnGauge = 0.00;
             break;
           default:
             console.log('Unknown action type ' + action.type);
@@ -314,8 +381,6 @@
       // Game-clock ticks
       GI.update = function() {
         if (this.isGameOver) {
-          postGameOverCounter++;
-          $('#postCounter').text(postGameOverCounter);
           return;
         }
         for (var i = 0, len = this.players.length; i < len; i++) {
@@ -500,11 +565,25 @@
           case 'action':
             // execute action
 //            console.log('SERVER sent action: ' + JSON.stringify(theEvent.content));
+ 
             var source = this.heroes[args.by];
             var target = this.heroes[args.target];
-            target.attributes.hp -= args.amount;
-            if (target.attributes.hp < 0) {
-              target.attributes.hp = 0;
+            switch(args.type) {
+              case 'attack':
+                target.attributes.hp -= args.amount;
+                if (target.attributes.hp < 0) {
+                  target.attributes.hp = 0;
+                }
+                break;
+              case 'item':
+                target.attributes.hp += args.amount;
+                if (target.attributes.hp > target.attributes.maxHp) {
+                  target.attributes.hp = target.attributes.maxHp;
+                }
+                break;
+              default:
+                console.log('Client received unknown action.type: ' + action.type);
+                break;
             }
             takeAction(source, target);
             break;
@@ -628,26 +707,83 @@
         updateHeroHp(target, true);
       }
 
-      // action button => target list
+      // action button => show action pane
       $(document).on('click', '.hero .takeAction', function(event) {
-        var heroId = $(this).attr('heroId');
-        var targetList = '<span>';
-        for (var i = 0; i < gameClient.enemy.party.heroes.length; i++) {
-          var curHero = gameClient.enemy.party.heroes[i];
-          if (!curHero.statuses.dead) {
-            targetList += '<button class="attack" heroId="'+ heroId +'" targetId="' + curHero.id + '">' + curHero.name + ' </button>';
-          }
-        }
-        targetList += '</span>';
-        $(this).replaceWith(targetList);
+          var heroId = $(this).attr('heroId');
+          $('#action-pane').show().attr('heroId', heroId);
+          $('#action-pane').children('ul').show();
+          $('#action-pane').children('#target-pane').hide();
+        });
 
-        });
+      function closeActionPane() {
+        $('#action-pane').hide();
+      }
+
       // target list => take action
-      $(document).on('click', '.hero .attack', function(event) {
-        var hero = gameClient.heroes[$(this).attr('heroId')];
-        var target = gameClient.heroes[$(this).attr('targetId')];
-        gameClient.queueEvent(new GameEvent('client_action', {type: 'attack', by: hero.id, target: target.id}));
+      $(document).on('click', '#target-pane button', function(event) {
+          var actionType = $(this).attr('class');
+          var hero = gameClient.heroes[$(this).attr('heroId')];
+          var target = gameClient.heroes[$(this).attr('targetId')];
+          switch (actionType) {
+            case 'attack':
+            case 'skill':
+              gameClient.queueEvent(new GameEvent('client_action', {type: 'attack', by: hero.id, target: target.id}));
+              break;
+            case 'item':
+              gameClient.queueEvent(new GameEvent('client_action', {type: 'item', by: hero.id, target: target.id}));
+              break;
+            default:
+              console.log('Action Not Yet Impl: ' + actionType);
+              break;
+          }
+          closeActionPane();
         });
+
+      $(document).on('click', '#start', function(event) {
+          gameClient.start();
+          $(this).hide();
+          });
+
+      // action pane option 'cancel' => close the pane
+      $(document).on('click', '#action-pane a.cancel', function(event) {
+          closeActionPane();
+      });
+      // action pane option => take action
+      $(document).on('click', '#action-pane a', function(event) {
+          var actionPane = $('#action-pane');
+          var heroId = actionPane.attr('heroId');
+          
+          var targets = null;
+          var actionType = $(this).text().toLowerCase();
+          switch (actionType) {
+            case 'attack':
+            case 'skill':
+              targets = gameClient.enemy.party.heroes;
+              break;
+            case 'item':
+              targets = gameClient.me.party.heroes;
+              break;
+            default:
+              console.log('Action Not Yet Impl: ' + $(this).text());
+              break;
+          }
+
+          if (targets) {
+            actionPane.find('ul').hide();
+            var targetList = '<span>';
+            for (var i = 0; i < targets.length; i++) {
+              var curHero = targets[i];
+              if (!curHero.statuses.dead) {
+                targetList += '<button class="' + actionType + '" heroId="'+ heroId +'" targetId="' + curHero.id + '">' + curHero.name + ' </button>';
+              }
+            }
+            targetList += '</span>';
+            $('#target-pane').html(targetList).show();
+          }
+
+          return false;
+          });
+
       /** END View stuff */
       
 
@@ -673,7 +809,6 @@
 
       var gameClient = new GameClient(player.id);
       gameClient.setup(gameInstance);
-      gameClient.start();
 
       // TODO: this should be somewhere better 
       for (var i = 0; i < gameClient.heroes.length; i++) {
