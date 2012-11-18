@@ -2,32 +2,24 @@ body {
   font-family: arial, sans-serif;
 }
 
-#chatMembers {
-  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.067);
+#combatLog {
+  background-color: #f6f6f6;
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+  color: #344;
+  font-size: 14px;
+  height:200px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  width: 840px;
 }
-.me { background-color: #ddddff; }
-
-#chatContainer.disabled { background-color: #dddddd; }
-#chatContainer {
-  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.067);
-height:400px;
-       overflow-y: scroll;
-       overflow-x: hidden;
+#combatLog ul {
+  list-style-type: none;
+  list-style-position: inside;
+  margin: 0;
+  padding: 0;
 }
-#chatMessageInput {
-  width: 780px;
-}
-
-#chatLog {
-width:100%;
-}
-#chatLog td {
-  border: none;
-}
-
-#chatLog td.timestamp {
-  width: 100px;
-  overflow: hidden;
+#combatLog li {
+  padding: 3px 10px;
 }
 
 .menu-pane {
@@ -50,7 +42,7 @@ width:100%;
 }
 
 .gauge {
-  width: 180px;
+  width: 160px;
 }
 
 .gauge-container {
