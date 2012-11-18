@@ -30,14 +30,16 @@
     #action-pane ul {
       list-style-type: none;
       list-style-position: inside;
-      margin: 0 0 0 20px;
+    /*  margin: 0 0 0 20px;*/
+      margin: 0;
       padding: 0;
     }
     #action-pane li {
-      padding: 4px 10px;
     }
     #action-pane a {
       color: #eee;
+      display: block;
+      padding: 4px 10px;
       text-decoration: none;
     }
     #target-pane {
@@ -49,7 +51,11 @@
       position: relative;
     }
     .encounter td {
-      padding: 4px 10px;
+      padding: 4px 10px 4px 0;
+    }
+    .encounter td.hp {
+      width: 50px;
+      text-align: right;
     }
     .encounter th {
       font-size: 12px;
@@ -64,6 +70,7 @@
       height:200px;
       overflow-y: scroll;
       overflow-x: hidden;
+      width: 840px;
     }
     #combatLog ul {
       list-style-type: none;
@@ -80,7 +87,7 @@
   <div class="container">
     <h1>ATBattler v0.1</h1>
     <div>
-      <canvas id="mainCanvas" width="800" height="480">
+      <canvas id="mainCanvas" width="840" height="360">
       </canvas>
       <div>
         <div class="menu-pane encounter" style="width:400px; float:left;">
@@ -127,15 +134,8 @@
       </div>
     </div>
     <script>  
-      var canvas = document.getElementById('mainCanvas').getContext('2d');
-      var CANVAS_WIDTH=800;
-      var CANVAS_HEIGHT=480;
-
       var FPS = 30;
       var SECOND = 1000;
-
-      var postGameOverCounter =0;
-
 
       /** === DOMAIN === **/
 
@@ -664,7 +664,7 @@
           msg = 'Game Over!';
         }
         this.log(msg);
-        alert(msg);
+        $(this).trigger('clientGameOverEvent', msg);
       }
 
       // a simple message log.  Allows listener to pickup and handle logging
@@ -677,6 +677,10 @@
       /***********************************************************************/
 
       /** View stuff */
+      var canvas = document.getElementById('mainCanvas').getContext('2d');
+      var CANVAS_WIDTH=$('#mainCanvas').width();
+      var CANVAS_HEIGHT=$('#mainCanvas').height();
+
       var hpIncrementers = [];
       var heroRows = [];
 
@@ -826,7 +830,7 @@
       var clock = new Clock(SECOND/FPS);
       var gameInstance = new GameInstance(clock);
       // *YOU
-      var player = new Player(1, 'milton');
+      var player = new Player(1, 'You');
       var party = new Party(1, 4);
       party.setHero(rollPlayerHero(1, 'Jergens'));
       party.setHero(rollPlayerHero(2, 'Milton'));
@@ -834,7 +838,7 @@
       player.setParty(party);
 
       // *OPPONENT
-      var enemy = new Player(2, 'enemy');
+      var enemy = new Player(2, 'Enemy');
       var enemyParty = new Party(1, 4);
       enemyParty.setHero(rollCpuHero(100, 'Teh Badguy'));
       enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
@@ -886,6 +890,12 @@
           combatLogList.append('<li>'+msg+'</li>');
           combatLog.scrollTop(combatLogList.height());
         });
+      $(gameClient).on('clientGameOverEvent', function(event, msg) {
+          canvas.fillStyle = "#039"; 
+          canvas.font = "bold 20px Arial";
+          canvas.fillText(msg, 50, 100);
+        });
+
       // TODO: logic and state => engine
       var textX = 50;
       var textY = 50;
@@ -896,7 +906,7 @@
       function draw() {
         canvas.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         canvas.fillStyle = "#000"; // Set color to black
-        canvas.fillText(counter, textX, textY);
+        canvas.fillText('Elapsed: ' + counter + 's', textX, textY);
       }
     </script>
   </div>
