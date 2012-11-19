@@ -8,10 +8,52 @@
   <!--<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>-->
   <script src="js/vendor/jquery-1.8.2.min.js"></script>
   <script src="js/vendor/underscore-min.js"></script>
+  <script src="js/vendor/easeljs-0.5.0.min.js"></script>
   <script src="js/util.js"></script>
   <script src="js/durationevent.js"></script>
   <script src="js/view.js"></script>
-<!--  <script src="js/requestAnimationFrame-polyfill.js"></script> -->
+
+  <!-- EaselJS setup -->
+  <script type="text/javascript">
+    var backdrop;
+    var stage;
+    var runningRate = 2.5;
+    var w, h;
+
+    var bgImage = new Image();
+    bgImage.src = 'img/plains.png';
+    bgImage.onload = init;
+
+    function init() {
+      // create a new stage and point it at our canvas:
+      var canvas =document.getElementById("mainCanvas");
+      stage = new createjs.Stage(canvas);
+    
+      // grab canvas width and height for later calculations:
+      w = canvas.width;
+      h = canvas.height;
+
+      // Add backdrop to the stage
+      backdrop =  new createjs.Shape(new createjs.Graphics().beginBitmapFill(bgImage, 'no-repeat').drawRect(0,0,bgImage.width,bgImage.height));
+      backdrop.scaleX = Math.ceil(w/bgImage.width);
+      backdrop.scaleY = Math.ceil(h/bgImage.height);
+      stage.addChild(backdrop);
+
+      // add elapsed time counter to stage
+      elapsedLabel = new createjs.Text("--s","bold 14px Arial","#FFF");
+      stage.addChild(elapsedLabel);
+      elapsedLabel.x = 10;
+      elapsedLabel.y = 10;
+      stage.update();
+    }
+
+    function tick() {
+      //fpsLabel.text = Math.round(createjs.Ticker.getMeasuredFPS())+" fps";
+      elapsedLabel.text = counter + "s";
+      stage.update();
+    }
+  </script>
+
   <style>
     .container {
       margin: 0 auto;
@@ -545,10 +587,7 @@
                 updateHero(toUpdate[i]);
               }
             }
-            update();
-            draw();
-
-            }.bind(this), 1000/FPS);
+          }.bind(this), 1000/FPS);
         this.log('Game start!');
       }
 
@@ -701,10 +740,6 @@
       /***********************************************************************/
 
       /** View stuff */
-      var canvas = document.getElementById('mainCanvas').getContext('2d');
-      var CANVAS_WIDTH=$('#mainCanvas').width();
-      var CANVAS_HEIGHT=$('#mainCanvas').height();
-
       var hpIncrementers = [];
       var heroRows = [];
 
@@ -919,23 +954,20 @@
           combatLog.scrollTop(combatLogList.height());
         });
       $(gameClient).on('clientGameOverEvent', function(event, msg) {
-          canvas.fillStyle = "#039"; 
-          canvas.font = "bold 20px Arial";
-          canvas.fillText(msg, 50, 100);
+          createjs.Ticker.setPaused(true);
+          
+          gameOverLabel = new createjs.Text(msg, "bold 40px Arial","#FFF");
+          stage.addChild(gameOverLabel);
+          gameOverLabel.x = 50;
+          gameOverLabel.y = 100;
+          stage.update();
         });
 
-      // TODO: logic and state => engine
-      var textX = 50;
-      var textY = 50;
+      // TODO: this needs to go somewhere else
       var counter = 0;
 
-      function update() { 
-      }
-      function draw() {
-        canvas.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        canvas.fillStyle = "#000"; // Set color to black
-        canvas.fillText('Elapsed: ' + counter + 's', textX, textY);
-      }
+      createjs.Ticker.setFPS(20);
+      createjs.Ticker.addListener(window);
     </script>
   </div>
   </body>
