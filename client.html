@@ -15,6 +15,9 @@
 
   <!-- EaselJS setup -->
   <script type="text/javascript">
+    var FPS = 30;
+    var SECOND = 1000;  // a second is 1000ms
+    var msPerFrame = 33; // approximate
     var backdrop;
     var stage;
     var runningRate = 2.5;
@@ -40,15 +43,17 @@
       stage.addChild(backdrop);
 
       // add elapsed time counter to stage
-      elapsedLabel = new createjs.Text("--s","bold 14px Arial","#FFF");
+      elapsedLabel = new createjs.Text("0s","bold 14px Arial","#FFF");
       stage.addChild(elapsedLabel);
       elapsedLabel.x = 10;
       elapsedLabel.y = 10;
       stage.update();
     }
 
+    // the view's game loop
     function tick() {
       //fpsLabel.text = Math.round(createjs.Ticker.getMeasuredFPS())+" fps";
+      gameClient.update();
       elapsedLabel.text = counter + "s";
       stage.update();
     }
@@ -59,10 +64,7 @@
       margin: 0 auto;
       width: 960px;
     }
-    canvas { 
-      border: 1px solid #f3f3f3; 
-      box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
-    }
+
     #action-pane {
       background-color: #036;
       border: 2px solid white;
@@ -74,7 +76,7 @@
       left: 375px;
       padding: 10px;
       position: absolute;
-      width:120px;
+      min-width:120px;
       z-index: 2;
     }
     #action-pane ul {
@@ -91,6 +93,27 @@
       display: block;
       padding: 4px 10px;
       text-decoration: none;
+      background-color: rgba(38,128,208,0);
+      -webkit-transition-property: background-color;
+      -webkit-transition-duration: 0.2s;
+      -webkit-transition-timing-function: ease-out;
+      -webkit-transition-delay: 0s;
+      -webkit-font-smoothing: antialiased;
+      -moz-transition-property: background-color;
+      -moz-transition-duration: 0.2s;
+      -moz-transition-timing-function: ease-out;
+      -moz-transition-delay: 0s;
+      -ms-transition-property: background-color;
+      -ms-transition-duration: 0.2s;
+      -ms-transition-timing-function: ease-out;
+      -o-transition-property: background-color;
+      -o-transition-duration: 0.2s;
+      -o-transition-timing-function: ease-out;
+      -o-transition-delay: 0s;
+      transition-delay: 0s;
+    }
+    #action-pane a:hover {
+      background-color: rgba(38,128,208,0.8);
     }
     #action-pane button {
       border: none;
@@ -121,29 +144,15 @@
       font-size: 12px;
       font-weight: normal;
     }
-
-    h1.logo {
-      color: #78a;
-      display: inline;
-      font-family: Century Gothic, Arial, sans-serif;
-      font-variant: small-caps;
-      font-weight: normal;
-      margin-right:10px;
-    }
-    .atb {
-      color: #369;
-      letter-spacing: -1px;
-      font-weight: bold;
-    }
-    .fineprint {
-      font-size: 0.7em;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 class="logo"><span class="atb">ATB</span>attler</h1>
-    <span class="fineprint">v0.1</span>
+	<div style="width:840px;">
+      <h1 class="logo"><span class="atb"><strong>AT</strong>B</span>attler</h1>
+      <span class="fineprint">v0.1</span>
+	  <button id="start" style="float:right;"/>Start Game</button>
+	</div>
     <div> 
       <canvas id="mainCanvas" width="840" height="360">
       </canvas>
@@ -183,8 +192,6 @@
           </table>
         </div> 
         <br style="clear:both;"/>
-        <div><button id="start"/>Start Game</button></div>
-        <br style="clear:both;"/>
         <div id="combatLog">
           <ul>
           </ul>
@@ -192,8 +199,6 @@
       </div>
     </div>
     <script>  
-      var FPS = 30;
-      var SECOND = 1000;
 
       /** === DOMAIN === **/
 
@@ -566,29 +571,31 @@
 
       GC.start = function() {
         this.gameInstance.start();
-        this.gameLoop = setInterval(function() {
-            // TODO: factor this out?
-
-            // client-side 'smooth gauge'.  Use client speed values to 
-            // extrapolate gauge, subject to server-sync.
-            var toUpdate = _.filter(this.heroes, function(curHero) {
-                if (!curHero.statuses.dead && !curHero.statuses.ready) {
-                  curHero.turnGauge += curHero.attributes.speed / 100.00;
-                  if (curHero.turnGauge >= 100) {
-                    curHero.turnGauge = 100.00;
-                  }
-                  return true;
-                }
-                return false;
-              });
-            if (toUpdate && toUpdate.length > 0) {
-//              _.each(toUpdate, updateHero);
-              for (var i = 0, len = toUpdate.length; i < len; i++) {
-                updateHero(toUpdate[i]);
-              }
-            }
-          }.bind(this), 1000/FPS);
+        $(this).trigger('clientGameStartEvent');
         this.log('Game start!');
+      }
+
+      // TODO: should this even be here?
+      // to be called by the view's game loop
+      GC.update = function() {
+        // client-side 'smooth gauge'.  Use client speed values to 
+        // extrapolate gauge, subject to server-sync.
+        var toUpdate = _.filter(this.heroes, function(curHero) {
+            if (!curHero.statuses.dead && !curHero.statuses.ready) {
+              curHero.turnGauge += curHero.attributes.speed / 100.00;
+              if (curHero.turnGauge >= 100) {
+                curHero.turnGauge = 100.00;
+              }
+              return true;
+            }
+            return false;
+          });
+        if (toUpdate && toUpdate.length > 0) {
+          //              _.each(toUpdate, updateHero);
+          for (var i = 0, len = toUpdate.length; i < len; i++) {
+            updateHero(toUpdate[i]);
+          }
+        }
       }
 
       GC.stop = function() {
@@ -820,7 +827,7 @@
       }
 
       // target list => take action
-      $(document).on('click', '#target-pane button', function(event) {
+      $(document).on('click', '#target-pane a', function(event) {
           var actionType = $(this).attr('class');
           var hero = gameClient.heroes[$(this).attr('heroId')];
           var target = gameClient.heroes[$(this).attr('targetId')];
@@ -839,6 +846,7 @@
               break;
           }
           closeActionPane();
+          return false;
         });
 
       $(document).on('click', '#start', function(event) {
@@ -877,7 +885,7 @@
             for (var i = 0; i < targets.length; i++) {
               var curHero = targets[i];
               if (!curHero.statuses.dead) {
-                targetList += '<button class="' + actionType + '" heroId="'+ heroId +'" targetId="' + curHero.id + '">' + curHero.name + ' </button>';
+                targetList += '<a href="#" class="' + actionType + '" heroId="'+ heroId +'" targetId="' + curHero.id + '">' + curHero.name + ' </a>';
               }
             }
             targetList += '</span>';
@@ -890,7 +898,7 @@
       
 
       // TODO: much of this should be 'server side'.
-      var clock = new Clock(SECOND/FPS);
+      var clock = new Clock(msPerFrame);
       var gameInstance = new GameInstance(clock);
       // *YOU
       var player = new Player(1, 'You');
@@ -955,19 +963,20 @@
         });
       $(gameClient).on('clientGameOverEvent', function(event, msg) {
           createjs.Ticker.setPaused(true);
-          
           gameOverLabel = new createjs.Text(msg, "bold 40px Arial","#FFF");
           stage.addChild(gameOverLabel);
           gameOverLabel.x = 50;
           gameOverLabel.y = 100;
           stage.update();
         });
+      $(gameClient).on('clientGameStartEvent', function(event, msg) {
+          createjs.Ticker.setFPS(FPS);
+          createjs.Ticker.addListener(window);
+        });
 
       // TODO: this needs to go somewhere else
       var counter = 0;
 
-      createjs.Ticker.setFPS(20);
-      createjs.Ticker.addListener(window);
     </script>
   </div>
   </body>
