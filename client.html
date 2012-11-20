@@ -22,6 +22,7 @@
     var stage;
     var runningRate = 2.5;
     var w, h;
+    var counter = 0;  // duration of game (temp)
 
     var bgImage = new Image();
     bgImage.src = 'img/plains.png';
@@ -53,18 +54,20 @@
     // the view's game loop
     function tick() {
       //fpsLabel.text = Math.round(createjs.Ticker.getMeasuredFPS())+" fps";
-      gameClient.update();
+      var toUpdate = gameClient.update();
+      if (toUpdate && toUpdate.length > 0) {
+        // _.each(toUpdate, updateHero);
+        for (var i = 0, len = toUpdate.length; i < len; i++) {
+          updateHero(toUpdate[i]);
+        }
+      }
+
       elapsedLabel.text = counter + "s";
       stage.update();
     }
   </script>
 
   <style>
-    .container {
-      margin: 0 auto;
-      width: 960px;
-    }
-
     #action-pane {
       background-color: #036;
       border: 2px solid white;
@@ -198,7 +201,7 @@
         </div>
       </div>
     </div>
-    <script>  
+    <script type="text/javascript">
 
       /** === DOMAIN === **/
 
@@ -590,12 +593,7 @@
             }
             return false;
           });
-        if (toUpdate && toUpdate.length > 0) {
-          //              _.each(toUpdate, updateHero);
-          for (var i = 0, len = toUpdate.length; i < len; i++) {
-            updateHero(toUpdate[i]);
-          }
-        }
+        return toUpdate;
       }
 
       GC.stop = function() {
@@ -624,9 +622,9 @@
             for (var i = 0; i < heroesSync.length; i++) {
               var theHero = this.heroes[heroesSync[i][0]];
               theHero.turnGauge = heroesSync[i][1];
-              updateHero(theHero);
+              $(this).trigger('clientUpdateHeroEvent', theHero);
             }
-            counter += 0.5;
+            $(this).trigger('clientSyncHeroEvent', theHero);
             break;
           case 'heroes_ready':
             var readyHeroes = args;
@@ -634,7 +632,7 @@
               var theHero = this.heroes[readyHeroes[i]];
               theHero.statuses.ready = true;
               theHero.turnGauge = 100.00;
-              updateHero(theHero);
+              $(this).trigger('clientUpdateHeroEvent', theHero);
             }
             break;
           case 'heroes_dead':
@@ -645,7 +643,7 @@
               theHero.statuses.dead = true;
               theHero.turnGauge = 0.00;
               theHero.attributes.hp = 0;
-              updateHero(theHero);
+              $(this).trigger('clientUpdateHeroEvent', theHero);
             }
             break;
           case 'action':
@@ -953,6 +951,7 @@
         hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
       }
 
+      // View handling of events raised by the Client.
       $(gameClient).on('clientLogEvent', function(event, msg) {
           //console.log(msg);
           // FIXME: no limit to messages!
@@ -973,9 +972,12 @@
           createjs.Ticker.setFPS(FPS);
           createjs.Ticker.addListener(window);
         });
-
-      // TODO: this needs to go somewhere else
-      var counter = 0;
+      $(gameClient).on('clientUpdateHeroEvent', function(event, hero) {
+          updateHero(hero);
+        });
+      $(gameClient).on('clientSyncHeroEvent', function(event, hero) {
+          counter += 0.5;
+        });
 
     </script>
   </div>

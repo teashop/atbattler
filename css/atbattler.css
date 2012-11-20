@@ -1,6 +1,10 @@
 body {
   font-family: arial, sans-serif;
 }
+.container {
+  margin: 0 auto;
+  width: 960px;
+}
 canvas { 
   border: 1px solid #f3f3f3; 
   box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
@@ -96,11 +100,3 @@ h1.logo {
 #enemy button {
   display: none;
 }
-
-a.chat-link {
-  color: inherit;
-}
-a.chat-link:before {
-  content: '[';
-}
-
