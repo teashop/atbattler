@@ -18,6 +18,14 @@
     var FPS = 30;
     var SECOND = 1000;  // a second is 1000ms
     var msPerFrame = 33; // approximate
+    var HERO_BASE_X = 150;
+    var HERO_BASE_Y = 150;
+    var HERO_BASE_SCALE = 3;
+    var HERO_SPACE_X = 15;
+    var HERO_SPACE_Y = 75;
+    var HERO_PERSPECTIVE_SCALE = 0.15;
+
+
     var backdrop;
     var stage;
     var runningRate = 2.5;
@@ -27,6 +35,8 @@
     var bgImage = new Image();
     bgImage.src = 'img/plains.png';
     bgImage.onload = init;
+
+    var heroSprites = [];
 
     function init() {
       // create a new stage and point it at our canvas:
@@ -48,6 +58,76 @@
       stage.addChild(elapsedLabel);
       elapsedLabel.x = 10;
       elapsedLabel.y = 10;
+
+      // TODO: hero sprites should be tied to their domain counterparts
+      var jergensSheet = new createjs.SpriteSheet({
+        "animations": {
+          "idle": [22],
+          "walk": [21,23, "walk", 5]
+          },
+          "images": ["img/jergens.png"],
+          "frames": {
+              "height": 32,
+              "width":24,
+              "regX": 16,
+              "regY": 12,
+              "count": 96
+            }
+       });
+      var miltonSheet = new createjs.SpriteSheet({
+        "animations": {
+          "idle": [13],
+          "walk": [12,14, "walk", 5]
+          },
+          "images": ["img/jergens.png"],
+          "frames": {
+              "height": 32,
+              "width":24,
+              "regX": 16,
+              "regY": 12,
+              "count": 96
+            }
+       });
+      var harukaSheet = new createjs.SpriteSheet({
+        "animations": {
+          "idle": [64],
+          "walk": [63,65, "walk", 5]
+          },
+          "images": ["img/amber.png"],
+          "frames": {
+              "height": 32,
+              "width":24,
+              "regX": 16,
+              "regY": 12,
+              "count": 96
+            }
+       });
+      var leenaSheet = new createjs.SpriteSheet({
+        "animations": {
+          "idle": [61],
+          "walk": [60,62, "walk", 5]
+          },
+          "images": ["img/jergens.png"],
+          "frames": {
+              "height": 32,
+              "width":24,
+              "regX": 16,
+              "regY": 12,
+              "count": 96
+            }
+       });
+      heroSprites.push(new createjs.BitmapAnimation(jergensSheet));
+      heroSprites.push(new createjs.BitmapAnimation(miltonSheet));
+      heroSprites.push(new createjs.BitmapAnimation(harukaSheet));
+//      heroSprites.push(new createjs.BitmapAnimation(leenaSheet));
+      for (var i = 0, len = heroSprites.length; i < len; i++) {
+        var curSprite = heroSprites[i];
+        curSprite.x = HERO_BASE_X - HERO_SPACE_X*i - 10*i;
+        curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i; 
+        curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
+        curSprite.gotoAndPlay("idle");
+        stage.addChild(curSprite);
+      }
       stage.update();
     }
 
@@ -152,16 +232,16 @@
 </head>
 <body>
   <div class="container">
-	<div style="width:840px;">
+	<div style="width:960px;">
       <h1 class="logo"><span class="atb"><strong>AT</strong>B</span>attler</h1>
       <span class="fineprint">v0.1</span>
 	  <button id="start" style="float:right;"/>Start Game</button>
 	</div>
     <div> 
-      <canvas id="mainCanvas" width="840" height="360">
+      <canvas id="mainCanvas" width="960" height="480">
       </canvas>
       <div>
-        <div class="menu-pane encounter" style="width:400px; float:left;">
+        <div class="menu-pane encounter" style="width:480px; float:left;">
           <div id="action-pane">
             <ul>
               <li><a href="#">Attack</a></li>
@@ -183,7 +263,7 @@
             </tbody>
           </table>
         </div>
-        <div class="menu-pane encounter" style="width:400px; float:left">
+        <div class="menu-pane encounter" style="width:440px; float:left">
           <table id="enemy">
             <thead>
               <th>Name</th>
@@ -942,17 +1022,17 @@
         var onUpdate = function(val, isPositive) {           
           var percent = val/this.hero.attributes.maxHp;
           var rgb = '#fff';
-		  if (isPositive) {	
-			rgb = '#2e6';
-		  } else {
+          if (isPositive) {	
+            rgb = '#2e6';
+          } else {
             if (percent < 0.3) {
               rgb = 'rgb(255,'+ (Math.round(percent/0.2*215)+40) + ',0)';
             } else if (percent < 0.6) {
               rgb = 'rgb(255,255,' + Math.round((percent-0.3)/0.3*255)+')';
             }
-		  }
-		  this.holder.text(val);
-		  this.holder.css('color', rgb);
+          }
+          this.holder.text(val);
+          this.holder.css('color', rgb);
         };
         onUpdate = _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), hero: curHero });
         hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
