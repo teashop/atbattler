@@ -55,7 +55,7 @@ GR_INC.stepThrough = function() {
 		this.timeout = null;
 		return;
 	}
-	this.onUpdate(this.current);
+	this.onUpdate(this.current, isStepPositive);
 	this.timeout = setTimeout(this.stepThrough.bind(this), this.tickSize);
 }
 GR_INC.start = function() {

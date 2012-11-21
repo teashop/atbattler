@@ -147,6 +147,7 @@
       font-size: 12px;
       font-weight: normal;
     }
+	
   </style>
 </head>
 <body>
@@ -377,17 +378,21 @@
       }
       // execute an action
       GI.executeAction = function(action) {
-//        console.log(action.by + ' uses ' + action.type + ' on ' + action.target);
         var results = [];
+		// FIXME: this precludes dual-tech/triple-tech etc.
+		var actor = this.heroes[action.by];
+		var target = this.heroes[action.target];
+		// drop actions from non-ready actors
+		if (!actor || !actor.statuses.ready) {
+			console.log('Server: ' + actor.name + ' is not ready; ignoring action request');
+			return;
+		}
         // TODO: these should be in handlers or something more organized
         switch(action.type) {
           case 'attack':
-          case 'skill':
-            var actor = this.heroes[action.by];
-            var target = this.heroes[action.target];
+          case 'skill':                        
             var dmg = actor.attributes.attack;
             var overkill = 0;
-//            console.log(actor.name + ' attacks ' + target.name + ' for ' + dmg + ' damage');
             target.attributes.hp -= dmg;
             results.push(new GameEvent('action', {type: action.type, by: actor.id, target: target.id, amount: dmg}));
             if (target.attributes.hp <= 0) {
@@ -401,11 +406,9 @@
             actor.turnGauge = 0.00;
             break;
           case 'item':
-            // FIXME: this is a placeholder for 'heal'
-            // Heals 15% of maxHp
-            var actor = this.heroes[action.by];
-            var target = this.heroes[action.target];
-            var amount = Math.round(target.attributes.maxHp * 0.15);
+            // FIXME: this is a placeholder for a 'heal'
+            // Heals 20% of maxHp
+            var amount = Math.round(target.attributes.maxHp * 0.20);
             target.attributes.hp += amount;
             if (target.attributes.hp > target.attributes.maxHp) {
               target.attributes.hp = target.attributes.maxHp;
@@ -668,7 +671,7 @@
                 }
                 break;
               case 'item':
-                this.log(source.name + ' uses item on ' + target.name + ', they were healed for ' + args.amount + '.');
+                this.log(source.name + ' uses item on ' + target.name + ' for ' + args.amount + ' healing.');
                 target.attributes.hp += args.amount;
                 if (target.attributes.hp > target.attributes.maxHp) {
                   target.attributes.hp = target.attributes.maxHp;
@@ -936,16 +939,20 @@
           + '</td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>');
 
         heroRows[curHero.id] = $('#' + heroDomId);
-        var onUpdate = function(val) { 
-          this.holder.text(val);
+        var onUpdate = function(val, isPositive) {           
           var percent = val/this.hero.attributes.maxHp;
           var rgb = '#fff';
-          if (percent < 0.3) {
-            rgb = 'rgb(255,'+ (Math.round(percent/0.2*215)+40) + ',0)';
-          } else if (percent < 0.6) {
-            rgb = 'rgb(255,255,' + Math.round((percent-0.3)/0.3*255)+')';
-          }
-          this.holder.css('color', rgb);
+		  if (isPositive) {	
+			rgb = '#2e6';
+		  } else {
+            if (percent < 0.3) {
+              rgb = 'rgb(255,'+ (Math.round(percent/0.2*215)+40) + ',0)';
+            } else if (percent < 0.6) {
+              rgb = 'rgb(255,255,' + Math.round((percent-0.3)/0.3*255)+')';
+            }
+		  }
+		  this.holder.text(val);
+		  this.holder.css('color', rgb);
         };
         onUpdate = _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), hero: curHero });
         hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
@@ -977,6 +984,7 @@
         });
       $(gameClient).on('clientSyncHeroEvent', function(event, hero) {
           counter += 0.5;
+		  updateHero(hero);
         });
 
     </script>
