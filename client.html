@@ -119,11 +119,11 @@
       heroSprites.push(new createjs.BitmapAnimation(jergensSheet));
       heroSprites.push(new createjs.BitmapAnimation(miltonSheet));
       heroSprites.push(new createjs.BitmapAnimation(harukaSheet));
-//      heroSprites.push(new createjs.BitmapAnimation(leenaSheet));
+      heroSprites.push(new createjs.BitmapAnimation(leenaSheet));
       for (var i = 0, len = heroSprites.length; i < len; i++) {
         var curSprite = heroSprites[i];
         curSprite.x = HERO_BASE_X - HERO_SPACE_X*i - 10*i;
-        curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i; 
+        curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
         curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
         curSprite.gotoAndPlay("idle");
         stage.addChild(curSprite);
@@ -213,7 +213,7 @@
     }
 
     .encounter {
-      height:150px;
+      height:160px;
       position: relative;
     }
     .encounter td {
@@ -987,6 +987,7 @@
       party.setHero(rollPlayerHero(1, 'Jergens'));
       party.setHero(rollPlayerHero(2, 'Milton'));
       party.setHero(rollPlayerHero(3, 'Haruka'));
+      party.setHero(rollPlayerHero(4, 'Leena'));
       player.setParty(party);
 
       // *OPPONENT

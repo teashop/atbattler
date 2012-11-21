@@ -60,6 +60,7 @@ h1.logo {
   box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
   color: #eee;
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#7db9e8',GradientType=0 ); /* IE6-9 */
+  font-size: 18px;
   font-weight: bold;
   letter-spacing: 1px;
   padding: 10px 8px;
