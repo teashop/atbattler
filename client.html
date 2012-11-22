@@ -31,12 +31,16 @@
     var runningRate = 2.5;
     var w, h;
     var counter = 0;  // duration of game (temp)
+    var effectNumberContainer; // dem popping numbers
 
     var bgImage = new Image();
     bgImage.src = 'img/plains.png';
     bgImage.onload = init;
 
     var heroSprites = [];
+    var enemySprites = [];
+
+    var heroIdToSprite = [];  // maps heroes to sprites
 
     function init() {
       // create a new stage and point it at our canvas:
@@ -60,6 +64,7 @@
       elapsedLabel.y = 10;
 
       // TODO: hero sprites should be tied to their domain counterparts
+      // properly.  We're just arbitrarily mapping them here.
       var jergensSheet = new createjs.SpriteSheet({
         "animations": {
           "idle": [22],
@@ -128,6 +133,56 @@
         curSprite.gotoAndPlay("idle");
         stage.addChild(curSprite);
       }
+      // enemy sprites
+      var badguySheet = new createjs.SpriteSheet({
+        "animations": {
+          "idle": [43],
+          "walk": [42,44, "walk", 5]
+          },
+          "images": ["img/chara01.png"],
+          "frames": {
+              "height": 32,
+              "width":24,
+              "regX": 16,
+              "regY": 12,
+              "count": 96
+            }
+       });
+      var wagsSheet = new createjs.SpriteSheet({
+        "animations": {
+          "idle": [37],
+          "walk": [36,38, "walk", 5]
+          },
+          "images": ["img/chara01.png"],
+          "frames": {
+              "height": 32,
+              "width":24,
+              "regX": 16,
+              "regY": 12,
+              "count": 96
+            }
+       });
+      enemySprites.push(new createjs.BitmapAnimation(badguySheet));
+      enemySprites.push(new createjs.BitmapAnimation(wagsSheet));
+      for (var i = 0, len = enemySprites.length; i < len; i++) {
+        var curSprite = enemySprites[i];
+        curSprite.x = w-HERO_BASE_X + HERO_SPACE_X*i - 10*i;
+        curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
+        curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
+        curSprite.gotoAndPlay("idle");
+        stage.addChild(curSprite);
+      }
+
+      heroIdToSprite[1] = heroSprites[0];
+      heroIdToSprite[2] = heroSprites[1];
+      heroIdToSprite[3] = heroSprites[2];
+      heroIdToSprite[4] = heroSprites[3];
+      heroIdToSprite[100] = enemySprites[0];
+      heroIdToSprite[200] = enemySprites[1];
+
+      effectNumberContainer = new createjs.Container();
+      effectNumberContainer.fps = FPS;
+      stage.addChild(effectNumberContainer);
       stage.update();
     }
 
@@ -141,8 +196,8 @@
           updateHero(toUpdate[i]);
         }
       }
-
       elapsedLabel.text = counter + "s";
+      updateEffectNumbers(effectNumberContainer);
       stage.update();
     }
   </script>
@@ -735,13 +790,14 @@
  
             var source = this.heroes[args.by];
             var target = this.heroes[args.target];
+            var amount = args.amount;
             switch(args.type) {
               case 'attack':
                 this.log(source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.');
                 target.attributes.hp -= args.amount;
                 if (target.attributes.hp < 0) {
                   target.attributes.hp = 0;
-                }
+                }				
                 break;
               case 'skill':
                 this.log(source.name + ' uses skill on ' + target.name + ' for ' + args.amount + ' damage.');
@@ -761,7 +817,7 @@
                 console.log('Client received unknown action.type: ' + action.type);
                 break;
             }
-            takeAction(source, target);
+            $(this).trigger('clientHeroActionEvent', [source, target, args.type, amount]);
             break;
           case 'client_action':
             // send action to server
@@ -840,7 +896,7 @@
         if (hero.statuses.dead) {
           if (!heroRow.hasClass('dead')) {
             heroRow.addClass('dead');
-            updateHeroHp(hero);
+            updateHeroHp(hero, null, 0);
           }
           return;
         }
@@ -871,28 +927,41 @@
         }
       }
 
-      function updateHeroHp(hero, useIncrementer) {
+      function updateHeroHp(hero, type, amount) {
         // update hp
-        if (useIncrementer) {
+        if (type) {
           // let incrementer take care of update
           hpIncrementers[hero.id].setTarget(hero.attributes.hp);
+          switch (type) {
+            case 'attack':
+            case 'skill':
+              effectNumberContainer.addChild(addEffectNumber(amount, false, heroIdToSprite[hero.id]));
+              break;
+            case 'item':
+              effectNumberContainer.addChild(addEffectNumber(amount, false, heroIdToSprite[hero.id], 'heal'));
+              break;
+            default:
+              console.log('unknown type, using default increment');
+              effectNumberContainer.addChild(addEffectNumber(amount, false, heroIdToSprite[hero.id]));
+              break;
+          }
         } else {
           // stop any existing incrementer, then set your value
-		  var heroHp = heroRows[hero.id].find('.hp');
+          var heroHp = heroRows[hero.id].find('.hp');
           hpIncrementers[hero.id].complete();
           heroHp.text(hero.attributes.hp);
         }
       }
 
       // take action => reset gauge & action buttons
-      function takeAction(hero, target) {
+      function takeAction(hero, target, type, amount) {
         var heroRow = heroRows[hero.id];
         heroRow.find('.action').html('');
         hero.statuses.ready = false;
         hero.turnGauge = 0.00;
         heroRow.removeClass('ready');
         updateHero(hero);
-        updateHeroHp(target, true);
+        updateHeroHp(target, type, amount);
       }
 
       // action button => show action pane
@@ -1063,10 +1132,13 @@
       $(gameClient).on('clientUpdateHeroEvent', function(event, hero) {
           updateHero(hero);
         });
+      $(gameClient).on('clientHeroActionEvent', function(event, source, target, type, amount) {
+          takeAction(source, target, type, amount);
+        });
       $(gameClient).on('clientSyncHeroEvent', function(event, hero) {
           counter += 0.5;
-		  updateHero(hero);
-        });
+          updateHero(hero);
+      });
 
     </script>
   </div>

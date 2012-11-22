@@ -20,7 +20,7 @@ var GradualIncrementer = function(theTarget, theCurrent, onUpdate, duration) {
 	this.current = (+theCurrent);
 	this.duration = duration;
 	this.onUpdate = (onUpdate instanceof Function) ? onUpdate : function(){};
-	this.tickSize = 1000/30; // ~ 30 ticks per second
+	this.tickSize = 50; // ~20 FPS
 	this.timeout = null;
 	this.step = this.calculateStep();
 }
@@ -71,4 +71,67 @@ GR_INC.complete = function() {
 	}
 	this.current = this.target;
 	this.onUpdate(this.target);
+}
+
+// REQUIRE: easeljs
+
+/** 
+ * Adds one of those cute 'popping' numbers so beloved for showing damage
+ * and healing.  Requires an 'anchor' (target DisplayObject) for placement.
+ */
+function addEffectNumber(num, isCrit, anchor, type) {
+	var theNum = num;
+	var isHeal = type && type == 'heal';
+	var theColor = isCrit ? '#ff3' : '#fff';	  
+	if (type) {
+		switch(type) {
+			case 'heal':
+				theColor = isCrit ? '#3f7' : '#2e6';
+				theNum = '+' + num;
+				break;
+			case 'heal_sp':
+				theColor = isCrit ? '#8ef' : '#7de';
+				theNum = '+' + num;
+				break;
+			default:
+				break;
+		} // switch
+	}
+	var theFont = 'bold 20px Arial';
+	var numLabel = new createjs.Text(theNum, theFont, theColor);      
+	numLabel.x = anchor.x - anchor.regX + (_.random(-5,5));
+	numLabel.y = anchor.y - anchor.regY + (_.random(-5,5));
+	if (isCrit) {
+		numLabel.scaleY = numLabel.scaleX = 1.5;
+	}
+	numLabel.textAlign = "center";
+	numLabel.yRemove = numLabel.y+20;
+	numLabel.vA = -0.015;
+	numLabel.vX = 0 + (_.random(-1,1)*0.25);
+	numLabel.vX = 0;
+	numLabel.vY = -8 + (_.random(-1,1)*0.5);
+	numLabel.shadow = new createjs.Shadow('#333', -2, 2, 2);
+	return numLabel;
+}
+/**
+ * Updates the provided popping effect numbers.
+ */
+function updateEffectNumbers(effectNumberContainer) {
+	var f = 60/effectNumberContainer.fps;
+	var l = effectNumberContainer.getNumChildren();
+	for (var i=l-1; i>=0; i--) {
+		var numLabel = effectNumberContainer.getChildAt(i);
+		if (numLabel.vY > 0) {
+			numLabel.alpha += numLabel.vA * f; // start fading after apex
+		}		
+		numLabel.y += numLabel.vY * f;
+		numLabel.vY += 0.6 * f;
+		numLabel.x += numLabel.vX * f;
+		numLabel.scaleX += 0.015 * f;
+		numLabel.scaleY += 0.015 * f;
+		//remove number that is invisble or past its removal boundary
+		if (numLabel.alpha <= 0 || numLabel.y > numLabel.yRemove) {
+			effectNumberContainer.removeChildAt(i);		  
+		}
+	}
 }
