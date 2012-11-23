@@ -166,7 +166,7 @@
       enemySprites.push(new createjs.BitmapAnimation(wagsSheet));
       for (var i = 0, len = enemySprites.length; i < len; i++) {
         var curSprite = enemySprites[i];
-        curSprite.x = w-HERO_BASE_X + HERO_SPACE_X*i - 10*i;
+        curSprite.x = w-HERO_BASE_X + HERO_SPACE_X*i + 10*i;
         curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
         curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
         curSprite.gotoAndPlay("idle");
@@ -526,10 +526,16 @@
         switch(action.type) {
           case 'attack':
           case 'skill':                        
-            var dmg = actor.attributes.attack;
+            var dmg = actor.attributes.attack * (_.random(95, 105)/100); //5% variance for now.
+			// 5% crit chance for now
+			var isCrit = (_.random(0,99)) < 5;
+			if (isCrit) {
+				dmg *= 1.5;
+			}
+			dmg = Math.round(dmg);
             var overkill = 0;
             target.attributes.hp -= dmg;
-            results.push(new GameEvent('action', {type: action.type, by: actor.id, target: target.id, amount: dmg}));
+            results.push(new GameEvent('action', {type: action.type, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit}));
             if (target.attributes.hp <= 0) {
               overkill = -(target.attributes.hp);
               target.attributes.hp = 0;
@@ -791,16 +797,25 @@
             var source = this.heroes[args.by];
             var target = this.heroes[args.target];
             var amount = args.amount;
+			var isCrit = args.isCrit ? args.isCrit : false;
             switch(args.type) {
               case 'attack':
-                this.log(source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.');
+			    var msg = source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.';
+				if (isCrit) {
+					msg += ' (Critical Hit)';
+				}
+                this.log(msg);
                 target.attributes.hp -= args.amount;
                 if (target.attributes.hp < 0) {
                   target.attributes.hp = 0;
                 }				
                 break;
               case 'skill':
-                this.log(source.name + ' uses skill on ' + target.name + ' for ' + args.amount + ' damage.');
+			    var msg = source.name + ' uses skill on ' + target.name + ' for ' + args.amount + ' damage.';
+				if (isCrit) {
+					msg += ' (Critical Hit)';
+				}
+                this.log(msg);
                 target.attributes.hp -= args.amount;
                 if (target.attributes.hp < 0) {
                   target.attributes.hp = 0;
@@ -817,7 +832,7 @@
                 console.log('Client received unknown action.type: ' + action.type);
                 break;
             }
-            $(this).trigger('clientHeroActionEvent', [source, target, args.type, amount]);
+            $(this).trigger('clientHeroActionEvent', [source, target, args.type, amount, isCrit]);
             break;
           case 'client_action':
             // send action to server
@@ -927,7 +942,7 @@
         }
       }
 
-      function updateHeroHp(hero, type, amount) {
+      function updateHeroHp(hero, type, amount, isCrit) {
         // update hp
         if (type) {
           // let incrementer take care of update
@@ -935,14 +950,14 @@
           switch (type) {
             case 'attack':
             case 'skill':
-              effectNumberContainer.addChild(addEffectNumber(amount, false, heroIdToSprite[hero.id]));
+              effectNumberContainer.addChild(addEffectNumber(amount, isCrit, heroIdToSprite[hero.id]));
               break;
             case 'item':
-              effectNumberContainer.addChild(addEffectNumber(amount, false, heroIdToSprite[hero.id], 'heal'));
+              effectNumberContainer.addChild(addEffectNumber(amount, isCrit, heroIdToSprite[hero.id], 'heal'));
               break;
             default:
               console.log('unknown type, using default increment');
-              effectNumberContainer.addChild(addEffectNumber(amount, false, heroIdToSprite[hero.id]));
+              effectNumberContainer.addChild(addEffectNumber(amount, isCrit, heroIdToSprite[hero.id]));
               break;
           }
         } else {
@@ -954,14 +969,14 @@
       }
 
       // take action => reset gauge & action buttons
-      function takeAction(hero, target, type, amount) {
+      function takeAction(hero, target, type, amount, isCrit) {
         var heroRow = heroRows[hero.id];
         heroRow.find('.action').html('');
         hero.statuses.ready = false;
         hero.turnGauge = 0.00;
         heroRow.removeClass('ready');
         updateHero(hero);
-        updateHeroHp(target, type, amount);
+        updateHeroHp(target, type, amount, isCrit);
       }
 
       // action button => show action pane
@@ -1115,7 +1130,7 @@
           var combatLog = $('#combatLog');
           var combatLogList = combatLog.find('ul');
           combatLogList.append('<li>'+msg+'</li>');
-          combatLog.scrollTop(combatLogList.height());
+//          combatLog.scrollTop(combatLogList.height());
         });
       $(gameClient).on('clientGameOverEvent', function(event, msg) {
           createjs.Ticker.setPaused(true);
@@ -1127,13 +1142,14 @@
         });
       $(gameClient).on('clientGameStartEvent', function(event, msg) {
           createjs.Ticker.setFPS(FPS);
+          createjs.Ticker.useRAF = true;
           createjs.Ticker.addListener(window);
         });
       $(gameClient).on('clientUpdateHeroEvent', function(event, hero) {
           updateHero(hero);
         });
-      $(gameClient).on('clientHeroActionEvent', function(event, source, target, type, amount) {
-          takeAction(source, target, type, amount);
+      $(gameClient).on('clientHeroActionEvent', function(event, source, target, type, amount, isCrit) {	
+          takeAction(source, target, type, amount, isCrit);
         });
       $(gameClient).on('clientSyncHeroEvent', function(event, hero) {
           counter += 0.5;

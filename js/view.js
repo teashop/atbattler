@@ -20,7 +20,7 @@ var GradualIncrementer = function(theTarget, theCurrent, onUpdate, duration) {
 	this.current = (+theCurrent);
 	this.duration = duration;
 	this.onUpdate = (onUpdate instanceof Function) ? onUpdate : function(){};
-	this.tickSize = 50; // ~20 FPS
+	this.tickSize = 33; // ~30 FPS
 	this.timeout = null;
 	this.step = this.calculateStep();
 }
@@ -97,7 +97,7 @@ function addEffectNumber(num, isCrit, anchor, type) {
 				break;
 		} // switch
 	}
-	var theFont = 'bold 20px Arial';
+	var theFont = isCrit ? 'bold 20px Arial' : 'bold 18px Arial';
 	var numLabel = new createjs.Text(theNum, theFont, theColor);      
 	numLabel.x = anchor.x - anchor.regX + (_.random(-5,5));
 	numLabel.y = anchor.y - anchor.regY + (_.random(-5,5));
@@ -108,7 +108,6 @@ function addEffectNumber(num, isCrit, anchor, type) {
 	numLabel.yRemove = numLabel.y+20;
 	numLabel.vA = -0.015;
 	numLabel.vX = 0 + (_.random(-1,1)*0.25);
-	numLabel.vX = 0;
 	numLabel.vY = -8 + (_.random(-1,1)*0.5);
 	numLabel.shadow = new createjs.Shadow('#333', -2, 2, 2);
 	return numLabel;
