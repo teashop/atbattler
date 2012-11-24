@@ -9,6 +9,7 @@
   <script src="js/vendor/jquery-1.8.2.min.js"></script>
   <script src="js/vendor/underscore-min.js"></script>
   <script src="js/vendor/easeljs-0.5.0.min.js"></script>
+  <script src="js/vendor/tweenjs-0.3.0.min.js"></script>
   <script src="js/util.js"></script>
   <script src="js/durationevent.js"></script>
   <script src="js/view.js"></script>
@@ -31,7 +32,7 @@
     var runningRate = 2.5;
     var w, h;
     var counter = 0;  // duration of game (temp)
-    var effectNumberContainer; // dem popping numbers
+    var effectNumGen; // dem popping numbers
 
     var bgImage = new Image();
     bgImage.src = 'img/plains.png';
@@ -180,9 +181,7 @@
       heroIdToSprite[100] = enemySprites[0];
       heroIdToSprite[200] = enemySprites[1];
 
-      effectNumberContainer = new createjs.Container();
-      effectNumberContainer.fps = FPS;
-      stage.addChild(effectNumberContainer);
+      effectNumGen = new EffectNumberGenerator(stage);
       stage.update();
     }
 
@@ -197,7 +196,6 @@
         }
       }
       elapsedLabel.text = counter + "s";
-      updateEffectNumbers(effectNumberContainer);
       stage.update();
     }
   </script>
@@ -950,14 +948,14 @@
           switch (type) {
             case 'attack':
             case 'skill':
-              effectNumberContainer.addChild(addEffectNumber(amount, isCrit, heroIdToSprite[hero.id]));
+              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
               break;
             case 'item':
-              effectNumberContainer.addChild(addEffectNumber(amount, isCrit, heroIdToSprite[hero.id], 'heal'));
+              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal');
               break;
             default:
               console.log('unknown type, using default increment');
-              effectNumberContainer.addChild(addEffectNumber(amount, isCrit, heroIdToSprite[hero.id]));
+              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
               break;
           }
         } else {

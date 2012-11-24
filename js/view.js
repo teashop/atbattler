@@ -73,64 +73,48 @@ GR_INC.complete = function() {
 	this.onUpdate(this.target);
 }
 
-// REQUIRE: easeljs
+// REQUIRE: easeljs, tweenjs
 
 /** 
  * Adds one of those cute 'popping' numbers so beloved for showing damage
  * and healing.  Requires an 'anchor' (target DisplayObject) for placement.
  */
-function addEffectNumber(num, isCrit, anchor, type) {
-	var theNum = num;
-	var isHeal = type && type == 'heal';
-	var theColor = isCrit ? '#ff3' : '#fff';	  
-	if (type) {
-		switch(type) {
-			case 'heal':
-				theColor = isCrit ? '#3f7' : '#2e6';
-				theNum = '+' + num;
-				break;
-			case 'heal_sp':
-				theColor = isCrit ? '#8ef' : '#7de';
-				theNum = '+' + num;
-				break;
-			default:
-				break;
-		} // switch
-	}
-	var theFont = isCrit ? 'bold 20px Arial' : 'bold 18px Arial';
-	var numLabel = new createjs.Text(theNum, theFont, theColor);      
-	numLabel.x = anchor.x - anchor.regX + (_.random(-5,5));
-	numLabel.y = anchor.y - anchor.regY + (_.random(-5,5));
-	if (isCrit) {
-		numLabel.scaleY = numLabel.scaleX = 1.5;
-	}
-	numLabel.textAlign = "center";
-	numLabel.yRemove = numLabel.y+20;
-	numLabel.vA = -0.015;
-	numLabel.vX = 0 + (_.random(-1,1)*0.25);
-	numLabel.vY = -8 + (_.random(-1,1)*0.5);
-	numLabel.shadow = new createjs.Shadow('#333', -2, 2, 2);
-	return numLabel;
-}
-/**
- * Updates the provided popping effect numbers.
- */
-function updateEffectNumbers(effectNumberContainer) {
-	var f = 60/effectNumberContainer.fps;
-	var l = effectNumberContainer.getNumChildren();
-	for (var i=l-1; i>=0; i--) {
-		var numLabel = effectNumberContainer.getChildAt(i);
-		if (numLabel.vY > 0) {
-			numLabel.alpha += numLabel.vA * f; // start fading after apex
-		}		
-		numLabel.y += numLabel.vY * f;
-		numLabel.vY += 0.6 * f;
-		numLabel.x += numLabel.vX * f;
-		numLabel.scaleX += 0.015 * f;
-		numLabel.scaleY += 0.015 * f;
-		//remove number that is invisble or past its removal boundary
-		if (numLabel.alpha <= 0 || numLabel.y > numLabel.yRemove) {
-			effectNumberContainer.removeChildAt(i);		  
+var EffectNumberGenerator = function(stage) {
+	this.stage = stage;
+
+	this.generate = function(num, isCrit, anchor, type) {
+		var theNum = num;
+		var isHeal = type && type == 'heal';
+		var theColor = isCrit ? '#ff3' : '#fff';	  
+		if (type) {
+			switch(type) {
+				case 'heal':
+					theColor = isCrit ? '#3f7' : '#2e6';
+					theNum = '+' + num;
+					break;
+				case 'heal_sp':
+					theColor = isCrit ? '#8df' : '#7cf';
+					theNum = '+' + num;
+					break;
+				default:
+					break;
+			} // switch
 		}
-	}
+		var theFont = isCrit ? 'bold 20px Arial' : '20px Arial';
+		var effectNum = new createjs.Text(theNum, theFont, theColor);      
+		effectNum.x = anchor.x - anchor.regX + (_.random(-5,5));
+		effectNum.y = anchor.y - anchor.regY + (_.random(-10,0));
+		effectNum.regY = 0;
+		effectNum.textAlign = "center";
+//		effectNum.shadow = new createjs.Shadow('#333', -2, 2, 2);
+
+		this.stage.addChild(effectNum);
+
+		// runs the 'pop' and once complete removes the number
+		var numTween = createjs.Tween.get(effectNum, {loop:false})
+			.to({y:effectNum.y-60, scaleX: effectNum.scaleX*1.5, scaleY: effectNum.scaleY*1.5}, 300)
+			.to({y:effectNum.y+20, x:effectNum.x + _.random(-25,25), scaleX: effectNum.scaleX, scaleY: effectNum.scaleY, alpha:0.2 }, 400, createjs.Ease.cubicIn)
+			.call(function(tween) { stage.removeChild(effectNum); });
+
+	};
 }
