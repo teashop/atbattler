@@ -113,7 +113,7 @@ var EffectNumberGenerator = function(stage) {
 		// runs the 'pop' and once complete removes the number
 		var numTween = createjs.Tween.get(effectNum, {loop:false})
 			.to({y:effectNum.y-60, scaleX: effectNum.scaleX*1.5, scaleY: effectNum.scaleY*1.5}, 300)
-			.to({y:effectNum.y+20, x:effectNum.x + _.random(-25,25), scaleX: effectNum.scaleX, scaleY: effectNum.scaleY, alpha:0.2 }, 400, createjs.Ease.cubicIn)
+			.to({y:effectNum.y+20, x:effectNum.x + _.random(-25,25), scaleX: effectNum.scaleX, scaleY: effectNum.scaleY, alpha:0.2 }, 400, createjs.Ease.circIn)
 			.call(function(tween) { stage.removeChild(effectNum); });
 
 	};
