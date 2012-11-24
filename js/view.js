@@ -118,3 +118,12 @@ var EffectNumberGenerator = function(stage) {
 
 	};
 }
+
+function tweenHeroHit(target, reverse, origX) {
+	var curPosX = origX ? origX : target.x;
+	var dirX = reverse ? -1 : 1;
+	var tween = createjs.Tween.get(target, {loop:false})
+		.to({x:curPosX-20*dirX, skewX:-5*dirX}, 200, createjs.Ease.bounceOut)
+		.to({x:curPosX, skewX:0}, 200, createjs.Ease.bounceIn);
+	return tween;
+}

@@ -129,6 +129,7 @@
       for (var i = 0, len = heroSprites.length; i < len; i++) {
         var curSprite = heroSprites[i];
         curSprite.x = HERO_BASE_X - HERO_SPACE_X*i - 10*i;
+        curSprite.origX = curSprite.x;
         curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
         curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
         curSprite.gotoAndPlay("idle");
@@ -168,6 +169,7 @@
       for (var i = 0, len = enemySprites.length; i < len; i++) {
         var curSprite = enemySprites[i];
         curSprite.x = w-HERO_BASE_X + HERO_SPACE_X*i + 10*i;
+        curSprite.origX = curSprite.x;
         curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
         curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
         curSprite.gotoAndPlay("idle");
@@ -948,6 +950,7 @@
           switch (type) {
             case 'attack':
             case 'skill':
+              tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
               effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
               break;
             case 'item':
