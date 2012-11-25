@@ -12,14 +12,21 @@ Game is mouse-driven for now; keyboard support coming later.
 
 ## Browser Support
 
-ATBattler runs on any relatively up-to-date version of Chrome or Firefox.  It also runs in IE9+ (Console must be enabled for now)
+ATBattler runs on any relatively up-to-date version of Chrome or Firefox.  It also runs in IE9+ (Console must be enabled for now).  It has not been tested in Opera or Safari.
 
 ----
 
 ## Libraries
 
-EaselJS 0.5.0
-TweenJS 0.3.0
+* jQuery 1.8.2
+
+http://www.jquery.org/
+
+* EaselJS 0.5.0
+* TweenJS 0.3.0
 
 http://www.createjs.com/
 
+* Underscore 1.4.2
+
+http://underscorejs.org/
