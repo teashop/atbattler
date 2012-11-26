@@ -91,6 +91,7 @@ h1.logo {
 }
 
 .ready .gauge-bar {
+  background-image: url('../img/gauge_ovr_ready.png');
   box-shadow: inset -12px 2px 7px rgba(255, 205, 205, 1), inset 0px -5px 8px rgba(120, 40, 0, 0.35);
   background-color: #ff8877;
 }
