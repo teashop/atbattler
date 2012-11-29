@@ -460,15 +460,13 @@
         this.durationClock = new Clock(SECOND*0.5);
 
         // Event Queues 
-        this.eventsIn = new EventQueue();
-        this.eventsOut = new EventQueue();
+        this.eventsIn = new EventQueue(this['processInbound'].bind(this));
+        this.eventsOut = new EventQueue(this['processOutbound'].bind(this));
 
         // duration based events to keep track of
         this.durationEventTracker = [];
 
         // handlers
-        $(this.eventsIn).on('queued', this['processInbound'].bind(this));
-        $(this.eventsOut).on('queued', this['processOutbound'].bind(this));
         $(this.clock).on('tick', this['onTick'].bind(this));
         $(this.durationClock).on('tick', this['onDurationTick'].bind(this));
       }
@@ -514,25 +512,25 @@
       // execute an action
       GI.executeAction = function(action) {
         var results = [];
-		// FIXME: this precludes dual-tech/triple-tech etc.
-		var actor = this.heroes[action.by];
-		var target = this.heroes[action.target];
-		// drop actions from non-ready actors
-		if (!actor || !actor.statuses.ready) {
-			console.log('Server: ' + actor.name + ' is not ready; ignoring action request');
-			return;
-		}
+        // FIXME: this precludes dual-tech/triple-tech etc.
+        var actor = this.heroes[action.by];
+        var target = this.heroes[action.target];
+        // drop actions from non-ready actors
+        if (!actor || !actor.statuses.ready) {
+          console.log('Server: ' + actor.name + ' is not ready; ignoring action request');
+          return;
+        }
         // TODO: these should be in handlers or something more organized
         switch(action.type) {
           case 'attack':
           case 'skill':                        
             var dmg = actor.attributes.attack * (_.random(95, 105)/100); //5% variance for now.
-			// 5% crit chance for now
-			var isCrit = (_.random(0,99)) < 5;
-			if (isCrit) {
-				dmg *= 1.5;
-			}
-			dmg = Math.round(dmg);
+            // 5% crit chance for now
+            var isCrit = (_.random(0,99)) < 5;
+            if (isCrit) {
+              dmg *= 1.5;
+            }
+            dmg = Math.round(dmg);
             var overkill = 0;
             target.attributes.hp -= dmg;
             results.push(new GameEvent('action', {type: action.type, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit}));
@@ -651,8 +649,6 @@
         this.isGameOver = true;
         this.eventsIn.clear();
         this.eventsOut.push(new GameEvent('game_over', winner ? winner[0] : ''));
-        $(this.eventsIn).off('queued');
-        $(this.eventsOut).off('queued');
         $(this.clock).off('tick');
         $(this.durationClock).off('tick');
 
@@ -679,11 +675,7 @@
         this.me = null;
         this.enemy = null;
 
-        this.eventsIn = new EventQueue();
-
-        this.gameLoop = null;
-        
-        $(this.eventsIn).on('queued', this['processEvent'].bind(this));
+        this.eventsIn = new EventQueue(this['processEvent'].bind(this));
       }
 
       var GC = GameClient.prototype;
@@ -742,7 +734,6 @@
 
       GC.stop = function() {
         this.gameInstance.stop();
-        clearInterval(this.gameLoop);
       }
 
       GC.queueEvent = function(gameEvent) {
@@ -797,13 +788,13 @@
             var source = this.heroes[args.by];
             var target = this.heroes[args.target];
             var amount = args.amount;
-			var isCrit = args.isCrit ? args.isCrit : false;
+            var isCrit = args.isCrit ? args.isCrit : false;
             switch(args.type) {
               case 'attack':
-			    var msg = source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.';
-				if (isCrit) {
-					msg += ' (Critical Hit)';
-				}
+                var msg = source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.';
+                if (isCrit) {
+                  msg += ' (Critical Hit)';
+                }
                 this.log(msg);
                 target.attributes.hp -= args.amount;
                 if (target.attributes.hp < 0) {
@@ -811,10 +802,10 @@
                 }				
                 break;
               case 'skill':
-			    var msg = source.name + ' uses skill on ' + target.name + ' for ' + args.amount + ' damage.';
-				if (isCrit) {
-					msg += ' (Critical Hit)';
-				}
+                var msg = source.name + ' uses skill on ' + target.name + ' for ' + args.amount + ' damage.';
+                if (isCrit) {
+                  msg += ' (Critical Hit)';
+                }
                 this.log(msg);
                 target.attributes.hp -= args.amount;
                 if (target.attributes.hp < 0) {
@@ -894,6 +885,17 @@
         $(this).trigger('clientLogEvent', msg)
       }
       /** END Game (Client) **/
+
+
+      /** CPU Game Client **/
+      function CpuGameClient(myId) {
+      }
+      CpuGameClient.prototype = new GameClient();
+      CpuGameClient.prototype.constructor = CpuGameClient;
+
+      var CPUGC = CpuGameClient.prototype;
+
+      /** END CPU Game Client */
 
 
       /***********************************************************************/

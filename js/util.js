@@ -43,16 +43,17 @@ C.start = function(adjustment) {
 
 
 /**
- * A simple representation of an 'event-queue', which fires a 'queued' event
- * when a new event is added.
+ * A simple representation of an 'event-queue', which calls a provided callback each time
+ * an event is added.  Note that the user must manually call shift() to retrieve an event.
  */
-function EventQueue() {
+function EventQueue(callback) {
 	this.events = [];
+	this.callback = callback;
 }
 var EQ = EventQueue.prototype;
 EQ.push = function(theEvent) {
 	this.events.push(theEvent);
-	$(this).trigger('queued');
+	this.callback();
 }
 EQ.shift = function() {
 	return this.events.shift();
