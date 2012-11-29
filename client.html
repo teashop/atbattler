@@ -8,6 +8,9 @@
   <!--<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>-->
   <script src="js/vendor/jquery-1.8.2.min.js"></script>
   <script src="js/vendor/underscore-min.js"></script>
+  <script> var exports = {};</script>
+  <script src="js/vendor/async.min.js"></script>
+  <script src="js/vendor/state-machine.min.js"></script>
   <script src="js/vendor/easeljs-0.5.0.min.js"></script>
   <script src="js/vendor/tweenjs-0.3.0.min.js"></script>
   <script src="js/util.js"></script>
@@ -454,6 +457,17 @@
 
         this.isGameOver = false;
 
+        // Game state machine
+        this.fsm = StateMachine.create({
+            target: this.prototype,
+            initial: 'new',
+            events: [
+            { name: 'triggerDoSetup',  from: 'new',  to: 'setup' },
+            { name: 'triggerAllReady', from: 'setup', to: 'running'    },
+            { name: 'triggerPause',  from: 'running', to: 'paused' },
+            { name: 'triggerGameOver', from: ['running', 'paused'], to: 'gameOver'  }
+          ]});
+
         // Game clock
         this.clock = clock;
         // 'Real Clock' Duration clock
@@ -483,9 +497,20 @@
             this.heroes[curHero.id] = curHero;
           }
         }
+        // TODO: players need to augmented with connectivity to their respective clients.
       }
 
-      /** Clock and Events */
+      // Call once all players have been added to the game; this starts the setup process
+      GI.setup = function() {
+        this.fsm.triggerDoSetup();
+      }
+
+      // Push game data down to Players.
+      GI.onsetup = function() {
+        this.eventsOut.push(new GameEvent('init_game_state', JSON.stringify(this.players)));
+      }
+
+      /** Clock and Triggered Events */
       GI.start = function() {
         this.clock.start();
         this.durationClock.start();
@@ -609,7 +634,7 @@
       // Game-clock ticks
       GI.update = function() {
         if (this.isGameOver) {
-          return;
+          eturn;
         }
         for (var i = 0, len = this.players.length; i < len; i++) {
           var curPlayer = this.players[i];
@@ -681,14 +706,15 @@
       var GC = GameClient.prototype;
 
       // TODO: this should come 'down' from the server
-      GC.setup = function(gameInstance) {
+      GC.setup = function(gameState) {
+        var gameStatePlayers = JSON.parse(gameState);
         this.gameInstance = gameInstance;
 
         // TODO: here we are mimicking 'receiving' player data from server
-        for (var i = 0; i < this.gameInstance.players.length; i++) {
+        for (var i = 0; i < gameStatePlayers.length; i++) {
           // take the raw JSON ver of the 'Player' and mash its data into an 
           // empty instance of the Domain Player class.  
-          var rawPlayer = JSON.parse(JSON.stringify(this.gameInstance.players[i]));
+          var rawPlayer = gameStatePlayers[i];
           // this is ugly as sin.
           var playerToAdd = new Player(rawPlayer.id, rawPlayer.name);
           var party = new Party(rawPlayer.party.id, rawPlayer.party.maxSize);
@@ -749,6 +775,9 @@
           return;
         }
         switch (theEvent.type) {
+          case 'game_init_state':
+            this.setup(args);
+            break;
           case 'heroes_sync':
             // sync player/hero timing. Use as sanity check for gauge.
             // TODO: view shit outta here?
@@ -1087,7 +1116,9 @@
       gameInstance.addPlayers(player, enemy);
 
       var gameClient = new GameClient(player.id);
-      gameClient.setup(gameInstance);
+//      gameClient.setup(gameInstance);
+      
+      gameInstance.setup();
 
       // TODO: this should be somewhere better 
       for (var i = 0; i < gameClient.heroes.length; i++) {
