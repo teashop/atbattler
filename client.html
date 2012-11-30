@@ -293,7 +293,7 @@
 	<div style="width:960px;">
       <h1 class="logo"><span class="atb"><strong>AT</strong>B</span>attler</h1>
       <span class="fineprint">v0.1</span>
-	  <button id="start" style="float:right;"/>Start Game</button>
+	  <button id="start" style="float:right;display:none;"/>Start Game</button>
 	</div>
     <div> 
       <canvas id="mainCanvas" width="960" height="480">
@@ -500,7 +500,7 @@
         // TODO: players need to augmented with connectivity to their respective clients.
       }
 
-      // Call once all players have been added to the game; this starts the setup process
+      // Call once all players have been added to the game; this begins the setup process
       GI.setup = function() {
         console.log('setup() called');
         this.fsm.triggerDoSetup();
@@ -509,10 +509,19 @@
       // Push game data down to Players.
       GI.onsetup = function() {
         console.log('onsetup() called');
-        this.eventsOut.push(new GameEvent('game_init_state', JSON.stringify(this.players)));
+        this.eventsOut.push(new GameEvent('game_setup_state', JSON.stringify(this.players)));
       }
 
-      /** Clock and Triggered Events */
+      // start game when all players are ready
+      GI.ontriggerAllReady = function() {
+        console.log('All ready!');
+        this.start();
+        this.eventsOut.push(new GameEvent('game_start'));
+      }
+
+      /**
+       * Starts the game
+       */
       GI.start = function() {
         this.clock.start();
         this.durationClock.start();
@@ -619,6 +628,12 @@
             // execute action
             this.executeAction(theEvent.content);
             break;
+          case 'player_ready':
+            // FIXME: need to id msgs with a 'sender', which would be inherent from the receiving communication
+            // for now, any 'ready' message starts the game.
+            console.log('player_ready');
+            this.fsm.triggerAllReady();
+            break;
           default:
             console.log('Unknown event type: ' + theEvent.type);
             break;
@@ -631,7 +646,7 @@
         // FIXME: this is just a simulated broadcast. 
         // GLOBAL
         async.forEach(this.players, function(player, cb) { player.sendMessage(theEvent); cb(null); }, function(err) {
-          console.log('GI: broadcast of Event:' + theEvent.type + ' completed');
+//          console.log('GI: broadcast of Event:' + theEvent.type + ' completed');
         });
       }
 
@@ -684,19 +699,10 @@
       }
       /** END Game Instance (server) **/
 
-      /** CPU Player (lololol) **/
-      function CpuPlayer(cpuPlayer, game) {
-        this.me = cpuPlayer;
-        this.game = game;
-        //TODO
-      }
-
-      /** END CPU Player
-
       /***********************************************************************/
 
       /** Game (Client) **/
-      function GameClient(myId) {
+      function GameClient(myId, emitterCallback) {
         this.players = [];
         this.heroes = [];
         this.myId = myId;
@@ -704,6 +710,7 @@
         this.enemy = null;
 
         this.eventsIn = new EventQueue(this['processEvent'].bind(this));
+        this.emitterCallback = emitterCallback || function(){};
       }
 
       var GC = GameClient.prototype;
@@ -734,10 +741,15 @@
             this.enemy = playerToAdd;
           }
         }
+        this.emitterCallback('clientSetupCompleteEvent');
+//          $('#start').show();
+      }
+      GC.ready = function() {
+        this.sendToServer(new GameEvent('player_ready', {from: this.myId}));
       }
 
       GC.start = function() {
-        $(this).trigger('clientGameStartEvent');
+        this.emitterCallback('clientGameStartEvent');
         this.log('Game start!');
       }
 
@@ -772,8 +784,11 @@
           return;
         }
         switch (theEvent.type) {
-          case 'game_init_state':
+          case 'game_setup_state':
             this.setup(args);
+            break;
+          case 'game_start':
+            this.start();
             break;
           case 'heroes_sync':
             // sync player/hero timing. Use as sanity check for gauge.
@@ -783,9 +798,9 @@
             for (var i = 0; i < heroesSync.length; i++) {
               var theHero = this.heroes[heroesSync[i][0]];
               theHero.turnGauge = heroesSync[i][1];
-              $(this).trigger('clientUpdateHeroEvent', theHero);
+              this.emitterCallback('clientUpdateHeroEvent', theHero);
             }
-            $(this).trigger('clientSyncHeroEvent', theHero);
+            this.emitterCallback('clientSyncHeroEvent', theHero);
             break;
           case 'heroes_ready':
             var readyHeroes = args;
@@ -793,7 +808,7 @@
               var theHero = this.heroes[readyHeroes[i]];
               theHero.statuses.ready = true;
               theHero.turnGauge = 100.00;
-              $(this).trigger('clientUpdateHeroEvent', theHero);
+              this.emitterCallback('clientUpdateHeroEvent', theHero);
             }
             break;
           case 'heroes_dead':
@@ -804,7 +819,7 @@
               theHero.statuses.dead = true;
               theHero.turnGauge = 0.00;
               theHero.attributes.hp = 0;
-              $(this).trigger('clientUpdateHeroEvent', theHero);
+              this.emitterCallback('clientUpdateHeroEvent', theHero);
             }
             break;
           case 'action':
@@ -849,7 +864,7 @@
                 console.log('Client received unknown action.type: ' + action.type);
                 break;
             }
-            $(this).trigger('clientHeroActionEvent', [source, target, args.type, amount, isCrit]);
+            this.emitterCallback('clientHeroActionEvent', [source, target, args.type, amount, isCrit]);
             break;
           case 'client_action':
             // send action to server
@@ -901,12 +916,12 @@
           msg = 'Game Over!';
         }
         this.log(msg);
-        $(this).trigger('clientGameOverEvent', msg);
+        this.emitterCallback('clientGameOverEvent', msg);
       }
 
       // a simple message log.  Allows listener to pickup and handle logging
       GC.log = function(msg) {
-        $(this).trigger('clientLogEvent', msg)
+        this.emitterCallback('clientLogEvent', msg)
       }
       /** END Game (Client) **/
 
@@ -1042,8 +1057,7 @@
         });
 
       $(document).on('click', '#start', function(event) {
-          gameInstance.start();
-          gameClient.start();
+          gameClient.ready();
           $(this).hide();
           });
 
@@ -1118,7 +1132,54 @@
 
       gameInstance.addPlayers(player, enemy);
 
-      var gameClient = new GameClient(player.id);
+      function emitterCallback() {
+        var type = arguments[0];
+        var args = arguments[1] ? arguments[1] : null;
+
+        // View handling of events raised by the Client.
+        switch(type) {
+          case 'clientLogEvent': 
+            var msg = args;
+            // FIXME: no limit to messages!
+            var combatLog = $('#combatLog');
+            var combatLogList = combatLog.find('ul');
+            combatLogList.append('<li>'+msg+'</li>');
+    //        combatLog.scrollTop(combatLogList.height());
+            break;
+          case 'clientGameOverEvent':
+            var msg = args;
+            createjs.Ticker.setPaused(true);
+            gameOverLabel = new createjs.Text(msg, "bold 40px Arial","#FFF");
+            stage.addChild(gameOverLabel);
+            gameOverLabel.x = 50;
+            gameOverLabel.y = 100;
+            stage.update();
+            break;
+          case 'clientSetupCompleteEvent':
+            $('#start').show();
+            break;
+          case 'clientGameStartEvent':
+            createjs.Ticker.setFPS(FPS);
+            createjs.Ticker.useRAF = true;
+            createjs.Ticker.addListener(window);
+            break;
+          case 'clientUpdateHeroEvent':
+            var hero = args;
+            updateHero(hero);
+            break;
+          case 'clientHeroActionEvent':
+            // source, target, type, amount, isCrit
+            takeAction(args[0], args[1], args[2], args[3], args[4]); 
+            break;
+          case 'clientSyncHeroEvent':
+            var hero = args;
+            counter += 0.5;
+            updateHero(hero);
+            break;
+        }
+      }
+
+      var gameClient = new GameClient(player.id, emitterCallback);
       
       // Game instance initiates setup
       gameInstance.setup();
@@ -1160,38 +1221,6 @@
         hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
       }
 
-      // View handling of events raised by the Client.
-      $(gameClient).on('clientLogEvent', function(event, msg) {
-          //console.log(msg);
-          // FIXME: no limit to messages!
-          var combatLog = $('#combatLog');
-          var combatLogList = combatLog.find('ul');
-          combatLogList.append('<li>'+msg+'</li>');
-//          combatLog.scrollTop(combatLogList.height());
-        });
-      $(gameClient).on('clientGameOverEvent', function(event, msg) {
-          createjs.Ticker.setPaused(true);
-          gameOverLabel = new createjs.Text(msg, "bold 40px Arial","#FFF");
-          stage.addChild(gameOverLabel);
-          gameOverLabel.x = 50;
-          gameOverLabel.y = 100;
-          stage.update();
-        });
-      $(gameClient).on('clientGameStartEvent', function(event, msg) {
-          createjs.Ticker.setFPS(FPS);
-          createjs.Ticker.useRAF = true;
-          createjs.Ticker.addListener(window);
-        });
-      $(gameClient).on('clientUpdateHeroEvent', function(event, hero) {
-          updateHero(hero);
-        });
-      $(gameClient).on('clientHeroActionEvent', function(event, source, target, type, amount, isCrit) {	
-          takeAction(source, target, type, amount, isCrit);
-        });
-      $(gameClient).on('clientSyncHeroEvent', function(event, hero) {
-          counter += 0.5;
-          updateHero(hero);
-      });
 
     </script>
   </div>
