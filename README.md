@@ -30,3 +30,11 @@ http://www.createjs.com/
 * Underscore 1.4.2
 
 http://underscorejs.org/
+
+* Jake Gordon's javascript-state-machine
+
+https://github.com/jakesgordon/javascript-state-machine
+
+* Caolan McMahon's Async Utils
+
+https://github.com/caolan/async
