@@ -459,7 +459,7 @@
 
         // Game state machine
         this.fsm = StateMachine.create({
-            target: this.prototype,
+            target: this,
             initial: 'new',
             events: [
             { name: 'triggerDoSetup',  from: 'new',  to: 'setup' },
@@ -502,12 +502,14 @@
 
       // Call once all players have been added to the game; this starts the setup process
       GI.setup = function() {
+        console.log('setup() called');
         this.fsm.triggerDoSetup();
       }
 
       // Push game data down to Players.
       GI.onsetup = function() {
-        this.eventsOut.push(new GameEvent('init_game_state', JSON.stringify(this.players)));
+        console.log('onsetup() called');
+        this.eventsOut.push(new GameEvent('game_init_state', JSON.stringify(this.players)));
       }
 
       /** Clock and Triggered Events */
@@ -707,10 +709,10 @@
 
       // TODO: this should come 'down' from the server
       GC.setup = function(gameState) {
+        // TODO: here we are mimicking 'receiving' player data from server
         var gameStatePlayers = JSON.parse(gameState);
         this.gameInstance = gameInstance;
 
-        // TODO: here we are mimicking 'receiving' player data from server
         for (var i = 0; i < gameStatePlayers.length; i++) {
           // take the raw JSON ver of the 'Player' and mash its data into an 
           // empty instance of the Domain Player class.  
