@@ -10,6 +10,7 @@
   <script src="js/vendor/state-machine.min.js"></script>
   <script src="js/vendor/easeljs-0.5.0.min.js"></script>
   <script src="js/vendor/tweenjs-0.3.0.min.js"></script>
+  <script src="js/vendor/preloadjs-0.2.0.min.js"></script>
   <script src="js/domain.js"></script>
   <script src="js/util.js"></script>
   <script src="js/durationevent.js"></script>
@@ -27,7 +28,6 @@
     var HERO_SPACE_Y = 75;
     var HERO_PERSPECTIVE_SCALE = 0.15;
 
-
     var backdrop;
     var stage;
     var runningRate = 2.5;
@@ -35,9 +35,18 @@
     var counter = 0;  // duration of game (temp)
     var effectNumGen; // dem popping numbers
 
-    var bgImage = new Image();
-    bgImage.src = 'img/plains.png';
-    bgImage.onload = init;
+    // TODO: have this determined by the game
+    // Use tag loading for now.
+    var preload = new createjs.PreloadJS(false);
+    var manifest = [
+        "img/plains.png",
+        "img/amber.png",
+        "img/jergens.png",
+        "img/chara01.png"
+      ];
+    preload.onComplete = init;
+    preload.loadManifest(manifest);
+
 
     var heroSprites = [];
     var enemySprites = [];
@@ -52,6 +61,9 @@
       // grab canvas width and height for later calculations:
       w = canvas.width;
       h = canvas.height;
+
+      var bgImage = new Image();
+      bgImage.src = 'img/plains.png';
 
       // Add backdrop to the stage
       backdrop =  new createjs.Shape(new createjs.Graphics().beginBitmapFill(bgImage, 'no-repeat').drawRect(0,0,bgImage.width,bgImage.height));
