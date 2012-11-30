@@ -630,7 +630,9 @@
 
         // FIXME: this is just a simulated broadcast. 
         // GLOBAL
-        gameClient.queueEvent(theEvent);
+        async.forEach(this.players, function(player, cb) { player.sendMessage(theEvent); cb(null); }, function(err) {
+          console.log('GI: broadcast of Event:' + theEvent.type + ' completed');
+        });
       }
 
       // Game-clock ticks
@@ -697,7 +699,6 @@
       function GameClient(myId) {
         this.players = [];
         this.heroes = [];
-        this.gameInstance = null;
         this.myId = myId;
         this.me = null;
         this.enemy = null;
@@ -711,7 +712,6 @@
       GC.setup = function(gameState) {
         // TODO: here we are mimicking 'receiving' player data from server
         var gameStatePlayers = JSON.parse(gameState);
-        this.gameInstance = gameInstance;
 
         for (var i = 0; i < gameStatePlayers.length; i++) {
           // take the raw JSON ver of the 'Player' and mash its data into an 
@@ -737,7 +737,6 @@
       }
 
       GC.start = function() {
-        this.gameInstance.start();
         $(this).trigger('clientGameStartEvent');
         this.log('Game start!');
       }
@@ -758,10 +757,6 @@
             return false;
           });
         return toUpdate;
-      }
-
-      GC.stop = function() {
-        this.gameInstance.stop();
       }
 
       GC.queueEvent = function(gameEvent) {
@@ -891,8 +886,6 @@
 
       GC.gameOver = function(winner) {
         var winner = _.find(this.players, function(thePlayer) { return thePlayer.id == winner.id; });
-
-        this.stop();
         this.isGameOver = true;
         this.eventsIn.clear();
         $(this.eventsIn).off('queued');
@@ -1049,6 +1042,7 @@
         });
 
       $(document).on('click', '#start', function(event) {
+          gameInstance.start();
           gameClient.start();
           $(this).hide();
           });
@@ -1107,6 +1101,9 @@
       party.setHero(rollPlayerHero(3, 'Haruka'));
       party.setHero(rollPlayerHero(4, 'Leena'));
       player.setParty(party);
+      player.sendMessage = function(message) {
+        gameClient.queueEvent(message);
+      };
 
       // *OPPONENT
       var enemy = new Player(2, 'Enemy');
@@ -1114,12 +1111,16 @@
       enemyParty.setHero(rollCpuHero(100, 'Teh Badguy'));
       enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
       enemy.setParty(enemyParty);
+      enemy.sendMessage = function(message) {
+      // FIXME: when AI/split client implemented!
+//        console.log("I'm an enemy, so I ignore this msg");
+      }
 
       gameInstance.addPlayers(player, enemy);
 
       var gameClient = new GameClient(player.id);
-//      gameClient.setup(gameInstance);
       
+      // Game instance initiates setup
       gameInstance.setup();
 
       // TODO: this should be somewhere better 
