@@ -360,6 +360,29 @@
       }
       /** END Game Event **/
 
+      /** Default Game Over condition = 1 player dead **/
+      function gameOverDefault(gameInstance) {
+        var deadPlayer = null;
+        var players = gameInstance.players;
+        for (var i = 0, len = players.length; i < len; i++) {
+          var curPlayer = players[i];
+          // every hero in the party is dead
+          if (_.all(_.pluck(curPlayer.party.heroes, 'statuses'), function(statuses) { return statuses.dead; })) {
+           deadPlayer = curPlayer; 
+           break;
+          }
+        } // for i
+
+        // return the winner, if any
+        if (deadPlayer) {
+          var winner = _.filter(players, function(curPlayer) {
+              return(curPlayer.id != deadPlayer.id);
+            }, this);
+          return winner[0];
+        } 
+        return false;
+      }
+
 
       /** Game Instance (Server) **/
       function GameInstance(clock) {
@@ -367,7 +390,8 @@
         this.players = [];
         // convenience map for direct access
         this.heroes = {};
-
+        // defines the conditions under which the game ends.
+        this.gameOverConditions = [];
         this.isGameOver = false;
 
         // Game state machine
@@ -411,6 +435,20 @@
           }
         }
         // TODO: players need to augmented with connectivity to their respective clients.
+      }
+
+      // adds the specified game over conditions to the game
+      GI.addGameOverConditions = function(conditions) {
+       this.gameOverConditions = this.gameOverConditions.concat(arguments); 
+      }
+
+      GI.checkGameOverConditions = function() {
+        var winner = gameOverDefault(this);
+        if (winner) {
+          this.gameOver(winner);
+          return true;
+        } 
+        return false;
       }
 
       // Call once all players have been added to the game; this begins the setup process
@@ -565,22 +603,11 @@
 
       // Game-clock ticks
       GI.update = function() {
-        if (this.isGameOver) {
-          eturn;
+        if (this.isGameOver || this.checkGameOverConditions()) {
+          return;
         }
-        for (var i = 0, len = this.players.length; i < len; i++) {
-          var curPlayer = this.players[i];
-
-          // game over condition:
-          if (_.all(_.pluck(curPlayer.party.heroes, 'statuses'), function(statuses) { return statuses.dead; })) {
-            this.gameOver(_.filter(this.players, function(curPlayer) {
-                return(curPlayer.id != this.players[i].id);
-              }, this));
-            return;
-          }
-
-          // player ready condition
-          var newlyReady = _.filter(curPlayer.party.heroes, function(curHero) {
+        // hero ready condition
+        var newlyReady = _.filter(this.heroes, function(curHero) {
             if (curHero && !curHero.statuses.dead && !curHero.statuses.ready) {
               curHero.turnGauge += curHero.attributes.speed / 100.00;
               if (curHero.turnGauge >= 100) {
@@ -591,13 +618,11 @@
             }
             return false;
           });
-
-          // broadcast new ready players to clients
-          // TODO
-          if(newlyReady.length > 0) {
-            this.eventsOut.push(new GameEvent('heroes_ready', _.pluck(newlyReady, 'id')));
-          }
-        } // for i
+        // broadcast new ready heroes to clients
+        // TODO
+        if(newlyReady.length > 0) {
+          this.eventsOut.push(new GameEvent('heroes_ready', _.pluck(newlyReady, 'id')));
+        }
       }
 
       
@@ -605,7 +630,7 @@
         this.stop();
         this.isGameOver = true;
         this.eventsIn.clear();
-        this.eventsOut.push(new GameEvent('game_over', winner ? winner[0] : ''));
+        this.eventsOut.push(new GameEvent('game_over', winner ? winner : ''));
         $(this.clock).off('tick');
         $(this.durationClock).off('tick');
 
@@ -812,8 +837,8 @@
         gameInstance.queueAction(theEvent);
       }
 
-      GC.gameOver = function(winner) {
-        var winner = _.find(this.players, function(thePlayer) { return thePlayer.id == winner.id; });
+      GC.gameOver = function(theWinner) {
+        var winner = _.find(this.players, function(thePlayer) { return thePlayer.id == theWinner.id; });
         this.isGameOver = true;
         this.eventsIn.clear();
         $(this.eventsIn).off('queued');
