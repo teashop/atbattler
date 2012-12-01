@@ -443,11 +443,15 @@
       }
 
       GI.checkGameOverConditions = function() {
-        var winner = gameOverDefault(this);
-        if (winner) {
-          this.gameOver(winner);
-          return true;
-        } 
+        var winner = null;
+        for (var i = 0; i < this.gameOverConditions.length; i++) {
+          winner = this.gameOverConditions[i](this);
+          if (winner) {
+            // any condition is enogh to trigger Game Over
+            this.fsm.triggerGameOver(winner);
+            return true;
+          } 
+        }
         return false;
       }
 
@@ -457,9 +461,13 @@
         this.fsm.triggerDoSetup();
       }
 
-      // Push game data down to Players.
+      // Finalize Instance params then push game data down to Players.
       GI.onsetup = function() {
         console.log('onsetup() called');
+        // no game over conditions assigned, use the default
+        if (this.gameOverConditions.length <= 0) {
+          this.gameOverConditions.push(gameOverDefault);
+        }
         this.eventsOut.push(new GameEvent('game_setup_state', JSON.stringify(this.players)));
       }
 
@@ -468,6 +476,15 @@
         console.log('All ready!');
         this.start();
         this.eventsOut.push(new GameEvent('game_start'));
+      }
+
+      GI.ongameOver = function(evt, from, to, winner) {
+        this.stop();
+        this.isGameOver = true;
+        this.eventsIn.clear();
+        this.eventsOut.push(new GameEvent('game_over', winner ? winner : ''));
+        $(this.clock).off('tick');
+        $(this.durationClock).off('tick');
       }
 
       /**
@@ -624,17 +641,7 @@
           this.eventsOut.push(new GameEvent('heroes_ready', _.pluck(newlyReady, 'id')));
         }
       }
-
       
-      GI.gameOver = function(winner) {
-        this.stop();
-        this.isGameOver = true;
-        this.eventsIn.clear();
-        this.eventsOut.push(new GameEvent('game_over', winner ? winner : ''));
-        $(this.clock).off('tick');
-        $(this.durationClock).off('tick');
-
-      }
       /** END Game Instance (server) **/
 
       /***********************************************************************/
