@@ -905,11 +905,33 @@
             console.log('CPU Player[' + this.myId + '] is ready!');
             this.ready();
             break;
+          case 'heroes_ready':
+            var readyHeroes = args;
+            var myReadyHeroes = [];
+            for (var i = 0; i < readyHeroes.length; i++) {
+              var theHero = this.heroes[readyHeroes[i]];
+              theHero.statuses.ready = true;
+              theHero.turnGauge = 100.00;
+              if (theHero.player.id == this.myId) {
+                myReadyHeroes.push(theHero);
+              }
+            }
+
+            // Always attacks!
+            // TODO: pick some other actions. 
+            var enemyHeroes = this.enemy.party.heroes;
+            for (var i = 0; i < myReadyHeroes.length; i++) {
+              var target = enemyHeroes[_.random(0, enemyHeroes.length-1)];
+              if (target.statuses.dead) {
+                target = _.find(enemyHeroes, function(theHero) { return !theHero.statuses.dead });
+              }
+              this.sendToServer(new GameEvent('client_action', {type: 'attack', by: myReadyHeroes[i].id, target: target.id}));
+            }
+            break;
           default:
             // do nothing for now.
             break;
-        }
-
+        } // switch
       }
       /** END CPU Game Client */
 
@@ -939,24 +961,6 @@
         if (hero.statuses.ready && heroRow.children('td.action').is(':empty')) {
           heroRow.children('.action').html('<button class="takeAction" heroId="' + hero.id + '">Action</button>');
           heroRow.addClass('ready');
-
-          // TODO: this belongs somewhere else
-          // enemy attacks immediately!
-          if (!isYou) {
-            var opponent = null;
-            // find a target opponent (obviously, this is you!)
-            for (var i = 0; i < gameInstance.players.length; i++) {
-              if (gameInstance.players[i].id != player.id) {
-                opponent = gameInstance.players[i];
-                break;
-              }
-            }
-            var target = opponent.party.heroes[_.random(0, opponent.party.heroes.length-1)];
-            if (target.statuses.dead) {
-              target = _.find(opponent.party.heroes, function(theHero) { return !theHero.statuses.dead });
-            }
-            gameClient.queueEvent(new GameEvent('client_action', {type: 'attack', by: hero.id, target: target.id}));
-          }
         }
       }
 
