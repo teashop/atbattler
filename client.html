@@ -455,15 +455,15 @@
         return false;
       }
 
-      // Call once all players have been added to the game; this begins the setup process
+      // Call once all players have been added to the game; 
+      // this begins the setup process
       GI.setup = function() {
-        console.log('setup() called');
         this.fsm.triggerDoSetup();
       }
 
       // Finalize Instance params then push game data down to Players.
       GI.onsetup = function() {
-        console.log('onsetup() called');
+        console.log('GI: onsetup() called, initializing game instance.');
         // no game over conditions assigned, use the default
         if (this.gameOverConditions.length <= 0) {
           this.gameOverConditions.push(gameOverDefault);
@@ -479,7 +479,7 @@
 
       // start game when all players are ready
       GI.ontriggerAllReady = function() {
-        console.log('All ready!');
+        console.log('GI: All Players ready, starting game NOW!');
         this.start();
         this.eventsOut.push(new GameEvent('game_start'));
       }
@@ -527,7 +527,7 @@
         var target = this.heroes[action.target];
         // drop actions from non-ready actors
         if (!actor || !actor.statuses.ready) {
-          console.log('Server: ' + actor.name + ' is not ready; ignoring action request');
+          console.log('GI: ' + actor.name + ' is not ready; ignoring action request');
           return;
         }
         // TODO: these should be in handlers or something more organized
@@ -568,7 +568,7 @@
             actor.turnGauge = 0.00;
             break;
           default:
-            console.log('Unknown action type ' + action.type);
+            console.log('GI: Unknown action type ' + action.type);
             break;
         } // switch
 
@@ -581,7 +581,7 @@
       GI.processInbound = function() {
         var theEvent = this.eventsIn.shift();
         if (!theEvent || !theEvent.type) {
-          console.log('Server: no event or event type, ignoring.');
+          console.log('GI: no event or event type, ignoring.');
           return;
         }
 
@@ -603,9 +603,9 @@
             this.executeAction(theEvent.content);
             break;
           case 'player_ready':
-            // FIXME: need to id msgs with a 'sender', which would be inherent from the receiving communication
+            // FIXME: need to id msgs with a proper 'sender', which would be inherent from the receiving communication
             // for now, any 'ready' message starts the game.
-            console.log('player_ready');
+            console.log('GI: player_ready received from Player [' + theEvent.content.from + '].');
             if (this.registerReadyPlayer) {
               this.registerReadyPlayer();
             } else {
@@ -613,7 +613,7 @@
             }
             break;
           default:
-            console.log('Unknown event type: ' + theEvent.type);
+            console.log('GI: Unknown event type: ' + theEvent.type);
             break;
         }
       }
@@ -697,7 +697,6 @@
           }
         }
         this.emitterCallback('clientSetupCompleteEvent');
-//          $('#start').show();
       }
       GC.ready = function() {
         this.sendToServer(new GameEvent('player_ready', {from: this.myId}));
@@ -882,13 +881,36 @@
 
 
       /** CPU Game Client **/
-      function CpuGameClient(myId) {
+
+      /**
+       * The CPU Game Client uses most of the same underlying mechanics as
+       * a human player, but overrides the message handling component with
+       * AI behaviour.
+       */
+      function CpuGameClient(myId, emitterCallback) {
+        GameClient.call(this, myId, emitterCallback);
       }
       CpuGameClient.prototype = new GameClient();
       CpuGameClient.prototype.constructor = CpuGameClient;
 
       var CPUGC = CpuGameClient.prototype;
 
+      CPUGC.processEvent = function() {
+        var theEvent = this.eventsIn.shift();
+        var args = theEvent.content;
+        switch (theEvent.type) {
+          case 'game_setup_state':
+            console.log('CPU Player[' + this.myId + '] setting up state...');
+            this.setup(args);
+            console.log('CPU Player[' + this.myId + '] is ready!');
+            this.ready();
+            break;
+          default:
+            // do nothing for now.
+            break;
+        }
+
+      }
       /** END CPU Game Client */
 
 
@@ -1082,15 +1104,7 @@
       enemy.setParty(enemyParty);
       // FIXME: when AI/split client implemented!
       enemy.sendMessage = function(message) {
-        var theEvent = message;
-        switch (theEvent.type) {
-          case 'game_setup_state':
-            gameInstance.queueAction(new GameEvent('player_ready', {from: enemy.id}));
-            break;
-          default:
-            // do nothing for now.
-            break;
-          }
+        cpuGameClient.queueEvent(message);
       }
 
       gameInstance.addPlayers(player, enemy);
@@ -1143,6 +1157,7 @@
       }
 
       var gameClient = new GameClient(player.id, emitterCallback);
+      var cpuGameClient = new CpuGameClient(enemy.id);
       
       // Game instance initiates setup
       gameInstance.setup();
@@ -1183,7 +1198,6 @@
         onUpdate = _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), hero: curHero });
         hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
       }
-
 
     </script>
   </div>
