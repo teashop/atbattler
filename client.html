@@ -300,11 +300,13 @@
 </head>
 <body>
   <div class="container">
-	<div style="width:960px;">
+    <div style="width:960px;">
       <h1 class="logo"><span class="atb"><strong>AT</strong>B</span>attler</h1>
       <span class="fineprint">v0.1</span>
-	  <button id="start" style="float:right;display:none;"/>Start Game</button>
-	</div>
+      <button id="pause" style="float:right;display:none;"/>Pause Game</button>
+      <button id="resume" style="float:right;display:none"/>Resume Game</button>
+      <button id="start" style="float:right;display:none;"/>Start Game</button>
+    </div>
     <div> 
       <canvas id="mainCanvas" width="960" height="480">
       </canvas>
@@ -402,6 +404,7 @@
             { name: 'triggerDoSetup',  from: 'new',  to: 'setup' },
             { name: 'triggerAllReady', from: 'setup', to: 'running'    },
             { name: 'triggerPause',  from: 'running', to: 'paused' },
+            { name: 'triggerResume',  from: 'paused', to: 'running' },
             { name: 'triggerGameOver', from: ['running', 'paused'], to: 'gameOver'  }
           ]});
 
@@ -482,6 +485,17 @@
         console.log('GI: All Players ready, starting game NOW!');
         this.start();
         this.eventsOut.push(new GameEvent('game_start'));
+      }
+
+      GI.onpaused = function() {
+        console.log('GI: Game was paused.');
+        this.stop();
+        this.eventsOut.push(new GameEvent('game_paused'));
+      }
+      GI.ontriggerResume = function() {
+        console.log('GI: Game is resumed.');
+        this.start();
+        this.eventsOut.push(new GameEvent('game_resumed'));
       }
 
       GI.ongameOver = function(evt, from, to, winner) {
@@ -602,6 +616,14 @@
             // execute action
             this.executeAction(theEvent.content);
             break;
+          case 'client_request_pause':
+            // FIXME: blind pause, no consensus required
+            this.fsm.triggerPause();
+            break;
+          case 'client_request_resume':
+            // FIXME: blind resume, no consensus required
+            this.fsm.triggerResume();
+            break;
           case 'player_ready':
             // FIXME: need to id msgs with a proper 'sender', which would be inherent from the receiving communication
             // for now, any 'ready' message starts the game.
@@ -707,6 +729,16 @@
         this.log('Game start!');
       }
 
+      GC.pause = function() {
+        this.emitterCallback('clientGamePauseEvent');
+        this.log('Game paused!');
+      }
+
+      GC.resume = function() {
+        this.emitterCallback('clientGameResumeEvent');
+        this.log('Game resumed!');
+      }
+
       // TODO: should this even be here?
       // to be called by the view's game loop
       GC.update = function() {
@@ -743,6 +775,12 @@
             break;
           case 'game_start':
             this.start();
+            break;
+          case 'game_paused':
+            this.pause();
+            break;
+          case 'game_resumed':
+            this.resume();
             break;
           case 'heroes_sync':
             // sync player/hero timing. Use as sanity check for gauge.
@@ -821,7 +859,9 @@
             this.emitterCallback('clientHeroActionEvent', [source, target, args.type, amount, isCrit]);
             break;
           case 'client_action':
-            // send action to server
+          case 'client_request_pause':
+          case 'client_request_resume':
+            // send to server
             this.sendToServer(theEvent);
             break;
           case 'game_over':
@@ -851,6 +891,14 @@
       // FIXME: it writes directly to server's inbound event queue
       GC.sendToServer = function(theEvent) {
         gameInstance.queueAction(theEvent);
+      }
+
+      GC.requestPause = function() {
+        this.queueEvent(new GameEvent('client_request_pause', {from: this.myId}));
+      }
+
+      GC.requestResume = function() {
+        this.queueEvent(new GameEvent('client_request_resume', {from: this.myId}));
       }
 
       GC.gameOver = function(theWinner) {
@@ -1037,11 +1085,6 @@
           return false;
         });
 
-      $(document).on('click', '#start', function(event) {
-          gameClient.ready();
-          $(this).hide();
-          });
-
       // action pane option => target list (or execute command)
       $(document).on('click', '#action-pane a', function(event) {
           var actionPane = $('#action-pane');
@@ -1080,6 +1123,26 @@
             $('#target-pane').html(targetList).show();
           }
           return false;
+          });
+
+      // Start Game
+      $(document).on('click', '#start', function(event) {
+          gameClient.ready();
+          $(this).hide();
+          });
+
+      // Pause Game
+      $(document).on('click', '#pause', function(event) {
+          gameClient.requestPause();
+          $(this).hide();
+          $('#resume').show();
+          });
+
+      // Resume Game
+      $(document).on('click', '#resume', function(event) {
+          gameClient.requestResume();
+          $(this).hide();
+          $('#pause').show();
           });
 
       /** END View stuff */
@@ -1143,6 +1206,13 @@
             createjs.Ticker.setFPS(FPS);
             createjs.Ticker.useRAF = true;
             createjs.Ticker.addListener(window);
+            $('#pause').show();
+            break;
+          case 'clientGamePauseEvent':
+            createjs.Ticker.setPaused(true);
+            break;
+          case 'clientGameResumeEvent':
+            createjs.Ticker.setPaused(false);
             break;
           case 'clientUpdateHeroEvent':
             var hero = args;
