@@ -468,6 +468,12 @@
         if (this.gameOverConditions.length <= 0) {
           this.gameOverConditions.push(gameOverDefault);
         }
+
+        // Setup to collect 'ready' replies - for now, a simple check that 
+        // starts the game when number of replies == number of Players. 
+        // TODO: deal with possibility of timeouts
+        this.registerReadyPlayer = _.after(this.players.length, this.fsm.triggerAllReady);
+        // Push state to players.
         this.eventsOut.push(new GameEvent('game_setup_state', JSON.stringify(this.players)));
       }
 
@@ -600,7 +606,11 @@
             // FIXME: need to id msgs with a 'sender', which would be inherent from the receiving communication
             // for now, any 'ready' message starts the game.
             console.log('player_ready');
-            this.fsm.triggerAllReady();
+            if (this.registerReadyPlayer) {
+              this.registerReadyPlayer();
+            } else {
+              console.log('No player ready registration function available');
+            }
             break;
           default:
             console.log('Unknown event type: ' + theEvent.type);
@@ -1070,9 +1080,17 @@
       enemyParty.setHero(rollCpuHero(100, 'Teh Badguy'));
       enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
       enemy.setParty(enemyParty);
-      enemy.sendMessage = function(message) {
       // FIXME: when AI/split client implemented!
-//        console.log("I'm an enemy, so I ignore this msg");
+      enemy.sendMessage = function(message) {
+        var theEvent = message;
+        switch (theEvent.type) {
+          case 'game_setup_state':
+            gameInstance.queueAction(new GameEvent('player_ready', {from: enemy.id}));
+            break;
+          default:
+            // do nothing for now.
+            break;
+          }
       }
 
       gameInstance.addPlayers(player, enemy);
