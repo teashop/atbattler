@@ -14,6 +14,7 @@
   <script src="js/domain.js"></script>
   <script src="js/util.js"></script>
   <script src="js/durationevent.js"></script>
+  <script src="js/gameevent.js"></script>
   <script src="js/gameinstance.js"></script>
   <script src="js/view.js"></script>
 
@@ -355,14 +356,6 @@
     </div>
     <script type="text/javascript">
 
-      /** Game Event **/
-      // simple payload for a typed queue event
-      function GameEvent(type, content) {
-        this.type = type;
-        this.content = content;
-      }
-      /** END Game Event **/
-
       /***********************************************************************/
 
       /** Game (Client) **/
@@ -375,6 +368,8 @@
 
         this.eventsIn = new EventQueue(this['processEvent'].bind(this));
         this.emitterCallback = emitterCallback || function(){};
+
+        this.msgFactory = GameEvent.getFactory(myId);
       }
 
       var GC = GameClient.prototype;
@@ -408,7 +403,7 @@
         this.emitterCallback('clientSetupCompleteEvent');
       }
       GC.ready = function() {
-        this.sendToServer(new GameEvent('player_ready', {from: this.myId}));
+        this.sendToServer(this.msgFactory.create(GameEvent.type.player_ready));
       }
 
       GC.start = function() {
@@ -444,8 +439,8 @@
         return toUpdate;
       }
 
-      GC.queueEvent = function(gameEvent) {
-        this.eventsIn.push(gameEvent);
+      GC.queueEvent = function(type, content) {
+        this.eventsIn.push(this.msgFactory.create(type, content));
       }
 
       GC.processEvent = function() {
@@ -457,19 +452,19 @@
           return;
         }
         switch (theEvent.type) {
-          case 'game_setup_state':
+          case GameEvent.type.game_setup_state:
             this.setup(args);
             break;
-          case 'game_start':
+          case GameEvent.type.game_start:
             this.start();
             break;
-          case 'game_paused':
+          case GameEvent.type.game_pause:
             this.pause();
             break;
-          case 'game_resumed':
+          case GameEvent.type.game_resume:
             this.resume();
             break;
-          case 'heroes_sync':
+          case GameEvent.type.heroes_sync:
             // sync player/hero timing. Use as sanity check for gauge.
             // TODO: view shit outta here?
             // TODO: need to do the smooth gauge, but use the sync as override
@@ -481,7 +476,7 @@
             }
             this.emitterCallback('clientSyncHeroEvent', theHero);
             break;
-          case 'heroes_ready':
+          case GameEvent.type.heroes_ready:
             var readyHeroes = args;
             for (var i = 0; i < readyHeroes.length; i++) {
               var theHero = this.heroes[readyHeroes[i]];
@@ -490,7 +485,7 @@
               this.emitterCallback('clientUpdateHeroEvent', theHero);
             }
             break;
-          case 'heroes_dead':
+          case GameEvent.type.heroes_dead:
             var deadHeroes = args;
             for (var i = 0; i < deadHeroes.length; i++) {
               var theHero = this.heroes[deadHeroes[i]];
@@ -501,7 +496,7 @@
               this.emitterCallback('clientUpdateHeroEvent', theHero);
             }
             break;
-          case 'action':
+          case GameEvent.type.heroes_action:
             // execute action
 //            console.log('SERVER sent action: ' + JSON.stringify(theEvent.content));
  
@@ -545,13 +540,13 @@
             }
             this.emitterCallback('clientHeroActionEvent', [source, target, args.type, amount, isCrit]);
             break;
-          case 'client_action':
-          case 'client_request_pause':
-          case 'client_request_resume':
+          case GameEvent.type.player_action:
+          case GameEvent.type.player_request_pause:
+          case GameEvent.type.player_request_resume:
             // send to server
             this.sendToServer(theEvent);
             break;
-          case 'game_over':
+          case GameEvent.type.game_over:
             this.gameOver(args);
             break;
           default:
@@ -581,11 +576,11 @@
       }
 
       GC.requestPause = function() {
-        this.queueEvent(new GameEvent('client_request_pause', {from: this.myId}));
+        this.queueEvent(GameEvent.type.player_request_pause);
       }
 
       GC.requestResume = function() {
-        this.queueEvent(new GameEvent('client_request_resume', {from: this.myId}));
+        this.queueEvent(GameEvent.type.player_request_resume);
       }
 
       GC.gameOver = function(theWinner) {
@@ -634,13 +629,13 @@
         var theEvent = this.eventsIn.shift();
         var args = theEvent.content;
         switch (theEvent.type) {
-          case 'game_setup_state':
+          case GameEvent.type.game_setup_state:
             console.log('CPU Player[' + this.myId + '] setting up state...');
             this.setup(args);
             console.log('CPU Player[' + this.myId + '] is ready!');
             this.ready();
             break;
-          case 'heroes_ready':
+          case GameEvent.type.heroes_ready:
             var readyHeroes = args;
             var myReadyHeroes = [];
             for (var i = 0; i < readyHeroes.length; i++) {
@@ -660,7 +655,7 @@
               if (target.statuses.dead) {
                 target = _.find(enemyHeroes, function(theHero) { return !theHero.statuses.dead });
               }
-              this.sendToServer(new GameEvent('client_action', {type: 'attack', by: myReadyHeroes[i].id, target: target.id}));
+              this.sendToServer(this.msgFactory.create(GameEvent.type.player_action, {type: 'attack', by: myReadyHeroes[i].id, target: target.id}));
             }
             break;
           default:
@@ -756,13 +751,13 @@
           var target = gameClient.heroes[$(this).attr('targetId')];
           switch (actionType) {
             case 'attack':
-              gameClient.queueEvent(new GameEvent('client_action', {type: 'attack', by: hero.id, target: target.id}));
+              gameClient.queueEvent(GameEvent.type.player_action, {type: 'attack', by: hero.id, target: target.id});
               break;
             case 'skill':
-              gameClient.queueEvent(new GameEvent('client_action', {type: 'skill', by: hero.id, target: target.id}));
+              gameClient.queueEvent(GameEvent.type.player_action, {type: 'skill', by: hero.id, target: target.id});
               break;
             case 'item':
-              gameClient.queueEvent(new GameEvent('client_action', {type: 'item', by: hero.id, target: target.id}));
+              gameClient.queueEvent(GameEvent.type.player_action, {type: 'item', by: hero.id, target: target.id});
               break;
             default:
               console.log('Action Not Yet Impl: ' + actionType);
@@ -847,7 +842,8 @@
       party.setHero(rollPlayerHero(4, 'Leena'));
       player.setParty(party);
       player.sendMessage = function(message) {
-        gameClient.queueEvent(message);
+//        console.log('Player got msg: ' + message);
+        gameClient.eventsIn.push(message);
       };
 
       // *OPPONENT
@@ -858,7 +854,8 @@
       enemy.setParty(enemyParty);
       // FIXME: when AI/split client implemented!
       enemy.sendMessage = function(message) {
-        cpuGameClient.queueEvent(message);
+//        console.log('CPU got msg: ' + message);
+        cpuGameClient.eventsIn.push(message);
       }
 
       gameInstance.addPlayers(player, enemy);
