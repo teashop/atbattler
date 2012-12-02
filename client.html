@@ -385,6 +385,49 @@
         return false;
       }
 
+      // dispatches based on GameEvent type.
+      var GameInstanceDispatcher = {
+        methods: {
+          tick: function(args) {
+            // update real-tick-based stuff
+            this.doTickUpkeep();
+          },
+          durationTick: function(args) {
+            // update duration-based stuff.  Filter out completed events.
+       //     this.durationEventTracker = this.durationEventTracker.filter(this.updateDurationEvent(theEvent));
+            var sync = _.map(this.heroes, function(theHero) {
+              return [theHero.id, theHero.turnGauge];
+            });
+            this.eventsOut.push(new GameEvent('heroes_sync', sync));
+          },
+          client_action: function(args) {
+            // execute action
+            this.executeAction(args);
+          },
+          client_request_pause: function(args) {
+            // FIXME: blind pause, no consensus required
+            this.fsm.triggerPause();
+          },
+          client_request_resume: function(args) {
+            // FIXME: blind resume, no consensus required
+            this.fsm.triggerResume();
+          },
+          player_ready: function(args) {
+            // FIXME: need to id msgs with a proper 'sender', which would be inherent from the receiving communication
+            // for now, any 'ready' message starts the game.
+            console.log('GI: player_ready received from Player [' + args.from + '].');
+            if (this.registerReadyPlayer) {
+              this.registerReadyPlayer();
+            } else {
+              console.log('No player ready registration function available');
+            }
+          }
+        }, // end methods
+
+        dispatch: function(type, args, instanceContext) {
+          return GameInstanceDispatcher.methods[type].call(instanceContext, args);
+        }
+      };
 
       /** Game Instance (Server) **/
       function GameInstance(clock) {
@@ -598,46 +641,7 @@
           console.log('GI: no event or event type, ignoring.');
           return;
         }
-
-        switch (theEvent.type) {
-          case 'tick':
-            // update real-tick-based stuff
-            this.doTickUpkeep();
-            break;
-          case 'durationTick':
-            // update duration-based stuff.  Filter out completed events.
-       //     this.durationEventTracker = this.durationEventTracker.filter(this.updateDurationEvent(theEvent));
-            var sync = _.map(this.heroes, function(theHero) {
-              return [theHero.id, theHero.turnGauge];
-            });
-            this.eventsOut.push(new GameEvent('heroes_sync', sync));
-            break;
-          case 'client_action':
-            // execute action
-            this.executeAction(theEvent.content);
-            break;
-          case 'client_request_pause':
-            // FIXME: blind pause, no consensus required
-            this.fsm.triggerPause();
-            break;
-          case 'client_request_resume':
-            // FIXME: blind resume, no consensus required
-            this.fsm.triggerResume();
-            break;
-          case 'player_ready':
-            // FIXME: need to id msgs with a proper 'sender', which would be inherent from the receiving communication
-            // for now, any 'ready' message starts the game.
-            console.log('GI: player_ready received from Player [' + theEvent.content.from + '].');
-            if (this.registerReadyPlayer) {
-              this.registerReadyPlayer();
-            } else {
-              console.log('No player ready registration function available');
-            }
-            break;
-          default:
-            console.log('GI: Unknown event type: ' + theEvent.type);
-            break;
-        }
+        GameInstanceDispatcher.dispatch(theEvent.type, theEvent.content, this);
       }
 
       GI.processOutbound = function() {
