@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ATBattler GameInstance Tests</title>
+  <link rel="stylesheet" href="resources/qunit-1.10.0.css">
+</head>
+<body>
+  <div id="qunit"></div>
+  <script src="resources/qunit-1.10.0.js"></script>
+  <script src="../js/vendor/underscore-min.js"></script>
+  <script src="../js/vendor/state-machine.min.js"></script>
+  <script src="../js/vendor/jquery-1.8.2.min.js"></script>
+
+  <script src="../js/util.js"></script>
+  <script src="../js/domain.js"></script>
+  <script src="../js/gameevent.js"></script>
+  <script src="../js/gameinstance.js"></script>
+  <script>
+    // Scaffolding
+    function generateInstance() {
+      var ctr = 1;
+      // player 1, id=1
+      var player1 = new Player(1, 'player1');
+      // heroes 1-4 belong to player1
+      var party1 = new Party(1, 4);
+      party1.setHero(rollPlayerHero(ctr, ctr++));
+      party1.setHero(rollPlayerHero(ctr, ctr++));
+      party1.setHero(rollPlayerHero(ctr, ctr++));
+      party1.setHero(rollPlayerHero(ctr, ctr++));
+      player1.setParty(party1);
+
+      // player 2, id=2
+      var player2 = new Player(2, 'player2');
+      // heroes 5-8 belong to player2
+      var party2 = new Party(2, 4);
+      party2.setHero(rollPlayerHero(ctr, ctr++));
+      party2.setHero(rollPlayerHero(ctr, ctr++));
+      party2.setHero(rollPlayerHero(ctr, ctr++));
+      party2.setHero(rollPlayerHero(ctr, ctr++));
+      player2.setParty(party2);
+
+      // clock
+      var clock = new Clock(33);
+
+      // create brand new instance.
+      var instance = new GameInstance(clock);
+      instance.addPlayers(player1, player2);
+      return instance;
+    }
+  </script>
+  <script>
+  test( "gameOverDefault()", function() {
+    var instance = generateInstance();
+        
+    // everyone's alive, so not game over.
+    ok( !gameOverDefault(instance), "No hero is dead yet" );
+
+    // kill off hero 1
+    instance.heroes[1].statuses.dead = true;
+    // still not game over
+    ok( !gameOverDefault(instance), "hero1 is dead, but other party members live" );
+
+    // kill off the rest of the party
+    instance.heroes[2].statuses.dead = true;
+    instance.heroes[3].statuses.dead = true;
+    instance.heroes[4].statuses.dead = true;
+    // game over, player2 (ID = 2) wins
+    equal( gameOverDefault(instance).id, 2, "player1's party is dead, player2 wins!" );
+
+    // revive hero 1
+    instance.heroes[1].statuses.dead = false;
+    // not game over anymore!
+    ok( !gameOverDefault(instance), "hero1 revived, game's not over!" );
+  });
+  </script>
+</body>
+</html>

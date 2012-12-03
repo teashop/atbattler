@@ -91,8 +91,8 @@ function GameInstance(clock) {
 
   // Game clock
   this.clock = clock;
-  // 'Real Clock' Duration clock
-  this.durationClock = new Clock(SECOND*0.5);
+  // 'Real Clock' Duration clock (500ms ticks)
+  this.durationClock = new Clock(500);
 
   // Event Queues
   this.eventsIn = new EventQueue(this['processInbound'].bind(this));
