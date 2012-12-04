@@ -44,6 +44,43 @@
     ok( result.length==2 && result[0]=='3' && result[1]=='4', "multi shift result: 2: Queue now empty, and results were ['3','4']" );
 
   });
+
+  test( "EventQueue - the buffer", function() {
+    var numElements = 0;
+    function cb(num) {
+      numElements = num;
+    }
+    var eq = new EventQueue(cb);
+
+    // add some stuff to the buffer
+    eq.buffer('1');
+    eq.buffer('2');
+    eq.buffer('3');
+
+    equal( eq.length(), 0, "Queue is empty (elements buffered)" );
+    equal( eq.bufferLength(), 3, "Buffer now has 3 elements" );
+
+
+    // flush buffer
+    eq.flush();
+    equal( numElements, 3, "3 elements were flushed from buffer to queue!" );
+    equal( eq.length(), 3, "The queue now has 3 elements" );
+    equal( eq.bufferLength(), 0, "Buffer is now empty (elements flushed)" );
+
+    // add to buffer, add to queue
+    eq.buffer('a');
+    eq.push('b');
+    ok( eq.length() == 4 && eq.bufferLength() == 1, "Buffer and queue operate independently");
+
+    // shifting doesn't impact buffer
+    eq.shift();
+    ok( eq.length() == 3 && eq.bufferLength() == 1, "Shifting from queue doesn't impact buffer");
+
+    // clear() clears both
+    eq.clear();
+    ok( eq.length() == 0 && eq.bufferLength() == 0, "clear() clears both buffer and queue");
+
+  });
   </script>
 </body>
 </html>
