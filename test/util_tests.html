@@ -67,6 +67,10 @@
     equal( eq.length(), 3, "The queue now has 3 elements" );
     equal( eq.bufferLength(), 0, "Buffer is now empty (elements flushed)" );
 
+    // flushing empty buffer has no effect
+    eq.flush();
+    equal( eq.length(), 3, "The queue *still* has 3 elements" );
+
     // add to buffer, add to queue
     eq.buffer('a');
     eq.push('b');
@@ -80,6 +84,34 @@
     eq.clear();
     ok( eq.length() == 0 && eq.bufferLength() == 0, "clear() clears both buffer and queue");
 
+  });
+
+  test( "EventQueue - error cases", function() {
+    var theEx = null;
+
+    // callback is a required parameter 
+    try {
+      var eq = new EventQueue();
+      eq.push('1');
+    } catch (exception) {
+      theEx = exception;
+    }
+    ok(theEx != null, "Callback function is required");
+
+    var numElements = 0;
+    function cb(num) {
+      numElements = num;
+    }
+    var eq = new EventQueue(cb);
+
+    // shift on empty queue
+    var result = eq.shift();
+    equal( eq.length(), 0, "shift() on empty queue does nothing");
+    ok( !result, "the result should be undefined"); 
+
+    // multi shift on empty queue
+    var result = eq.shift(3);
+    ok( result.length == 0, "the result should be empty []");
   });
   </script>
 </body>
