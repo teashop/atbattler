@@ -295,19 +295,12 @@ GI.processInbound = function(num) {
   var numEvents = num ? num : 1;
   var events = this.eventsIn.shift(numEvents);
   var context = this;
-  async.forEachSeries(events, 
-    function(theEvent, cb) {
+  _.each(events, 
+    function(theEvent) {
       if (!theEvent || !theEvent.type) {
-        var err = 'GI: no event or event type, ignoring.';
-        cb(err);
+        console.log('GI: inbound: no event or event type, ignoring.');
       }
       GameInstanceDispatcher.dispatch(theEvent.type, theEvent.from, theEvent.content, context);
-      cb(null);
-    }, 
-    function(err) {
-      if (err) {
-        console.log(err);
-      }
     });
 }
 
@@ -315,25 +308,18 @@ GI.processOutbound = function(num) {
   var numEvents = num ? num : 1;
   var events = this.eventsOut.shift(numEvents);
   var context = this;
-  async.forEachSeries(events, 
-    function(theEvent, cb) {
+  _.each(events, 
+    function(theEvent) {
       if (!theEvent || !theEvent.type) {
-        var err = 'GI: no event or event type, ignoring.';
-        cb(err);
+        console.log('GI: outbound: no event or event type, ignoring.');
       }
       // FIXME: this is just a simulated broadcast.
-      // GLOBAL
+      // async call so that we don't block on communication
       async.forEach(context.players, function(player, cb) { 
-          player.sendMessage(theEvent); cb(null); }, 
-          function(err) {
-    //        console.log('GI: broadcast of Event:' + theEvent.type + ' completed');
-          });
-      cb(null);
-    }, 
-    function(err) {
-      if (err) {
-        console.log(err);
-      }
+        player.sendMessage(theEvent); cb(null); }, 
+        function(err) {
+//        console.log('GI: broadcast of Event:' + theEvent.type + ' completed');
+        });
     });
 }
 
