@@ -216,9 +216,17 @@ GI.queueInbound = function(type, content) {
 //  console.log('queueing in: type=' + type + ', content= ' + content);
   this.eventsIn.push(this.msgFactory.create(type, content));
 }
+GI.bufferInbound = function(type, content) {
+//  console.log('buffering in: type=' + type + ', content= ' + content);
+  this.eventsIn.buffer(this.msgFactory.create(type, content));
+}
 GI.queueOutbound = function(type, content) {
 //  console.log('queueing out: type=' + type + ', content= ' + content);
   this.eventsOut.push(this.msgFactory.create(type, content));
+}
+GI.bufferOutbound = function(type, content) {
+//  console.log('buffering out: type=' + type + ', content= ' + content);
+  this.eventsOut.buffer(this.msgFactory.create(type, content));
 }
 
 // Perform upkeep on a real-time tick basis
@@ -228,7 +236,6 @@ GI.doTickUpkeep = function() {
 }
 // execute an action
 GI.executeAction = function(action) {
-  var results = [];
   // FIXME: this precludes dual-tech/triple-tech etc.
   var actor = this.heroes[action.by];
   var target = this.heroes[action.target];
@@ -250,12 +257,12 @@ GI.executeAction = function(action) {
       dmg = Math.round(dmg);
       var overkill = 0;
       target.attributes.hp -= dmg;
-      results.push(this.msgFactory.create(GameEvent.type.heroes_action, {type: action.type, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit}));
+      this.bufferOutbound(GameEvent.type.heroes_action, {type: action.type, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
       if (target.attributes.hp <= 0) {
         overkill = -(target.attributes.hp);
         target.attributes.hp = 0;
         target.statuses.dead = true;
-        results.push(this.msgFactory.create(GameEvent.type.heroes_dead, [target.id]));
+        this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
       }
       // reset actor
       actor.statuses.ready = false;
@@ -269,7 +276,7 @@ GI.executeAction = function(action) {
       if (target.attributes.hp > target.attributes.maxHp) {
         target.attributes.hp = target.attributes.maxHp;
       }
-      results.push(this.msgFactory.create(GameEvent.type.heroes_action, {type: 'item', by: actor.id, target: target.id, amount: amount}));
+      this.bufferOutbound(GameEvent.type.heroes_action, {type: 'item', by: actor.id, target: target.id, amount: amount});
       // reset actor
       actor.statuses.ready = false;
       actor.turnGauge = 0.00;
@@ -280,31 +287,54 @@ GI.executeAction = function(action) {
   } // switch
 
   // FIXME: special case, i can't handle a multi-push yet.
-  for (var i = 0; i < results.length; i++) {
-    this.eventsOut.push(results[i]);
-  }
+  this.eventsOut.flush();
 }
 
 // Inbound event processor
-GI.processInbound = function() {
-  var theEvent = this.eventsIn.shift();
-  if (!theEvent || !theEvent.type) {
-    console.log('GI: no event or event type, ignoring.');
-    return;
-  }
-  GameInstanceDispatcher.dispatch(theEvent.type, theEvent.from, theEvent.content, this);
+GI.processInbound = function(num) {
+  var numEvents = num ? num : 1;
+  var events = this.eventsIn.shift(numEvents);
+  var context = this;
+  async.forEachSeries(events, 
+    function(theEvent, cb) {
+      if (!theEvent || !theEvent.type) {
+        var err = 'GI: no event or event type, ignoring.';
+        cb(err);
+      }
+      GameInstanceDispatcher.dispatch(theEvent.type, theEvent.from, theEvent.content, context);
+      cb(null);
+    }, 
+    function(err) {
+      if (err) {
+        console.log(err);
+      }
+    });
 }
 
-GI.processOutbound = function() {
-  var theEvent = this.eventsOut.shift();
-
-  // FIXME: this is just a simulated broadcast.
-  // GLOBAL
-  async.forEach(this.players, function(player, cb) { 
-      player.sendMessage(theEvent); cb(null); }, 
-      function(err) {
-//        console.log('GI: broadcast of Event:' + theEvent.type + ' completed');
-      });
+GI.processOutbound = function(num) {
+  var numEvents = num ? num : 1;
+  var events = this.eventsOut.shift(numEvents);
+  var context = this;
+  async.forEachSeries(events, 
+    function(theEvent, cb) {
+      if (!theEvent || !theEvent.type) {
+        var err = 'GI: no event or event type, ignoring.';
+        cb(err);
+      }
+      // FIXME: this is just a simulated broadcast.
+      // GLOBAL
+      async.forEach(context.players, function(player, cb) { 
+          player.sendMessage(theEvent); cb(null); }, 
+          function(err) {
+    //        console.log('GI: broadcast of Event:' + theEvent.type + ' completed');
+          });
+      cb(null);
+    }, 
+    function(err) {
+      if (err) {
+        console.log(err);
+      }
+    });
 }
 
 // Game-clock ticks

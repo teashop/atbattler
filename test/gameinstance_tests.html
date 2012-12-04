@@ -18,26 +18,37 @@
   <script src="../js/gameinstance.js"></script>
   <script>
     // Scaffolding
+    function rollHero(id) {
+      var theHp = 1000;
+      var attributes = {
+         speed: 100,
+         attack: 100,
+         hp: theHp,
+         maxHp: theHp
+      };
+      return new Hero(id, name, attributes);
+    }
+
     function generateInstance() {
       var ctr = 1;
       // player 1, id=1
       var player1 = new Player(1, 'player1');
       // heroes 1-4 belong to player1
       var party1 = new Party(1, 4);
-      party1.setHero(rollPlayerHero(ctr, ctr++));
-      party1.setHero(rollPlayerHero(ctr, ctr++));
-      party1.setHero(rollPlayerHero(ctr, ctr++));
-      party1.setHero(rollPlayerHero(ctr, ctr++));
+      party1.setHero(rollHero(ctr++));
+      party1.setHero(rollHero(ctr++));
+      party1.setHero(rollHero(ctr++));
+      party1.setHero(rollHero(ctr++));
       player1.setParty(party1);
 
       // player 2, id=2
       var player2 = new Player(2, 'player2');
       // heroes 5-8 belong to player2
       var party2 = new Party(2, 4);
-      party2.setHero(rollPlayerHero(ctr, ctr++));
-      party2.setHero(rollPlayerHero(ctr, ctr++));
-      party2.setHero(rollPlayerHero(ctr, ctr++));
-      party2.setHero(rollPlayerHero(ctr, ctr++));
+      party2.setHero(rollHero(ctr++));
+      party2.setHero(rollHero(ctr++));
+      party2.setHero(rollHero(ctr++));
+      party2.setHero(rollHero(ctr++));
       player2.setParty(party2);
 
       // clock

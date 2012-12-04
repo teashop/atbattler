@@ -43,11 +43,13 @@ C.start = function(adjustment) {
 
 
 /**
- * A simple representation of an 'event-queue', which calls a provided callback each time
- * an event is added.  Note that the user must manually call shift() to retrieve an event.
+ * A simple representation of an 'event-queue', which calls a provided callback 
+ * each time an event is added.  Note that the user must manually call shift() 
+ * to retrieve an event.
  */
 function EventQueue(callback) {
 	this.events = [];
+  this.buf = [];
 	this.callback = callback;
 }
 var EQ = EventQueue.prototype;
@@ -55,11 +57,29 @@ EQ.push = function(theEvent) {
 	this.events.push(theEvent);
 	this.callback();
 }
-EQ.shift = function() {
-	return this.events.shift();
+EQ.shift = function(num) {
+  if (!num) {
+  	return this.events.shift();
+  } else {
+    var removed = _.first(this.events, num);
+    this.events = _.rest(this.events, removed.length);
+    return removed;
+  }
 }
 EQ.clear = function() {
 	this.events = [];
+  this.buf = [];
+}
+EQ.buffer = function(theEvent) {
+  this.buf.push(theEvent);
+}
+EQ.flush = function() {
+  // cat all of the buffered events to the queue, then callback with the 
+  // number of added events.
+  this.events = this.events.concat(this.buf);
+  var numBuffered = this.buf.length;
+  this.buf = [];
+  this.callback(numBuffered);
 }
 /** END Event Queue */
 
