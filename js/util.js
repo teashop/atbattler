@@ -70,13 +70,13 @@ EQ.clear = function() {
 	this.events = [];
   this.buf = [];
 }
-EQ.buffer = function(theEvent) {
-  this.buf.push(theEvent);
+EQ.buffer = function(events) {
+  this.buf.push.apply(this.buf, arguments);
 }
 EQ.flush = function() {
-  // cat all of the buffered events to the queue, then callback with the 
+  // add all of the buffered events to the queue, then callback with the 
   // number of added events.
-  this.events = this.events.concat(this.buf);
+  this.events.push.apply(this.events, this.buf);
   var numBuffered = this.buf.length;
   this.buf = [];
   this.callback(numBuffered);
