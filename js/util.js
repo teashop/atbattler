@@ -55,7 +55,10 @@ function EventQueue(callback) {
 var EQ = EventQueue.prototype;
 EQ.push = function(theEvent) {
 	this.events.push(theEvent);
-	this.callback();
+	this.callback(1);
+}
+EQ.length = function() {
+  return this.events.length;
 }
 EQ.shift = function(num) {
   if (!num) {
@@ -69,6 +72,9 @@ EQ.shift = function(num) {
 EQ.clear = function() {
 	this.events = [];
   this.buf = [];
+}
+EQ.bufferLength = function(events) {
+  return this.buf.length;
 }
 EQ.buffer = function(events) {
   this.buf.push.apply(this.buf, arguments);
