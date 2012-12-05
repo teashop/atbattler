@@ -53,9 +53,7 @@
     var eq = new EventQueue(cb);
 
     // add some stuff to the buffer
-    eq.buffer('1');
-    eq.buffer('2');
-    eq.buffer('3');
+    eq.buffer('1', '2', '3');
 
     equal( eq.length(), 0, "Queue is empty (elements buffered)" );
     equal( eq.bufferLength(), 3, "Buffer now has 3 elements" );
@@ -83,6 +81,21 @@
     // clear() clears both
     eq.clear();
     ok( eq.length() == 0 && eq.bufferLength() == 0, "clear() clears both buffer and queue");
+
+    eq.push('w');
+    eq.push('x');
+    eq.push('y');
+    eq.push('z');
+    eq.stash();
+    ok( eq.length() == 0 && eq.bufferLength() == 4, "4 events were queued then stashed to the buffer");
+
+    eq.stash();
+    ok( eq.length() == 0 && eq.bufferLength() == 4, "stash()-ing an empty queue has no effect.");
+
+    eq.push('a');
+    eq.push('b');
+    eq.stash();
+    ok(eq.bufferLength() == 6 && eq.buf[4] == 'a' && eq.buf[5] == 'b', "stash()-ing when buffer is non-empty appends stashed elements to the end of the buffer.");
 
   });
 
