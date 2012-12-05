@@ -79,6 +79,11 @@ EQ.bufferLength = function(events) {
 EQ.buffer = function(events) {
   this.buf.push.apply(this.buf, arguments);
 }
+// copies contents of the event queue to the buffer
+EQ.stash = function() {
+  this.buf.push.apply(this.buf, this.events);
+  this.events = [];
+}
 EQ.flush = function() {
   // add all of the buffered events to the queue, then callback with the 
   // number of added events.

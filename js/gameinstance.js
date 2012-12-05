@@ -32,9 +32,9 @@ var GameInstanceDispatcher = {
 var GIDM = GameInstanceDispatcher.methods;
 
 GIDM[GameEvent.type.game_tick] = function(from, args) {
-      // update real-tick-based stuff
-      this.doTickUpkeep();
-    }
+  // update real-tick-based stuff
+  this.doTickUpkeep();
+}
 GIDM[GameEvent.type.game_duration_tick] = function(from, args) {
   // update duration-based stuff.  Filter out completed events.
 //     this.durationEventTracker = this.durationEventTracker.filter(this.updateDurationEvent(theEvent));
@@ -42,19 +42,19 @@ GIDM[GameEvent.type.game_duration_tick] = function(from, args) {
     return [theHero.id, theHero.turnGauge];
   });
   this.queueOutbound(GameEvent.type.heroes_sync, sync);
-},
+}
 GIDM[GameEvent.type.player_action] = function(from, args) {
   // execute action
   this.executeAction(args);
-},
+}
 GIDM[GameEvent.type.player_request_pause] = function(from, args) {
   // FIXME: blind pause, no consensus required
   this.fsm.triggerPause();
-},
+}
 GIDM[GameEvent.type.player_request_resume] = function(from, args) {
   // FIXME: blind resume, no consensus required
   this.fsm.triggerResume();
-},
+}
 GIDM[GameEvent.type.player_ready] = function(from, args) {
   // FIXME: need to id msgs with a proper 'sender', which would be inherent from the receiving communication
   // for now, any 'ready' message starts the game.
@@ -96,6 +96,7 @@ function GameInstance(clock) {
 
   // Event Queues
   this.eventsIn = new EventQueue(this['processInbound'].bind(this));
+  this.dispatch = this['dispatchInbound'].bind(this);
   this.eventsOut = new EventQueue(this['processOutbound'].bind(this));
 
   // Msg Factory
@@ -174,10 +175,18 @@ GI.ontriggerAllReady = function() {
 GI.onpaused = function() {
   console.log('GI: Game was paused.');
   this.stop();
+  // switch dispatch to filtered mode while paused
+  this.dispatch = this.filterInbound;
+  // any pending events are buffered (stashed) as leaving them in the queue
+  // would cause them to be dropped when the game is paused.
+  this.eventsIn.stash();
   this.queueOutbound(GameEvent.type.game_pause);
 }
 GI.ontriggerResume = function() {
   console.log('GI: Game is resumed.');
+  // buffered input is processed, regular dispatching resumes
+  this.dispatch = this.dispatchInbound;
+  this.eventsIn.flush();
   this.start();
   this.queueOutbound(GameEvent.type.game_resume);
 }
@@ -212,14 +221,22 @@ GI.onDurationTick = function() {
 GI.queueAction = function(action) {
   this.eventsIn.push(action);
 }
+// used to queue inbound Events generated internally
 GI.queueInbound = function(type, content) {
 //  console.log('queueing in: type=' + type + ', content= ' + content);
   this.eventsIn.push(this.msgFactory.create(type, content));
 }
-GI.bufferInbound = function(type, content) {
-//  console.log('buffering in: type=' + type + ', content= ' + content);
-  this.eventsIn.buffer(this.msgFactory.create(type, content));
+// used to filter out incoming events when under a pause state.
+// The only Event that will be dispatched are 'resume' events.
+// TODO: expand this to other 'game control messages' (e.g. quit)
+GI.filterInbound = function(theEvent) {
+  if (theEvent.type == GameEvent.type.player_request_resume) {
+    this.dispatchInbound(theEvent);
+  } else {
+    console.log('GI: filtering inbound events, dropping: ' + theEvent.type);
+  }
 }
+
 GI.queueOutbound = function(type, content) {
 //  console.log('queueing out: type=' + type + ', content= ' + content);
   this.eventsOut.push(this.msgFactory.create(type, content));
@@ -300,10 +317,14 @@ GI.processInbound = function(num) {
       if (!theEvent || !theEvent.type) {
         console.log('GI: inbound: no event or event type, ignoring.');
       }
-      GameInstanceDispatcher.dispatch(theEvent.type, theEvent.from, theEvent.content, context);
+      context.dispatch(theEvent);
     });
 }
+GI.dispatchInbound = function(theEvent) {
+  GameInstanceDispatcher.dispatch(theEvent.type, theEvent.from, theEvent.content, this);
+}
 
+// Outbound event processor
 GI.processOutbound = function(num) {
   var numEvents = num ? num : 1;
   var events = this.eventsOut.shift(numEvents);
