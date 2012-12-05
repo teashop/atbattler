@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>ATBattler GameInstance Tests</title>
+  <title>ATBattler Util Tests</title>
   <link rel="stylesheet" href="resources/qunit-1.10.0.css">
 </head>
 <body>
@@ -127,6 +127,21 @@
     ok( result.length == 0, "the result should be empty []");
   });
 
+  asyncTest("Clock - regular ticks", 1, function() {
+    var clock = new Clock(200);
+    var ticks = 0;
+    function countTicks() {
+      ticks++;
+    }
+    $(clock).on('tick', countTicks);
+    clock.start();
+    setTimeout(function() { 
+        clock.stop(); 
+        equal(ticks, 5 ,"Expecting 5 ticks @ 200ms over 1100ms.");
+        start();
+      }, 1100);
+  });
+
   asyncTest("Clock - pause", 1, function() {
     var clock = new Clock(1000);
 
@@ -135,8 +150,9 @@
         clock.pause(); 
         var adj = clock.pauseAdjustment;
         // we can't get an exact adjustment because of the granularity of
-        // the JS clock.  So 'close enough' is good enough.
-        ok(adj <= 300 && adj > 250,"pause at 300, elapsed adj. for resume is: " + adj);
+        // the JS clock. This varies, but about 15ms seems to be a safe  
+        // assumption.  For this case, 'close enough' is good enough.
+        ok(adj <= 330 && adj > 270,"pause at 300, elapsed adj. for resume is: " + adj);
         start();
       }, 300);
   });

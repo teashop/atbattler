@@ -16,8 +16,8 @@ C.getAdjustment = function(now) {
 	var adjustment = 0;
 	if (now >= this.prevTime + this.tickSize) {
 		adjustment = now - this.prevTime - this.tickSize;
-		this.prevTime = now;
 	}
+  this.prevTime = now;
 	return adjustment;
 }
 C.nextTick = function() {
