@@ -466,12 +466,15 @@
             break;
           case GameEvent.type.heroes_sync:
             // sync player/hero timing. Use as sanity check for gauge.
-            // TODO: view shit outta here?
-            // TODO: need to do the smooth gauge, but use the sync as override
+            // FIXME: for 'smooth' behaviour, only override with sync value
+            // if current value is really 'out of whack' (> 5% less than sync)
             var heroesSync = args;
             for (var i = 0; i < heroesSync.length; i++) {
               var theHero = this.heroes[heroesSync[i][0]];
-              theHero.turnGauge = heroesSync[i][1];
+              var diff = theHero.turnGauge - heroesSync[i][1];
+              if (diff < -5) {
+                theHero.turnGauge -= diff;
+              }
               this.emitterCallback('clientUpdateHeroEvent', theHero);
             }
             this.emitterCallback('clientSyncHeroEvent', theHero);
