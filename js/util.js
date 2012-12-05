@@ -35,6 +35,18 @@ C.stop = function() {
 	this.stopNextTick = true;
 	clearTimeout(this.timer);
 }
+C.pause = function() {
+  this.stop();
+  // determine how much of time is left before the next tick.
+  // this will be used to adjust the clock on a call to resume().
+  this.pauseAdjustment = (new Date()).getTime() - this.prevTime;
+  while (this.pauseAdjustment > this.tickSize) {
+    this.pauseAdjustment -= this.tickSize;
+  }
+}
+C.resume = function() {
+  this.start(this.pauseAdjustment ? this.pauseAdjustment : 0);
+}
 C.start = function(adjustment) {
 	this.stopNextTick = false;
 	this.timer = setTimeout(this.nextTick.bind(this), adjustment ? this.tickSize - adjustment : this.tickSize);

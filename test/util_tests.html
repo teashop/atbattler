@@ -126,6 +126,20 @@
     var result = eq.shift(3);
     ok( result.length == 0, "the result should be empty []");
   });
+
+  asyncTest("Clock - pause", 1, function() {
+    var clock = new Clock(1000);
+
+    clock.start();
+    setTimeout(function() { 
+        clock.pause(); 
+        var adj = clock.pauseAdjustment;
+        // we can't get an exact adjustment because of the granularity of
+        // the JS clock.  So 'close enough' is good enough.
+        ok(adj <= 300 && adj > 250,"pause at 300, elapsed adj. for resume is: " + adj);
+        start();
+      }, 300);
+  });
   </script>
 </body>
 </html>
