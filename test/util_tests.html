@@ -128,7 +128,7 @@
   });
 
   asyncTest("Clock - regular ticks", 1, function() {
-    var clock = new Clock(200);
+    var clock = new Clock(100);
     var ticks = 0;
     function countTicks() {
       ticks++;
@@ -137,9 +137,24 @@
     clock.start();
     setTimeout(function() { 
         clock.stop(); 
-        equal(ticks, 5 ,"Expecting 5 ticks @ 200ms over 1100ms.");
+        equal(ticks, 5 ,"Expecting 5 ticks @ 100ms over 550ms.");
         start();
-      }, 1100);
+      }, 550);
+  });
+
+  asyncTest("Clock - start()/stop()", 1, function() {
+    var clock = new Clock(200);
+    var ticks = 0;
+    function countTicks() {
+      ticks++;
+    }
+    $(clock).on('tick', countTicks);
+    clock.start();
+    clock.stop(); 
+    setTimeout(function() { 
+        equal(ticks, 0 ,"Expecting 0 ticks @ 200ms over 300ms.");
+        start();
+      }, 300);
   });
 
   asyncTest("Clock - pause", 1, function() {
