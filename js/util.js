@@ -14,9 +14,7 @@ function Clock(tickSize) {
 var C = Clock.prototype;
 C.getAdjustment = function(now) {
 	var adjustment = 0;
-	if (now >= this.prevTime + this.tickSize) {
-		adjustment = now - this.prevTime - this.tickSize;
-	}
+  adjustment = now - this.prevTime - this.tickSize;
   this.prevTime = now;
 	return adjustment;
 }

@@ -22,7 +22,7 @@
   <script type="text/javascript">
     var FPS = 30;
     var SECOND = 1000;  // a second is 1000ms
-    var msPerFrame = 33; // approximate
+    var msPerFrame = SECOND/FPS; // approximate
     var HERO_BASE_X = 150;
     var HERO_BASE_Y = 150;
     var HERO_BASE_SCALE = 3;
@@ -467,12 +467,13 @@
           case GameEvent.type.heroes_sync:
             // sync player/hero timing. Use as sanity check for gauge.
             // FIXME: for 'smooth' behaviour, only override with sync value
-            // if current value is really 'out of whack' (> 5% less than sync)
+            // if current value is *really* out of whack (+/- 15% )
             var heroesSync = args;
             for (var i = 0; i < heroesSync.length; i++) {
               var theHero = this.heroes[heroesSync[i][0]];
               var diff = theHero.turnGauge - heroesSync[i][1];
-              if (diff < -5) {
+              if (Math.abs(diff) > 15) {
+//                console.log('Client: gauge correction for: ' + theHero.id + ', local='+theHero.turnGauge + ', server='+heroesSync[i][1]);
                 theHero.turnGauge -= diff;
               }
               this.emitterCallback('clientUpdateHeroEvent', theHero);
