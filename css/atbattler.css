@@ -67,6 +67,13 @@ h1.logo {
   text-shadow: -1px 1px 1px rgba(0,0,0,0.5);
 }
 
+.pane-title {
+  font-size: 12px;
+  font-weight: normal;
+  text-align: center;
+  padding:4px 0;
+}
+
 .gauge {
   width: 160px;
 }
