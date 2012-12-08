@@ -27,7 +27,7 @@
     var HERO_BASE_Y = 150;
     var HERO_BASE_SCALE = 3;
     var HERO_SPACE_X = 15;
-    var HERO_SPACE_Y = 75;
+    var HERO_SPACE_Y = 65;
     var HERO_PERSPECTIVE_SCALE = 0.15;
 
     var backdrop;
@@ -57,7 +57,7 @@
 
     function init() {
       // create a new stage and point it at our canvas:
-      var canvas =document.getElementById("mainCanvas");
+      var canvas =document.getElementById("main-canvas");
       stage = new createjs.Stage(canvas);
     
       // grab canvas width and height for later calculations:
@@ -218,10 +218,6 @@
   </script>
 
   <style>
-
-    #party .selected {
-      background-color: rgba(10, 50, 110, 0.9);
-    }
     #action-pane {
       background-color: rgba(10, 50, 110, 0.9);
       border: 2px solid white;
@@ -286,27 +282,53 @@
     #target-pane {
       display: none;
     }
-
-    .encounter {
-      height:160px;
-      position: relative;
+    #party .selected {
+      background-color: rgba(10, 50, 110, 0.9);
     }
-    .encounter table {
+    #player-pane {
+      left: 0px;
+      height:160px;
+      position: absolute;
+      width: 480px;
+    }
+    #enemy-pane {
+      left: 500px;
+      height:160px;
+      position: absolute;
+      width: 440px;
+    }
+
+    .hero-list {
       border: none;
       border-collapse:collapse;
     }
-    .encounter td {
+    .hero-list td {
       padding: 6px 12px;
     }
-    .encounter td.hp {
+    .hero-list td.hp {
       width: 50px;
       text-align: right;
     }
-    .encounter th {
+    .hero-list th {
       font-size: 12px;
       font-weight: normal;
     }
-	
+
+    #pause, #resume, #start {
+      background-color: #37c;
+      border: 1px solid rgb(48, 121, 237);
+      border-radius: 2px;
+      color: white;
+      cursor: pointer;
+      display:none;
+      float:right;
+      font-family: arial;
+      font-weight: bold;
+      padding: 5px 10px;
+    }
+    #pause:hover, #resume:hover, #start:hover {
+      background-color: #59e;
+    }
   </style>
 </head>
 <body>
@@ -314,15 +336,15 @@
     <div style="width:960px;">
       <h1 class="logo"><span class="atb"><strong>AT</strong>B</span>attler</h1>
       <span class="fineprint">v0.1</span>
-      <button id="pause" style="float:right;display:none;"/>Pause Game</button>
-      <button id="resume" style="float:right;display:none"/>Resume Game</button>
-      <button id="start" style="float:right;display:none;"/>Start Game</button>
+      <button id="pause"/>Pause Game</button>
+      <button id="resume"/>Resume Game</button>
+      <button id="start"/>Start Game</button>
     </div>
     <div> 
-      <canvas id="mainCanvas" width="960" height="480">
+      <canvas id="main-canvas" height="460" width="960">
       </canvas>
-      <div>
-        <div class="menu-pane encounter" style="width:480px; float:left;">
+      <div style="position:relative;height:165px;">
+        <div id="player-pane" class="menu-pane">
           <div id="action-pane">
             <div class="pane-title"></div>
             <ul>
@@ -334,7 +356,7 @@
             <div id="target-pane"></div>
             <p><a href="#" class="cancel">Cancel</a></p>
           </div>
-          <table id="party">
+          <table id="party" class="hero-list">
             <thead>
               <th>Name</th>
               <th>HP</th>
@@ -345,8 +367,8 @@
             </tbody>
           </table>
         </div>
-        <div class="menu-pane encounter" style="width:440px; float:left">
-          <table id="enemy">
+        <div id="enemy-pane" class="menu-pane">
+          <table id="enemy" class="hero-list">
             <thead>
               <th>Name</th>
               <th>HP</th>
@@ -357,11 +379,11 @@
             </tbody>
           </table>
         </div> 
-        <br style="clear:both;"/>
-        <div id="combatLog">
-          <ul>
-          </ul>
-        </div>
+      </div>
+      <br style="clear:both;"/>
+      <div id="combatLog">
+        <ul>
+        </ul>
       </div>
     </div>
     <script type="text/javascript">
