@@ -708,6 +708,18 @@
       var hpIncrementers = [];
       var heroRows = [];
 
+      /** Templates **/
+      // Hero Row (name, hp, gauge, etc)
+      var heroRowTemplate = _.template('<tr id="<%= heroDomId %>" class="hero"'
+        + 'position="<%= position %>" heroId="<%= heroId %>"><td>'
+        + '<%= heroName %></td><td class="hp"><%= heroHp %></td>'
+        + '<td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>'
+         );
+      // Hero Action Button
+      var heroButtonTemplate = _.template('<button class="hero-action" heroId="<%= heroId %>">Action</button>');
+
+      /** END Templates **/
+
       function updateHero(hero) {
         var player = hero.player;
         var isYou = player.id == gameClient.myId;
@@ -725,7 +737,7 @@
         heroGauge.width(hero.turnGauge + '%');
         // update readiness
         if (hero.statuses.ready && heroRow.children('td.action').is(':empty')) {
-          heroRow.children('.action').html('<button class="hero-action" heroId="' + hero.id + '">Action</button>');
+          heroRow.children('.action').html(heroButtonTemplate({heroId: hero.id}));
           heroRow.addClass('ready');
         }
       }
@@ -961,6 +973,7 @@
       // respond)
       gameInstance.setup();
 
+
       // TODO: this should be somewhere better 
       for (var i = 0; i < gameClient.heroes.length; i++) {
         var curHero = gameClient.heroes[i];
@@ -975,8 +988,7 @@
         if (!isYou) {
           heroPane = $("#enemy > tbody");
         }
-        heroPane.append('<tr id="'+ heroDomId +'" class="hero" position="'+ i +'" heroId="' + curHero.id +'"><td>' + curHero.name + '</td><td class="hp">' + heroHp 
-          + '</td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>');
+        heroPane.append(heroRowTemplate({heroDomId: heroDomId, position: i, heroId: curHero.id, heroName: curHero.name, heroHp: heroHp}));
 
         heroRows[curHero.id] = $('#' + heroDomId);
         var onUpdate = function(val, isPositive) {
