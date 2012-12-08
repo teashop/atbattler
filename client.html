@@ -725,7 +725,7 @@
         heroGauge.width(hero.turnGauge + '%');
         // update readiness
         if (hero.statuses.ready && heroRow.children('td.action').is(':empty')) {
-          heroRow.children('.action').html('<button class="takeAction" heroId="' + hero.id + '">Action</button>');
+          heroRow.children('.action').html('<button class="hero-action" heroId="' + hero.id + '">Action</button>');
           heroRow.addClass('ready');
         }
       }
@@ -768,8 +768,8 @@
         updateHeroHp(target, type, amount, isCrit);
       }
 
-      // action button => show action pane
-      $(document).on('click', '.hero .takeAction', function(event) {
+      // hero action button => show action pane
+      $('#party').on('click', 'tr .hero-action', function(event) {
           var heroId = $(this).attr('heroId');
           var hero = gameClient.heroes[heroId];
           var heroDomId = '#hero_'+ heroId;
@@ -787,7 +787,7 @@
       }
 
       // target list => take action
-      $(document).on('click', '#target-pane a', function(event) {
+      $('#target-pane').on('click', 'a', function(event) {
           var actionType = $(this).attr('class');
           var hero = gameClient.heroes[$(this).attr('heroId')];
           var target = gameClient.heroes[$(this).attr('targetId')];
@@ -810,10 +810,9 @@
         });
 
       // action pane option => target list (or execute command)
-      $(document).on('click', '#action-pane a', function(event) {
+      $('#action-pane a').on('click', function(event) {
           var actionPane = $('#action-pane');
           var heroId = actionPane.attr('heroId');
-          
           var targets = null;
           var actionType = $(this).text().toLowerCase();
           switch (actionType) {
@@ -850,20 +849,20 @@
           });
 
       // Start Game
-      $(document).on('click', '#start', function(event) {
+      $('#start').on('click', function(event) {
           gameClient.ready();
           $(this).hide();
           });
 
       // Pause Game
-      $(document).on('click', '#pause', function(event) {
+      $('#pause').on('click', function(event) {
           gameClient.requestPause();
           $(this).hide();
           $('#resume').show();
           });
 
       // Resume Game
-      $(document).on('click', '#resume', function(event) {
+      $('#resume').on('click', function(event) {
           gameClient.requestResume();
           $(this).hide();
           $('#pause').show();
@@ -894,7 +893,6 @@
       enemyParty.setHero(rollCpuHero(100, 'Teh Badguy'));
       enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
       enemy.setParty(enemyParty);
-      // FIXME: when AI/split client implemented!
       enemy.sendMessage = function(message) {
 //        console.log('CPU got msg: ' + message);
         cpuGameClient.eventsIn.push(message);
@@ -959,7 +957,8 @@
       var gameClient = new GameClient(player.id, emitterCallback);
       var cpuGameClient = new CpuGameClient(enemy.id);
       
-      // Game instance initiates setup
+      // Game instance initiates setup (Player Clients will need to
+      // respond)
       gameInstance.setup();
 
       // TODO: this should be somewhere better 
@@ -980,7 +979,7 @@
           + '</td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>');
 
         heroRows[curHero.id] = $('#' + heroDomId);
-        var onUpdate = function(val, isPositive) {           
+        var onUpdate = function(val, isPositive) {
           var percent = val/this.hero.attributes.maxHp;
           var rgb = '#fff';
           if (isPositive) {	
