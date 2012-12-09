@@ -119,6 +119,86 @@ var EffectNumberGenerator = function(stage) {
 	};
 }
 
+
+/**
+ * Action Pane Menu Template
+ */
+var actionMenuTemplate = _.template('<div id="action_<%= id %>" class="action-pane" position="<%= position %>"><%= content%></div>');
+
+/** 
+ * Carousel for 'action panes' (command list for ready heroes)
+ */
+function ActionCarousel(container, panes) {
+  this.obj = container;
+  this.paneWidth = 200;
+  this.obj.append('<div class="tray"></div>');
+  this.tray = $('.tray',this.obj);
+  for (var i=0; i<panes.length; i++) {
+    this.tray.append(actionMenuTemplate(panes[i]));
+  }
+}
+
+var AC = ActionCarousel.prototype;
+
+AC.moveRight = function(dist) {
+  var dist = 1;
+  if(this.tray.is(':animated')) {
+    return;
+  }
+  $('.action-pane',this.obj).slice(-dist).prependTo(this.tray);
+  var width = this.paneWidth;
+  this.tray.css({left:'-='+(this.paneWidth*dist)+'px'});
+  this.tray.stop().animate({left:"+="+this.paneWidth*dist+"px"},200,function(){
+    // TODO: other callbacks
+  });
+}
+
+AC.moveLeft = function(dist) {
+  var dist = 1;
+  if(this.tray.is(':animated')) {
+    return;
+  }
+  this.tray.stop().animate({left:"-="+(this.paneWidth)*dist+"px"},200,
+    (function(){
+      $('.action-pane',this.obj).slice(0,dist).appendTo(this.tray);
+      this.tray.css({left:'-'+(this.paneWidth)+'px'});
+      // TODO: other callbacks
+    }).bind(this)
+  );
+}
+
+AC.add = function(item) {
+  var pos = item.position;
+  var toAdd = actionMenuTemplate(item);
+  var curPane = $('.action-pane', this.obj);
+  var successorId = null;
+  while (curPane.length > 0) {
+    if (curPane.attr('position') > pos) {
+      successorId = curPane.attr('id');
+      break;
+    }
+    curPane = curPane.next();
+  }
+  // couldn't find it == add to end.
+  if (!successorId) {
+    $(toAdd).appendTo('.tray');
+  } else {
+    // found it, insert before closest successor
+    $('#' + successorId).before(toAdd);
+  }
+}
+
+AC.remove = function(id) {
+  var target = $('#action_' + id);
+  if (target.length > 0) {
+    target.slideToggle(100, function() {
+      target.remove(); });
+  }
+}
+
+
+/** TWEENS **/
+
 function tweenHeroHit(target, reverse, origX) {
 	var curPosX = origX ? origX : target.x;
 	var dirX = reverse ? -1 : 1;
