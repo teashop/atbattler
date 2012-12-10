@@ -227,6 +227,7 @@
       display: none;
       min-height: 120px;
       left: 375px;
+      top: 0;
       padding: 10px;
       position: absolute;
       min-width:120px;
@@ -345,17 +346,6 @@
       </canvas>
       <div style="position:relative;height:165px;">
         <div id="player-pane" class="menu-pane">
-          <div id="action-pane">
-            <div class="pane-title"></div>
-            <ul>
-              <li><a href="#">Attack</a></li>
-              <li><a href="#">Skill</a></li>
-              <li><a href="#">Item</a></li>
-              <li><a href="#">Defend</a></li>
-            </ul>
-            <div id="target-pane"></div>
-            <p><a href="#" class="cancel">Cancel</a></p>
-          </div>
           <table id="party" class="hero-list">
             <thead>
               <th>Name</th>
@@ -718,6 +708,17 @@
       // Hero Action Button
       var heroButtonTemplate = _.template('<button class="hero-action" heroId="<%= heroId %>">Action</button>');
 
+      // Hero Action Pane
+      var heroActionPaneTemplate = _.template('<div id="action-pane" heroId="<%= hero.id %>">'
+          + '<div class="pane-title"><%= hero.name %></div>'
+          + '<ul class="command-list"></ul>'
+          + '<div id="target-pane"></div>'
+          + '<p><a href="#" class="cancel">Cancel</a></p></div>');
+
+      // Hero Command list
+      var heroCommandTemplate = _.template('<% _.each(commands, ' 
+        + ' function(command) { %> <li><a href="#"><%= command.name %></a></li>'
+        + ' <% }); %>');
       /** END Templates **/
 
       function updateHero(hero) {
@@ -785,21 +786,26 @@
           var heroId = $(this).attr('heroId');
           var hero = gameClient.heroes[heroId];
           var heroDomId = '#hero_'+ heroId;
+          var commands = hero.commands;
           $(heroDomId).addClass('selected');
-          $('#action-pane').show().attr('heroId', heroId);
-          $('#action-pane').children('.pane-title').text(hero.name);
-          $('#action-pane').children('ul').show();
+
+          var actionPane = heroActionPaneTemplate({hero: hero});
+
+          $('#player-pane').append(actionPane);
+
+          $('#action-pane').children('ul').append(heroCommandTemplate({commands: commands}));
+          $('#action-pane').slideToggle(100);
           $('#action-pane').children('#target-pane').hide();
         });
 
       function closeActionPane(heroId) {
         var heroDomId = '#hero_'+ heroId;
         $(heroDomId).removeClass('selected');
-        $('#action-pane').hide();
+        $('#action-pane').remove();
       }
 
       // target list => take action
-      $('#target-pane').on('click', 'a', function(event) {
+      $('#player-pane').on('click', '#target-pane a', function(event) {
           var actionType = $(this).attr('class');
           var hero = gameClient.heroes[$(this).attr('heroId')];
           var target = gameClient.heroes[$(this).attr('targetId')];
@@ -822,7 +828,7 @@
         });
 
       // action pane option => target list (or execute command)
-      $('#action-pane a').on('click', function(event) {
+      $('#player-pane').on('click', '#action-pane .command-list a', function(event) {
           var actionPane = $('#action-pane');
           var heroId = actionPane.attr('heroId');
           var targets = null;
@@ -841,7 +847,7 @@
               closeActionPane(heroId);
               return false;
             default:
-              console.log('Action Not Yet Impl: ' + $(this).text());
+              console.log('Command Not Yet Impl: ' + $(this).text());
               break;
           }
 
@@ -973,6 +979,14 @@
       // respond)
       gameInstance.setup();
 
+      // TODO: Command list needs to come down from server, separate instances
+      // for each Hero
+      var commands = [
+          {name: 'Attack'},
+          {name: 'Skill'},
+          {name: 'Item'},
+          {name: 'Defend'}
+        ];
 
       // TODO: this should be somewhere better 
       for (var i = 0; i < gameClient.heroes.length; i++) {
@@ -980,6 +994,9 @@
         if (!curHero) { 
           continue;
         }
+
+        // FIXME: here's that command list (shared instance!)
+        curHero.commands = commands;
         var isYou = curHero.player.id == gameClient.myId;
         var heroDomId = 'hero_'+ curHero.id;
         var heroHp = curHero.attributes.hp;
