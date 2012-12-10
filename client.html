@@ -218,7 +218,7 @@
   </script>
 
   <style>
-    #action-pane {
+    .action-pane {
       background-color: rgba(10, 50, 110, 0.9);
       border: 2px solid white;
       border-radius: 4px;
@@ -233,16 +233,16 @@
       min-width:120px;
       z-index: 2;
     }
-    #action-pane ul {
+    .action-pane ul {
       list-style-type: none;
       list-style-position: inside;
     /*  margin: 0 0 0 20px;*/
       margin: 0;
       padding: 0;
     }
-    #action-pane li {
+    .action-pane li {
     }
-    #action-pane a {
+    .action-pane a {
       border-radius: 4px;
       color: #eee;
       display: block;
@@ -267,10 +267,10 @@
       -o-transition-delay: 0s;
       transition-delay: 0s;
     }
-    #action-pane a:hover {
+    .action-pane a:hover {
       background-color: rgba(38,128,208,0.8);
     }
-    #action-pane button {
+    .action-pane button {
       border: none;
       background: none;
       color: #eee;
@@ -709,7 +709,7 @@
       var heroButtonTemplate = _.template('<button class="hero-action" heroId="<%= heroId %>">Action</button>');
 
       // Hero Action Pane
-      var heroActionPaneTemplate = _.template('<div id="action-pane" heroId="<%= hero.id %>">'
+      var heroActionPaneTemplate = _.template('<div class="action-pane" heroId="<%= hero.id %>">'
           + '<div class="pane-title"><%= hero.name %></div>'
           + '<ul class="command-list"></ul>'
           + '<div id="target-pane"></div>'
@@ -787,21 +787,22 @@
           var hero = gameClient.heroes[heroId];
           var heroDomId = '#hero_'+ heroId;
           var commands = hero.commands;
+          var playerPane = $('#player-pane');
           $(heroDomId).addClass('selected');
 
           var actionPane = heroActionPaneTemplate({hero: hero});
 
-          $('#player-pane').append(actionPane);
+          playerPane.append(actionPane);
 
-          $('#action-pane').children('ul').append(heroCommandTemplate({commands: commands}));
-          $('#action-pane').slideToggle(100);
-          $('#action-pane').children('#target-pane').hide();
+          $('.action-pane', playerPane).children('ul').append(heroCommandTemplate({commands: commands}));
+          $('.action-pane', playerPane).slideToggle(100);
+          $('.action-pane', playerPane).children('#target-pane').hide();
         });
 
       function closeActionPane(heroId) {
         var heroDomId = '#hero_'+ heroId;
         $(heroDomId).removeClass('selected');
-        $('#action-pane').remove();
+        $('.action-pane').remove();
       }
 
       // target list => take action
@@ -828,8 +829,8 @@
         });
 
       // action pane option => target list (or execute command)
-      $('#player-pane').on('click', '#action-pane .command-list a', function(event) {
-          var actionPane = $('#action-pane');
+      $('#player-pane').on('click', '.action-pane .command-list a', function(event) {
+          var actionPane = $(event.target).parents('.action-pane');
           var heroId = actionPane.attr('heroId');
           var targets = null;
           var actionType = $(this).text().toLowerCase();
