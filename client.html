@@ -218,7 +218,14 @@
   </script>
 
   <style>
-    .action-pane {
+    #command-tray {
+      position: absolute;
+      top: 0;
+      min-height: 300px;
+      width:650px;
+      left: 375px;
+    }
+    .command-pane {
       background-color: rgba(10, 50, 110, 0.9);
       border: 2px solid white;
       border-radius: 4px;
@@ -226,23 +233,24 @@
       color:#eee;
       display: none;
       min-height: 120px;
-      left: 375px;
-      top: 0;
+/*      left: 375px;
+      top: 0;*/
+      float: left;
       padding: 10px;
-      position: absolute;
+      position: relative;
       min-width:120px;
       z-index: 2;
     }
-    .action-pane ul {
+    .command-pane ul {
       list-style-type: none;
       list-style-position: inside;
     /*  margin: 0 0 0 20px;*/
       margin: 0;
       padding: 0;
     }
-    .action-pane li {
+    .command-pane li {
     }
-    .action-pane a {
+    .command-pane a {
       border-radius: 4px;
       color: #eee;
       display: block;
@@ -267,10 +275,10 @@
       -o-transition-delay: 0s;
       transition-delay: 0s;
     }
-    .action-pane a:hover {
+    .command-pane a:hover {
       background-color: rgba(38,128,208,0.8);
     }
-    .action-pane button {
+    .command-pane button {
       border: none;
       background: none;
       color: #eee;
@@ -280,7 +288,7 @@
       text-align: left;
       width: 100%;
     }
-    #target-pane {
+    .target-pane {
       display: none;
     }
     #party .selected {
@@ -346,6 +354,7 @@
       </canvas>
       <div style="position:relative;height:165px;">
         <div id="player-pane" class="menu-pane">
+        <div id="command-tray"></div>
           <table id="party" class="hero-list">
             <thead>
               <th>Name</th>
@@ -705,20 +714,27 @@
         + '<%= heroName %></td><td class="hp"><%= heroHp %></td>'
         + '<td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>'
          );
-      // Hero Action Button
-      var heroButtonTemplate = _.template('<button class="hero-action" heroId="<%= heroId %>">Action</button>');
 
-      // Hero Action Pane
-      var heroActionPaneTemplate = _.template('<div class="action-pane" heroId="<%= hero.id %>">'
-          + '<div class="pane-title"><%= hero.name %></div>'
-          + '<ul class="command-list"></ul>'
-          + '<div id="target-pane"></div>'
-          + '<p><a href="#" class="cancel">Cancel</a></p></div>');
+      // Hero Command Pane
+      var heroActionPaneTemplate = _.template('<div class="command-pane" id="com_<%= hero.id %>" heroId="<%= hero.id %>">'
+        + '<div class="pane-title"><%= hero.name %></div>'
+        + '<ul class="command-list"></ul>'
+        + '<div class="target-pane"></div></div>');
 
       // Hero Command list
       var heroCommandTemplate = _.template('<% _.each(commands, ' 
         + ' function(command) { %> <li><a href="#"><%= command.name %></a></li>'
         + ' <% }); %>');
+
+      // Hero Target list
+      var heroTargetTemplate = _.template('<span class="targets">'
+        + '<% _.each(targets, function(target) { '
+        + '   if (!target.statuses.dead) { %>'
+        +       '<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>'
+        + ' <% } }); %>'
+        + '</span><p><a href="#" class="cancel">Cancel</a></p>');
+
+
       /** END Templates **/
 
       function updateHero(hero) {
@@ -737,8 +753,17 @@
         // update gauge
         heroGauge.width(hero.turnGauge + '%');
         // update readiness
-        if (hero.statuses.ready && heroRow.children('td.action').is(':empty')) {
-          heroRow.children('.action').html(heroButtonTemplate({heroId: hero.id}));
+        if (hero.statuses.ready && isYou && !heroRow.hasClass('ready')) {
+          var heroDomId = '#hero_'+ hero.id;
+          var commands = hero.commands;
+          var commandTray = $('#command-tray');
+          $(heroDomId).addClass('selected');
+          commandTray.append(heroActionPaneTemplate({hero: hero}));
+          // get the newly added command pane
+          var comPane = $("#com_" + hero.id, commandTray);
+          comPane.children('ul').append(heroCommandTemplate({commands: commands}));
+          comPane.slideToggle(100);
+          comPane.children('.target-pane').hide();
           heroRow.addClass('ready');
         }
       }
@@ -770,10 +795,9 @@
         }
       }
 
-      // take action => reset gauge & action buttons
+      // take action => reset gauge 
       function takeAction(hero, target, type, amount, isCrit) {
         var heroRow = heroRows[hero.id];
-        heroRow.find('.action').html('');
         hero.statuses.ready = false;
         hero.turnGauge = 0.00;
         heroRow.removeClass('ready');
@@ -781,32 +805,23 @@
         updateHeroHp(target, type, amount, isCrit);
       }
 
-      // hero action button => show action pane
-      $('#party').on('click', 'tr .hero-action', function(event) {
-          var heroId = $(this).attr('heroId');
-          var hero = gameClient.heroes[heroId];
-          var heroDomId = '#hero_'+ heroId;
-          var commands = hero.commands;
-          var playerPane = $('#player-pane');
-          $(heroDomId).addClass('selected');
-
-          var actionPane = heroActionPaneTemplate({hero: hero});
-
-          playerPane.append(actionPane);
-
-          $('.action-pane', playerPane).children('ul').append(heroCommandTemplate({commands: commands}));
-          $('.action-pane', playerPane).slideToggle(100);
-          $('.action-pane', playerPane).children('#target-pane').hide();
-        });
-
-      function closeActionPane(heroId) {
+      function closeCommandPane(heroId) {
         var heroDomId = '#hero_'+ heroId;
         $(heroDomId).removeClass('selected');
-        $('.action-pane').remove();
+        $('#com_' + heroId).remove();
       }
 
-      // target list => take action
-      $('#player-pane').on('click', '#target-pane a', function(event) {
+      // Cancel Targets => return to the command pane
+      $('#player-pane').on('click', '.command-pane a.cancel', function(event) {
+          var commandPane = $(event.target).parents('.command-pane');
+          var heroId = commandPane.attr('heroId');
+          commandPane.find('ul').show();
+          commandPane.find('.target-pane').hide();
+          return false;
+        });
+
+      // target list => execute action on target.
+      $('#player-pane').on('click', '.target-pane .targets a', function(event) {
           var actionType = $(this).attr('class');
           var hero = gameClient.heroes[$(this).attr('heroId')];
           var target = gameClient.heroes[$(this).attr('targetId')];
@@ -824,14 +839,14 @@
               console.log('Action Not Yet Impl: ' + actionType);
               break;
           }
-          closeActionPane(hero.id);
+          closeCommandPane(hero.id);
           return false;
         });
 
-      // action pane option => target list (or execute command)
-      $('#player-pane').on('click', '.action-pane .command-list a', function(event) {
-          var actionPane = $(event.target).parents('.action-pane');
-          var heroId = actionPane.attr('heroId');
+      // command pane option => target list (or execute command)
+      $('#player-pane').on('click', '.command-pane .command-list a', function(event) {
+          var commandPane = $(event.target).parents('.command-pane');
+          var heroId = commandPane.attr('heroId');
           var targets = null;
           var actionType = $(this).text().toLowerCase();
           switch (actionType) {
@@ -844,25 +859,15 @@
             case 'item':
               targets = gameClient.me.party.heroes;
               break;
-            case 'cancel':
-              closeActionPane(heroId);
-              return false;
             default:
               console.log('Command Not Yet Impl: ' + $(this).text());
               break;
           }
 
           if (targets) {
-            actionPane.find('ul').hide();
-            var targetList = '<span>';
-            for (var i = 0; i < targets.length; i++) {
-              var curHero = targets[i];
-              if (!curHero.statuses.dead) {
-                targetList += '<a href="#" class="' + actionType + '" heroId="'+ heroId +'" targetId="' + curHero.id + '">' + curHero.name + ' </a>';
-              }
-            }
-            targetList += '</span>';
-            $('#target-pane').html(targetList).show();
+            commandPane.find('ul').hide();
+            var targetList = heroTargetTemplate({heroId: heroId, actionType: actionType, targets: targets});
+            $('.target-pane', commandPane).html(targetList).show();
           }
           return false;
           });
