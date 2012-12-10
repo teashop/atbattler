@@ -248,8 +248,6 @@
       margin: 0;
       padding: 0;
     }
-    .command-pane li {
-    }
     .command-pane a {
       border-radius: 4px;
       color: #eee;
@@ -277,16 +275,6 @@
     }
     .command-pane a:hover {
       background-color: rgba(38,128,208,0.8);
-    }
-    .command-pane button {
-      border: none;
-      background: none;
-      color: #eee;
-      font-size: 16px;
-      font-weight: bold;
-      font-family: Arial, sans-serif;
-      text-align: left;
-      width: 100%;
     }
     .target-pane {
       display: none;
@@ -359,7 +347,7 @@
             <thead>
               <th>Name</th>
               <th>HP</th>
-              <th></th>
+              <th>SP</th>
               <th></th>
             </thead>
             <tbody>
@@ -371,7 +359,7 @@
             <thead>
               <th>Name</th>
               <th>HP</th>
-              <th></th>
+              <th>SP</th>
               <th></th>
             </thead>
             <tbody>
@@ -712,7 +700,7 @@
       var heroRowTemplate = _.template('<tr id="<%= heroDomId %>" class="hero"'
         + 'position="<%= position %>" heroId="<%= heroId %>"><td>'
         + '<%= heroName %></td><td class="hp"><%= heroHp %></td>'
-        + '<td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td><td class="action"></td></tr>'
+        + '<td class="sp"></td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td></tr>'
          );
 
       // Hero Command Pane
