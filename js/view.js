@@ -123,7 +123,7 @@ var EffectNumberGenerator = function(stage) {
 /**
  * Command Pane Menu Template
  */
-var commandMenuTemplate = _.template('<div id="com_<%= id %>" class="command-pane" position="<%= position %>"><%= content%></div>');
+var commandMenuTemplate = _.template('<div id="com_<%= id %>" heroId="<%= id %>" class="command-pane" position="<%= position %>"><%= content%></div>');
 
 /** 
  * Carousel for 'command panes' (command list for ready heroes)
@@ -167,8 +167,8 @@ CC.moveLeft = function() {
   }
   this.tray.stop().animate({left:"-="+(this.paneWidth)*dist+"px"},200,
     (function(){
-      $('.command-pane',this.obj).slice(0,dist).appendTo(this.tray);
-      this.tray.css({left:'-'+(this.paneWidth)+'px'});
+      $('.command-pane',this.obj).slice(0, dist).appendTo(this.tray);
+      this.tray.css({left:'+='+(this.paneWidth)+'px'});
       // TODO: other callbacks
     }).bind(this)
   );
@@ -193,7 +193,6 @@ CC.add = function(item) {
     // found it, insert before closest successor
     $('#' + successorId).before(toAdd);
   }
-
   // first pane = show tray
   if (this.numPanes == 0) {
     this.tray.slideToggle(100);

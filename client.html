@@ -218,12 +218,13 @@
   </script>
 
   <style>
-    #command-tray {
+    #commands {
       position: absolute;
       top: 0;
       min-height: 300px;
-      width:650px;
+      width:180px;
       left: 375px;
+      overflow: hidden;
     }
     .command-pane {
       background-color: rgba(10, 50, 110, 0.9);
@@ -231,15 +232,15 @@
       border-radius: 4px;
       box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
       color:#eee;
-      display: none;
       min-height: 120px;
 /*      left: 375px;
       top: 0;*/
       float: left;
       padding: 10px;
       position: relative;
-      min-width:120px;
       z-index: 2;
+      width: 156px;
+      overflow: hidden;
     }
     .command-pane ul {
       list-style-type: none;
@@ -276,6 +277,12 @@
     .command-pane a:hover {
       background-color: rgba(38,128,208,0.8);
     }
+
+    .command-tray {
+      position:relative;
+      width:1600px;left:0px;
+    }
+
     .target-pane {
       display: none;
     }
@@ -342,7 +349,7 @@
       </canvas>
       <div style="position:relative;height:165px;">
         <div id="player-pane" class="menu-pane">
-        <div id="command-tray"></div>
+        <div id="commands"></div>
           <table id="party" class="hero-list">
             <thead>
               <th>Name</th>
@@ -368,6 +375,8 @@
         </div> 
       </div>
       <br style="clear:both;"/>
+      <button id="moveLeft" onClick="commandCarousel.moveLeft();">Left</button>
+      <button id="moveRight" onClick="commandCarousel.moveRight();">Right</button>
       <div id="combatLog">
         <ul>
         </ul>
@@ -704,10 +713,10 @@
          );
 
       // Hero Command Pane
-      var heroActionPaneTemplate = _.template('<div class="command-pane" id="com_<%= hero.id %>" heroId="<%= hero.id %>">'
-        + '<div class="pane-title"><%= hero.name %></div>'
+      var heroActionPaneTemplate = _.template(
+         '<div class="pane-title"><%= hero.name %></div>'
         + '<ul class="command-list"></ul>'
-        + '<div class="target-pane"></div></div>');
+        + '<div class="target-pane"></div>');
 
       // Hero Command list
       var heroCommandTemplate = _.template('<% _.each(commands, ' 
@@ -744,13 +753,13 @@
         if (hero.statuses.ready && isYou && !heroRow.hasClass('ready')) {
           var heroDomId = '#hero_'+ hero.id;
           var commands = hero.commands;
-          var commandTray = $('#command-tray');
+          var commandContainer= $('#commands');
           $(heroDomId).addClass('selected');
-          commandTray.append(heroActionPaneTemplate({hero: hero}));
+          var content = heroActionPaneTemplate({hero: hero});
+          commandCarousel.add({id: hero.id, content: content, position: hero.id})
           // get the newly added command pane
-          var comPane = $("#com_" + hero.id, commandTray);
-          comPane.children('ul').append(heroCommandTemplate({commands: commands}));
-          comPane.slideToggle(100);
+          var comPane = $("#com_" + hero.id);
+          comPane.find('ul').append(heroCommandTemplate({commands: commands}));
           comPane.children('.target-pane').hide();
           heroRow.addClass('ready');
         }
@@ -1020,6 +1029,10 @@
         onUpdate = _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), hero: curHero });
         hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
       }
+
+      // attach command carousel
+      var commandCarousel = new CommandCarousel($('#commands'));
+      commandCarousel.paneWidth = 180;
 
     </script>
   </div>
