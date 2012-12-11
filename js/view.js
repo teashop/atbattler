@@ -121,31 +121,38 @@ var EffectNumberGenerator = function(stage) {
 
 
 /**
- * Action Pane Menu Template
+ * Command Pane Menu Template
  */
-var actionMenuTemplate = _.template('<div id="action_<%= id %>" class="action-pane" position="<%= position %>"><%= content%></div>');
+var commandMenuTemplate = _.template('<div id="com_<%= id %>" class="command-pane" position="<%= position %>"><%= content%></div>');
 
 /** 
- * Carousel for 'action panes' (command list for ready heroes)
+ * Carousel for 'command panes' (command list for ready heroes)
  */
-function ActionCarousel(container, panes) {
+function CommandCarousel(container, panes) {
   this.obj = container;
   this.paneWidth = 200;
-  this.obj.append('<div class="tray"></div>');
-  this.tray = $('.tray',this.obj);
-  for (var i=0; i<panes.length; i++) {
-    this.tray.append(actionMenuTemplate(panes[i]));
+  this.paneIdPrefix = 'com_';
+  this.obj.append('<div class="command-tray" style="display:none"></div>');
+  this.tray = $('.command-tray',this.obj);
+  this.numPanes = 0;
+  // add any provided panes.
+  if (panes) {
+    for (var i=0; i<panes.length; i++) {
+      this.tray.append(commandMenuTemplate(panes[i]));
+      this.numPanes++;
+    }
+    this.tray.slideToggle(100);
   }
 }
 
-var AC = ActionCarousel.prototype;
+var CC = CommandCarousel.prototype;
 
-AC.moveRight = function(dist) {
+CC.moveRight = function() {
   var dist = 1;
-  if(this.tray.is(':animated')) {
+  if(this.numPanes <= 1 || this.tray.is(':animated')) {
     return;
   }
-  $('.action-pane',this.obj).slice(-dist).prependTo(this.tray);
+  $('.command-pane',this.obj).slice(-dist).prependTo(this.tray);
   var width = this.paneWidth;
   this.tray.css({left:'-='+(this.paneWidth*dist)+'px'});
   this.tray.stop().animate({left:"+="+this.paneWidth*dist+"px"},200,function(){
@@ -153,24 +160,24 @@ AC.moveRight = function(dist) {
   });
 }
 
-AC.moveLeft = function(dist) {
+CC.moveLeft = function() {
   var dist = 1;
-  if(this.tray.is(':animated')) {
+  if(this.numPanes <= 1 || this.tray.is(':animated')) {
     return;
   }
   this.tray.stop().animate({left:"-="+(this.paneWidth)*dist+"px"},200,
     (function(){
-      $('.action-pane',this.obj).slice(0,dist).appendTo(this.tray);
+      $('.command-pane',this.obj).slice(0,dist).appendTo(this.tray);
       this.tray.css({left:'-'+(this.paneWidth)+'px'});
       // TODO: other callbacks
     }).bind(this)
   );
 }
 
-AC.add = function(item) {
+CC.add = function(item) {
   var pos = item.position;
-  var toAdd = actionMenuTemplate(item);
-  var curPane = $('.action-pane', this.obj);
+  var toAdd = commandMenuTemplate(item);
+  var curPane = $('.command-pane', this.obj);
   var successorId = null;
   while (curPane.length > 0) {
     if (curPane.attr('position') > pos) {
@@ -181,18 +188,29 @@ AC.add = function(item) {
   }
   // couldn't find it == add to end.
   if (!successorId) {
-    $(toAdd).appendTo('.tray');
+    $(toAdd).appendTo('.command-tray');
   } else {
     // found it, insert before closest successor
     $('#' + successorId).before(toAdd);
   }
+
+  // first pane = show tray
+  if (this.numPanes == 0) {
+    this.tray.slideToggle(100);
+  }
+  this.numPanes++;
 }
 
-AC.remove = function(id) {
-  var target = $('#action_' + id);
+CC.remove = function(id) {
+  var target = $('#' + this.paneIdPrefix + id);
   if (target.length > 0) {
     target.slideToggle(100, function() {
       target.remove(); });
+    this.numPanes--;
+    // last pane removed, so hide
+    if (this.numPanes == 0) {
+      this.tray.slideToggle(100);
+    }
   }
 }
 
