@@ -224,7 +224,7 @@
       min-height: 300px;
       width:180px;
       left: 375px;
-      overflow: hidden;
+/*      overflow: hidden;*/
     }
     .command-pane {
       background-color: rgba(10, 50, 110, 0.9);
@@ -712,7 +712,12 @@
         + '<td class="sp"></td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td></tr>'
          );
 
-      // Hero Command Pane
+      /**
+       * Command Pane Container Template
+       */
+      var commandContainerTemplate = _.template('<div id="com_<%= id %>" heroId="<%= id %>" class="command-pane" position="<%= position %>"><%= content%></div>');
+
+      // Hero Command Pane Content
       var heroActionPaneTemplate = _.template(
          '<div class="pane-title"><%= hero.name %></div>'
         + '<ul class="command-list"></ul>'
@@ -1033,6 +1038,7 @@
       // attach command carousel
       var commandCarousel = new CommandCarousel($('#commands'));
       commandCarousel.paneWidth = 180;
+      commandCarousel.commandPaneTemplate = commandContainerTemplate;
 
     </script>
   </div>
