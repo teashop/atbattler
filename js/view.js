@@ -128,21 +128,15 @@ var commandMenuTemplate = _.template('<div id="com_<%= id %>" heroId="<%= id %>"
 /** 
  * Carousel for 'command panes' (command list for ready heroes)
  */
-function CommandCarousel(container, panes) {
+function CommandCarousel(container) {
+  var defaultPaneTemplate =  _.template('<div id="com_<%= id %>" class="command-pane" position="<%= position %>"><%= content%></div>');
   this.obj = container;
   this.paneWidth = 200;
   this.paneIdPrefix = 'com_';
   this.obj.append('<div class="command-tray" style="display:none"></div>');
   this.tray = $('.command-tray',this.obj);
   this.numPanes = 0;
-  // add any provided panes.
-  if (panes) {
-    for (var i=0; i<panes.length; i++) {
-      this.tray.append(commandMenuTemplate(panes[i]));
-      this.numPanes++;
-    }
-    this.tray.slideToggle(100);
-  }
+  this.paneInFocus = null;
 }
 
 var CC = CommandCarousel.prototype;
@@ -153,6 +147,7 @@ CC.moveRight = function() {
     return;
   }
   $('.command-pane',this.obj).slice(-dist).prependTo(this.tray);
+  this.paneInFocus = $('.command-pane',this.obj);
   var width = this.paneWidth;
   this.tray.css({left:'-='+(this.paneWidth*dist)+'px'});
   this.tray.stop().animate({left:"+="+this.paneWidth*dist+"px"},200,function(){
@@ -169,6 +164,7 @@ CC.moveLeft = function() {
     (function(){
       $('.command-pane',this.obj).slice(0, dist).appendTo(this.tray);
       this.tray.css({left:'+='+(this.paneWidth)+'px'});
+      this.paneInFocus = $('.command-pane',this.obj);
       // TODO: other callbacks
     }).bind(this)
   );
@@ -178,6 +174,8 @@ CC.add = function(item) {
   var pos = item.position;
   var toAdd = commandMenuTemplate(item);
   var curPane = $('.command-pane', this.obj);
+  // protip: current pane in focus in the tray is the 1st element
+  var paneInFocusId = curPane.attr('id');
   var successorId = null;
   while (curPane.length > 0) {
     if (curPane.attr('position') > pos) {
@@ -186,11 +184,12 @@ CC.add = function(item) {
     }
     curPane = curPane.next();
   }
-  // couldn't find it == add to end.
-  if (!successorId) {
+  // couldn't find it  or successor is in focus == add to end.
+  // (Successor in focus causes focus to bump)
+  if (!successorId || paneInFocusId == successorId) {
     $(toAdd).appendTo('.command-tray');
   } else {
-    // found it, insert before closest successor
+    // found it, insert before closest successor 
     $('#' + successorId).before(toAdd);
   }
   // first pane = show tray
@@ -201,10 +200,12 @@ CC.add = function(item) {
 }
 
 CC.remove = function(id) {
-  var target = $('#' + this.paneIdPrefix + id);
+  var targetId = this.paneIdPrefix + id;
+  var target = $('#' + targetId);
   if (target.length > 0) {
     target.slideToggle(100, function() {
-      target.remove(); });
+        target.remove(); 
+      });
     this.numPanes--;
     // last pane removed, so hide
     if (this.numPanes == 0) {
@@ -212,7 +213,6 @@ CC.remove = function(id) {
     }
   }
 }
-
 
 /** TWEENS **/
 
