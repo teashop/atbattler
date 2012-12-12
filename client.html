@@ -224,7 +224,7 @@
       min-height: 300px;
       width:180px;
       left: 375px;
-/*      overflow: hidden;*/
+      overflow: hidden;
     }
     .command-pane {
       background-color: rgba(10, 50, 110, 0.9);
@@ -232,14 +232,13 @@
       border-radius: 4px;
       box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
       color:#eee;
+      margin: 0 2px;
       min-height: 120px;
-/*      left: 375px;
-      top: 0;*/
       float: left;
       padding: 10px;
       position: relative;
       z-index: 2;
-      width: 156px;
+      width: 152px;
       overflow: hidden;
     }
     .command-pane ul {
@@ -810,7 +809,7 @@
       function closeCommandPane(heroId) {
         var heroDomId = '#hero_'+ heroId;
         $(heroDomId).removeClass('selected');
-        $('#com_' + heroId).remove();
+        commandCarousel.remove(heroId);
       }
 
       // Cancel Targets => return to the command pane
@@ -942,6 +941,8 @@
             break;
           case 'clientGameOverEvent':
             var msg = args;
+            commandCarousel.clear();
+            $('tr', '#party').removeClass('selected');
             createjs.Ticker.setPaused(true);
             gameOverLabel = new createjs.Text(msg, "bold 40px Arial","#FFF");
             stage.addChild(gameOverLabel);

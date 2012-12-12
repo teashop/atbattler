@@ -196,13 +196,19 @@ CC.remove = function(id) {
   var targetId = this.paneIdPrefix + id;
   var target = $('#' + targetId);
   if (target.length > 0) {
-    target.remove(); 
+    target.slideToggle(100, function() {
+      target.remove(); 
+    });
     this.numPanes--;
     // last pane removed, so hide
     if (this.numPanes == 0) {
       this.tray.slideToggle(100);
     }
   }
+}
+
+CC.clear = function() {
+  $('.command-pane', this.obj).remove();
 }
 
 /** TWEENS **/
