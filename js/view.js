@@ -134,6 +134,8 @@ function CommandCarousel(container) {
   // callbacks - provide as required
   this.onAdd = function() {};
   this.onRemove = function() {};
+  this.onMoveStart = function() {};
+  this.onMoveEnd = function() {};
 }
 
 var CC = CommandCarousel.prototype;
@@ -143,12 +145,13 @@ CC.moveRight = function() {
   if(this.numPanes <= 1 || this.tray.is(':animated')) {
     return;
   }
-  $('.command-pane',this.obj).slice(-dist).prependTo(this.tray);
+  this.onMoveStart(this.getInFocusOrigId());
+  this.getPaneInFocus().slice(-dist).prependTo(this.tray);
   var width = this.paneWidth;
   this.tray.css({left:'-='+(this.paneWidth*dist)+'px'});
-  this.tray.stop().animate({left:"+="+this.paneWidth*dist+"px"},200,function(){
-    // TODO: other callbacks
-  });
+  this.tray.stop().animate({left:"+="+this.paneWidth*dist+"px"},200,(function(){
+      this.onMoveEnd(this.getInFocusOrigId());
+  }).bind(this));
 }
 
 CC.moveLeft = function() {
@@ -156,11 +159,12 @@ CC.moveLeft = function() {
   if(this.numPanes <= 1 || this.tray.is(':animated')) {
     return;
   }
+  this.onMoveStart(this.getInFocusOrigId());
   this.tray.stop().animate({left:"-="+(this.paneWidth)*dist+"px"},200,
     (function(){
-      $('.command-pane',this.obj).slice(0, dist).appendTo(this.tray);
+      this.getPaneInFocus().slice(0, dist).appendTo(this.tray);
       this.tray.css({left:'+='+(this.paneWidth)+'px'});
-      // TODO: other callbacks
+      this.onMoveEnd(this.getInFocusOrigId());
     }).bind(this)
   );
 }
@@ -168,7 +172,7 @@ CC.moveLeft = function() {
 CC.add = function(item) {
   var pos = item.position;
   var toAdd = this.commandPaneTemplate(item);
-  var curPane = $('.command-pane', this.obj);
+  var curPane = this.getPaneInFocus();
   // protip: current pane in focus in the tray is the 1st element
   var paneInFocusId = curPane.attr('id');
   var ancestorId = null;
@@ -188,9 +192,10 @@ CC.add = function(item) {
     // found it, insert after closest ancestor 
     $('#' + ancestorId).after(toAdd);
   }
-  // first pane = show tray
+  // first pane = show tray && inform focus
   if (this.numPanes == 0) {
     this.tray.slideToggle(100);
+    this.onMoveEnd(item.id);
   }
   this.numPanes++;
   this.onAdd(this.numPanes);
@@ -200,9 +205,19 @@ CC.remove = function(id) {
   var targetId = this.paneIdPrefix + id;
   var target = $('#' + targetId);
   if (target.length > 0) {
-    target.slideToggle(100, function() {
+    var curPane = this.getPaneInFocus();
+    var requiresMove = false;
+    // if we're removing the pane in focus, this counts as a carousel move
+    if (curPane.attr('id') == targetId) {
+      this.onMoveStart(this.getPaneOrigId(curPane));
+      requiresMove = true;
+    }
+    target.slideToggle(100, (function() {
       target.remove(); 
-    });
+      if (requiresMove) {
+        this.onMoveEnd(this.getInFocusOrigId());
+      }
+    }).bind(this));
     this.numPanes--;
     this.onRemove(this.numPanes);
     // last pane removed, so hide
@@ -213,9 +228,22 @@ CC.remove = function(id) {
 }
 
 CC.clear = function() {
-  $('.command-pane', this.obj).remove();
+  this.getPaneInFocus().remove();
   this.numPanes = 0;
   this.onRemove(this.numPanes);
+}
+
+CC.getPaneInFocus = function() {
+  return $('.command-pane',this.obj);
+}
+
+CC.getInFocusOrigId = function() {
+  return this.getPaneOrigId(this.getPaneInFocus());
+  
+}
+CC.getPaneOrigId = function(pane) {
+  var domId = pane.attr('id');  
+  return domId ? domId.substr(domId.indexOf('_')+1) : undefined;
 }
 
 /** TWEENS **/

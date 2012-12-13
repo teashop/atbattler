@@ -775,7 +775,6 @@
           var heroDomId = '#hero_'+ hero.id;
           var commands = hero.commands;
           var commandContainer= $('#commands');
-          $(heroDomId).addClass('selected');
           var content = heroActionPaneTemplate({hero: hero});
           commandCarousel.add({id: hero.id, content: content, position: hero.id})
           // get the newly added command pane
@@ -825,7 +824,6 @@
 
       function closeCommandPane(heroId) {
         var heroDomId = '#hero_'+ heroId;
-        $(heroDomId).removeClass('selected');
         commandCarousel.remove(heroId);
       }
 
@@ -898,6 +896,19 @@
         } else {
           $('#command-next').hide();
           $('#command-prev').hide();
+        }
+      }
+
+      function onCommandCarouselMoveStart(id) {
+        if (id) {
+          var heroDomId = '#hero_'+ id;
+          $(heroDomId).removeClass('selected');
+        }
+      }
+      function onCommandCarouselMoveEnd(id) {
+        if (id) {
+          var heroDomId = '#hero_'+ id;
+          $(heroDomId).addClass('selected');
         }
       }
 
@@ -1070,6 +1081,8 @@
       commandCarousel.commandPaneTemplate = commandContainerTemplate;
       commandCarousel.onAdd = onAddRemoveCommandPanes;
       commandCarousel.onRemove = onAddRemoveCommandPanes;
+      commandCarousel.onMoveStart = onCommandCarouselMoveStart;
+      commandCarousel.onMoveEnd = onCommandCarouselMoveEnd;
 
     </script>
   </div>
