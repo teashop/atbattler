@@ -332,6 +332,23 @@
     #pause:hover, #resume:hover, #start:hover {
       background-color: #59e;
     }
+
+    #command-next, #command-prev {
+      background-color: #37c;
+      border: 1px solid rgb(48, 121, 237);
+      border-radius: 2px;
+      color: white;
+      display: none;
+      font-family: arial;
+      font-weight: bold;
+      left: 520px;
+      position: absolute;
+      width: 25px;
+      z-index: 3;
+    }
+    #command-prev {
+      left: 385px;
+    }
   </style>
 </head>
 <body>
@@ -348,7 +365,9 @@
       </canvas>
       <div style="position:relative;height:165px;">
         <div id="player-pane" class="menu-pane">
-        <div id="commands"></div>
+          <button id="command-prev" onClick="commandCarousel.moveRight();">&laquo;</button>
+          <button id="command-next" onClick="commandCarousel.moveLeft();">&raquo;</button>
+          <div id="commands"></div>
           <table id="party" class="hero-list">
             <thead>
               <th>Name</th>
@@ -374,8 +393,6 @@
         </div> 
       </div>
       <br style="clear:both;"/>
-      <button id="moveLeft" onClick="commandCarousel.moveLeft();">Left</button>
-      <button id="moveRight" onClick="commandCarousel.moveRight();">Right</button>
       <div id="combatLog">
         <ul>
         </ul>
@@ -873,6 +890,17 @@
           return false;
           });
 
+      // show/hide nav buttons for command pane if necessary
+      function onAddRemoveCommandPanes(numPanes) {
+        if (numPanes > 1) {
+          $('#command-next').show();
+          $('#command-prev').show();
+        } else {
+          $('#command-next').hide();
+          $('#command-prev').hide();
+        }
+      }
+
       // Start Game
       $('#start').on('click', function(event) {
           gameClient.ready();
@@ -1040,6 +1068,8 @@
       var commandCarousel = new CommandCarousel($('#commands'));
       commandCarousel.paneWidth = 180;
       commandCarousel.commandPaneTemplate = commandContainerTemplate;
+      commandCarousel.onAdd = onAddRemoveCommandPanes;
+      commandCarousel.onRemove = onAddRemoveCommandPanes;
 
     </script>
   </div>

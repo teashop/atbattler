@@ -131,6 +131,9 @@ function CommandCarousel(container) {
   this.tray = $('.command-tray',this.obj);
   this.numPanes = 0;
   this.commandPaneTemplate = defaultPaneTemplate;
+  // callbacks - provide as required
+  this.onAdd = function() {};
+  this.onRemove = function() {};
 }
 
 var CC = CommandCarousel.prototype;
@@ -190,6 +193,7 @@ CC.add = function(item) {
     this.tray.slideToggle(100);
   }
   this.numPanes++;
+  this.onAdd(this.numPanes);
 }
 
 CC.remove = function(id) {
@@ -200,6 +204,7 @@ CC.remove = function(id) {
       target.remove(); 
     });
     this.numPanes--;
+    this.onRemove(this.numPanes);
     // last pane removed, so hide
     if (this.numPanes == 0) {
       this.tray.slideToggle(100);
@@ -209,6 +214,8 @@ CC.remove = function(id) {
 
 CC.clear = function() {
   $('.command-pane', this.obj).remove();
+  this.numPanes = 0;
+  this.onRemove(this.numPanes);
 }
 
 /** TWEENS **/
