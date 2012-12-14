@@ -277,6 +277,10 @@
       background-color: rgba(38,128,208,0.8);
     }
 
+    .command-pane .pane-title {
+      margin-bottom: 8px;
+    }
+
     .command-tray {
       position:relative;
       width:1600px;left:0px;
@@ -341,9 +345,11 @@
       display: none;
       font-family: arial;
       font-weight: bold;
-      left: 520px;
+      left: 515px;
       position: absolute;
-      width: 25px;
+      width: 30px;
+      height: 25px;
+      padding-bottom: 2px;
       z-index: 3;
     }
     #command-prev {
@@ -889,26 +895,35 @@
           });
 
       // show/hide nav buttons for command pane if necessary
+      function showCommandNavButtons() {
+        $('#command-next').slideDown(100);
+        $('#command-prev').slideDown(100);
+      }
+      function hideCommandNavButtons() {
+        $('#command-next').slideUp(100);
+        $('#command-prev').slideUp(100);
+      }
+
       function onAddRemoveCommandPanes(numPanes) {
         if (numPanes > 1) {
-          $('#command-next').show();
-          $('#command-prev').show();
+          showCommandNavButtons();
         } else {
-          $('#command-next').hide();
-          $('#command-prev').hide();
+          hideCommandNavButtons();
         }
       }
 
       function onCommandCarouselMoveStart(id) {
         if (id) {
-          var heroDomId = '#hero_'+ id;
-          $(heroDomId).removeClass('selected');
+          $('#hero_'+ id).removeClass('selected');
+          hideCommandNavButtons();
         }
       }
       function onCommandCarouselMoveEnd(id) {
         if (id) {
-          var heroDomId = '#hero_'+ id;
-          $(heroDomId).addClass('selected');
+          $('#hero_'+ id).addClass('selected');
+          if (commandCarousel.numPanes > 1) {
+            showCommandNavButtons();
+          }
         }
       }
 
