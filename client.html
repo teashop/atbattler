@@ -799,7 +799,7 @@
           switch (type) {
             case 'attack':
             case 'skill':
-              tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
+              atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
               effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
               break;
             case 'item':

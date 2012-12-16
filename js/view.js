@@ -1,3 +1,5 @@
+var atb = atb || {};
+
 /*
    A class to implement a gradually incrementing/decrementing numeric
    value.  JavaScript timeouts are used to periodically change a tracked value;
@@ -248,7 +250,7 @@ CC.getPaneOrigId = function(pane) {
 
 /** TWEENS **/
 
-function tweenHeroHit(target, reverse, origX) {
+atb.tweenHeroHit = function(target, reverse, origX) {
 	var curPosX = origX ? origX : target.x;
 	var dirX = reverse ? -1 : 1;
 	var tween = createjs.Tween.get(target, {loop:false})
