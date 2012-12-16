@@ -13,7 +13,7 @@ function rollCpuHero(id, name) {
 	var theHp = _.random(1200, 1700);
 	var attributes = {
 		speed: _.random(80, 100),
-		attack: _.random(50, 90),
+		attack: _.random(90, 390),
 		hp: theHp,
 		maxHp: theHp
 	};

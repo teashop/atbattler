@@ -354,3 +354,12 @@ atb.tweenHeroHit = function(target, reverse, origX) {
 		.to({x:curPosX, skewX:0}, 200, createjs.Ease.bounceIn);
 	return tween;
 }
+
+atb.tweenHeroDead = function(target, reverse, origX, origY) {
+	var curPosX = origX ? origX : target.x;
+	var curPosY = origY ? origY : target.Y;
+	var dirX = reverse ? -1 : 1;
+	var tween = createjs.Tween.get(target, {loop:false})
+		.to({rotation: 90*dirX, y:curPosY+20}, 200, createjs.Ease.bounceOut);
+	return tween;
+}

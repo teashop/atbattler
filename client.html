@@ -147,6 +147,7 @@
         curSprite.x = HERO_BASE_X - HERO_SPACE_X*i - 10*i;
         curSprite.origX = curSprite.x;
         curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
+        curSprite.origY = curSprite.y;
         curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
         curSprite.gotoAndPlay("idle");
         stage.addChild(curSprite);
@@ -187,6 +188,7 @@
         curSprite.x = w-HERO_BASE_X + HERO_SPACE_X*i + 10*i;
         curSprite.origX = curSprite.x;
         curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
+        curSprite.origY = curSprite.y;
         curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
         curSprite.gotoAndPlay("idle");
         stage.addChild(curSprite);
@@ -477,16 +479,18 @@
       GC.update = function() {
         // client-side 'smooth gauge'.  Use client speed values to 
         // extrapolate gauge, subject to server-sync.
-        var toUpdate = _.filter(this.heroes, function(curHero) {
-            if (!curHero.statuses.dead && !curHero.statuses.ready) {
-              curHero.turnGauge += curHero.attributes.speed / 100.00;
-              if (curHero.turnGauge >= 100) {
-                curHero.turnGauge = 100.00;
+        if (!this.isGameOver) {
+          var toUpdate = _.filter(this.heroes, function(curHero) {
+              if (!curHero.statuses.dead && !curHero.statuses.ready) {
+                curHero.turnGauge += curHero.attributes.speed / 100.00;
+                if (curHero.turnGauge >= 100) {
+                  curHero.turnGauge = 100.00;
+                }
+                return true;
               }
-              return true;
-            }
-            return false;
-          });
+              return false;
+            });
+        }
         return toUpdate;
       }
 
@@ -713,6 +717,15 @@
               this.sendToServer(this.msgFactory.create(GameEvent.type.player_action, {type: 'attack', by: myReadyHeroes[i].id, target: target.id}));
             }
             break;
+          case GameEvent.type.heroes_dead:
+            var deadHeroes = args;
+            for (var i = 0; i < deadHeroes.length; i++) {
+              var theHero = this.heroes[deadHeroes[i]];
+              theHero.statuses.dead = true;
+              theHero.turnGauge = 0.00;
+              theHero.attributes.hp = 0;
+            }
+            break;
           default:
             // do nothing for now.
             break;
@@ -764,6 +777,8 @@
         if (hero.statuses.dead) {
           if (!heroRow.hasClass('dead')) {
             heroRow.addClass('dead');
+            var heroSprite = heroIdToSprite[hero.id];
+            atb.tweenHeroDead(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
             updateHeroHp(hero, null, 0);
           }
           return;
@@ -1046,7 +1061,8 @@
             var msg = args;
             commandCarousel.clear();
             $('tr', '#party').removeClass('selected');
-            createjs.Ticker.setPaused(true);
+            // FIXME: arbitrary 1s for animations to complete
+            _.delay(function() { createjs.Ticker.setPaused(true); }, 1000);
             gameOverLabel = new createjs.Text(msg, "bold 40px Arial","#FFF");
             stage.addChild(gameOverLabel);
             gameOverLabel.x = 50;
