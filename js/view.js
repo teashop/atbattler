@@ -81,7 +81,7 @@ GR_INC.complete = function() {
  * Adds one of those cute 'popping' numbers so beloved for showing damage
  * and healing.  Requires an 'anchor' (target DisplayObject) for placement.
  */
-var EffectNumberGenerator = function(stage) {
+atb.EffectNumberGenerator = function(stage) {
 	this.stage = stage;
 
 	this.generate = function(num, isCrit, anchor, type) {
@@ -124,7 +124,7 @@ var EffectNumberGenerator = function(stage) {
 /** 
  * Carousel for 'command panes' (command list for ready heroes)
  */
-function CommandCarousel(container) {
+atb.CommandCarousel = function(container) {
   var defaultPaneTemplate =  _.template('<div id="com_<%= id %>" class="command-pane" position="<%= position %>"><%= content%></div>');
   this.obj = container;
   this.paneWidth = 200;
@@ -140,7 +140,7 @@ function CommandCarousel(container) {
   this.onMoveEnd = function() {};
 }
 
-var CC = CommandCarousel.prototype;
+var CC = atb.CommandCarousel.prototype;
 
 CC.moveRight = function() {
   var dist = 1;

@@ -198,7 +198,7 @@
       heroIdToSprite[100] = enemySprites[0];
       heroIdToSprite[200] = enemySprites[1];
 
-      effectNumGen = new EffectNumberGenerator(stage);
+      effectNumGen = new atb.EffectNumberGenerator(stage);
       stage.update();
     }
 
@@ -1091,7 +1091,7 @@
       }
 
       // attach command carousel
-      var commandCarousel = new CommandCarousel($('#commands'));
+      var commandCarousel = new atb.CommandCarousel($('#commands'));
       commandCarousel.paneWidth = 180;
       commandCarousel.commandPaneTemplate = commandContainerTemplate;
       commandCarousel.onAdd = onAddRemoveCommandPanes;
