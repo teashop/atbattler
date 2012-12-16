@@ -261,14 +261,15 @@ atb.MenuItemsTemplate = _.template(
     '<% }); %></ul>');
 
 /**
- * A menu interface supporting a cursor, implied row/column navigation, and
+ * A menu-items widget supporting a cursor, implied row/column navigation, and
  * auto-scrolling.  Primarily used to support keyboard-based navigation.
+ * This widget should be embedded into the actual menu
  */
-atb.Menu = function(container, id, prefix) {
-  this.id = id;
+atb.MenuItems = function(container, prefix) {
+  this.container = container;
+  this.id = this.container.attr('id').slice(1);
   this.itemPrefix = prefix ? prefix : this.id + '_it_';
 
-  this.container = container;
   this.numItems = 0;
   this.curSelected = null;
 
@@ -283,16 +284,15 @@ atb.Menu = function(container, id, prefix) {
   this.container.append(atb.MenuTemplate({id: this.id}));
 
   // items will be added/maniuplated within here:
-  this.baseContainer = $('#' + this.id);
-  this.itemContainer = this.baseContainer.find('.menu-bounding');
+  this.itemContainer = this.container.find('.menu-bounding');
 
   // FIXME? we only support y (vertical) auto-scroll, not horizontal.
-  var baseContainerCssOverflowY = this.baseContainer.css('overflow-y');
-  this.isScrollY = baseContainerCssOverflowY == 'scroll';
+  var containerCssOverflowY = this.container.css('overflow-y');
+  this.isScrollY = containerCssOverflowY == 'scroll';
 }
 /** Menu prototype functions */
 {
-  var MENU = atb.Menu.prototype;
+  var MENU = atb.MenuItems.prototype;
 
   MENU.addItems = function(items) {
     this.numItems = items.length;
@@ -337,7 +337,7 @@ atb.Menu = function(container, id, prefix) {
       var selectId = this.itemPrefix + nextPos;
       this.curSelected = $('#' + selectId, this.itemContainer).addClass('selected');
       if (this.isScrollY) {
-        $(this.baseContainer).stop().animate({scrollTop: this.curSelected.position().top - this.curSelected.height()}, 100);
+        $(this.container).stop().animate({scrollTop: this.curSelected.position().top - this.curSelected.height()}, 100);
       }
       this.onSelect(this.curSelected);
     }
