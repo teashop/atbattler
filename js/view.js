@@ -26,53 +26,56 @@ atb.GradualIncrementer = function(theTarget, theCurrent, onUpdate, duration) {
 	this.timeout = null;
 	this.step = this.calculateStep();
 }
-var GR_INC = atb.GradualIncrementer.prototype;
-GR_INC.getTarget = function() {
-	return this.target;
-}
-GR_INC.setTarget = function(newTarget, newDuration) {
-	this.target = newTarget;
-	if (newDuration) {
-		this.duration = newDuration;
-	}
-	this.step = this.calculateStep();
-	this.start();
-}
-GR_INC.calculateStep = function() {
-	if (this.duration <= 0) {
-		// duration shouldn't ever be <= 0; if so treat as a 1 step Op
-		return this.target - this.current;
-	} else {
-		// err on the side of larger steps.
-		return Math.ceil((this.target - this.current)/(this.duration * this.tickSize));
-	}
-}
-GR_INC.stepThrough = function() {
-	this.current = this.current + this.step;
-	var isStepPositive = this.step > 0;
-	if ((this.current >= this.target && isStepPositive)
-			|| this.current <= this.target && !isStepPositive) {
-		this.onUpdate(this.target);
-		clearTimeout(this.timeout);
-		this.timeout = null;
-		return;
-	}
-	this.onUpdate(this.current, isStepPositive);
-	this.timeout = setTimeout(this.stepThrough.bind(this), this.tickSize);
-}
-GR_INC.start = function() {
-	// if there's no currently running timer, start a new one
-	if (!this.timeout) {
-		this.timeout = setTimeout(this.stepThrough.bind(this), this.tickSize);
-	}
-}
-GR_INC.complete = function() {
-	if (this.timeout) {
-		clearTimeout(this.timeout);
-		this.timeout = null;
-	}
-	this.current = this.target;
-	this.onUpdate(this.target);
+/* GradualIncrementer prototype functions */
+{
+  var GR_INC = atb.GradualIncrementer.prototype;
+  GR_INC.getTarget = function() {
+    return this.target;
+  }
+  GR_INC.setTarget = function(newTarget, newDuration) {
+    this.target = newTarget;
+    if (newDuration) {
+      this.duration = newDuration;
+    }
+    this.step = this.calculateStep();
+    this.start();
+  }
+  GR_INC.calculateStep = function() {
+    if (this.duration <= 0) {
+      // duration shouldn't ever be <= 0; if so treat as a 1 step Op
+      return this.target - this.current;
+    } else {
+      // err on the side of larger steps.
+      return Math.ceil((this.target - this.current)/(this.duration * this.tickSize));
+    }
+  }
+  GR_INC.stepThrough = function() {
+    this.current = this.current + this.step;
+    var isStepPositive = this.step > 0;
+    if ((this.current >= this.target && isStepPositive)
+        || this.current <= this.target && !isStepPositive) {
+      this.onUpdate(this.target);
+      clearTimeout(this.timeout);
+      this.timeout = null;
+      return;
+    }
+    this.onUpdate(this.current, isStepPositive);
+    this.timeout = setTimeout(this.stepThrough.bind(this), this.tickSize);
+  }
+  GR_INC.start = function() {
+    // if there's no currently running timer, start a new one
+    if (!this.timeout) {
+      this.timeout = setTimeout(this.stepThrough.bind(this), this.tickSize);
+    }
+  }
+  GR_INC.complete = function() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+    this.current = this.target;
+    this.onUpdate(this.target);
+  }
 }
 
 // REQUIRE: easeljs, tweenjs
@@ -139,113 +142,206 @@ atb.CommandCarousel = function(container) {
   this.onMoveStart = function() {};
   this.onMoveEnd = function() {};
 }
+/** CommandCarousel prototype functions */
+{
+  var CC = atb.CommandCarousel.prototype;
 
-var CC = atb.CommandCarousel.prototype;
-
-CC.moveRight = function() {
-  var dist = 1;
-  if(this.numPanes <= 1 || this.tray.is(':animated')) {
-    return;
-  }
-  this.onMoveStart(this.getInFocusOrigId());
-  this.getPaneInFocus().slice(-dist).prependTo(this.tray);
-  var width = this.paneWidth;
-  this.tray.css({left:'-='+(this.paneWidth*dist)+'px'});
-  this.tray.stop().animate({left:"+="+this.paneWidth*dist+"px"},200,(function(){
-      this.onMoveEnd(this.getInFocusOrigId());
-  }).bind(this));
-}
-
-CC.moveLeft = function() {
-  var dist = 1;
-  if(this.numPanes <= 1 || this.tray.is(':animated')) {
-    return;
-  }
-  this.onMoveStart(this.getInFocusOrigId());
-  this.tray.stop().animate({left:"-="+(this.paneWidth)*dist+"px"},200,
-    (function(){
-      this.getPaneInFocus().slice(0, dist).appendTo(this.tray);
-      this.tray.css({left:'+='+(this.paneWidth)+'px'});
-      this.onMoveEnd(this.getInFocusOrigId());
-    }).bind(this)
-  );
-}
-
-CC.add = function(item) {
-  var pos = item.position;
-  var toAdd = this.commandPaneTemplate(item);
-  var curPane = this.getPaneInFocus();
-  // protip: current pane in focus in the tray is the 1st element
-  var paneInFocusId = curPane.attr('id');
-  var ancestorId = null;
-  // look for closest ancestor
-  while (curPane.length > 0) {
-    if (curPane.attr('position') < pos) {
-      if (!ancestorId || ancestorId < curPane.attr('id')) {
-        ancestorId = curPane.attr('id');
-      }
+  CC.moveRight = function() {
+    var dist = 1;
+    if(this.numPanes <= 1 || this.tray.is(':animated')) {
+      return;
     }
-    curPane = curPane.next();
-  }
-  // couldn't find it == add to end.
-  if (!ancestorId) {
-    $(toAdd).appendTo('.command-tray');
-  } else {
-    // found it, insert after closest ancestor 
-    $('#' + ancestorId).after(toAdd);
-  }
-  // first pane = show tray && inform focus
-  if (this.numPanes == 0) {
-    this.tray.slideToggle(100);
-    this.onMoveEnd(item.id);
-  }
-  this.numPanes++;
-  this.onAdd(this.numPanes);
-}
-
-CC.remove = function(id) {
-  var targetId = this.paneIdPrefix + id;
-  var target = $('#' + targetId);
-  if (target.length > 0) {
-    var curPane = this.getPaneInFocus();
-    var requiresMove = false;
-    // if we're removing the pane in focus, this counts as a carousel move
-    if (curPane.attr('id') == targetId) {
-      this.onMoveStart(this.getPaneOrigId(curPane));
-      requiresMove = true;
-    }
-    target.slideToggle(100, (function() {
-      target.remove(); 
-      if (requiresMove) {
+    this.onMoveStart(this.getInFocusOrigId());
+    this.getPaneInFocus().slice(-dist).prependTo(this.tray);
+    var width = this.paneWidth;
+    this.tray.css({left:'-='+(this.paneWidth*dist)+'px'});
+    this.tray.stop().animate({left:"+="+this.paneWidth*dist+"px"},200,(function(){
         this.onMoveEnd(this.getInFocusOrigId());
-      }
     }).bind(this));
-    this.numPanes--;
-    this.onRemove(this.numPanes);
-    // last pane removed, so hide
+  }
+
+  CC.moveLeft = function() {
+    var dist = 1;
+    if(this.numPanes <= 1 || this.tray.is(':animated')) {
+      return;
+    }
+    this.onMoveStart(this.getInFocusOrigId());
+    this.tray.stop().animate({left:"-="+(this.paneWidth)*dist+"px"},200,
+      (function(){
+        this.getPaneInFocus().slice(0, dist).appendTo(this.tray);
+        this.tray.css({left:'+='+(this.paneWidth)+'px'});
+        this.onMoveEnd(this.getInFocusOrigId());
+      }).bind(this)
+    );
+  }
+
+  CC.add = function(item) {
+    var pos = item.position;
+    var toAdd = this.commandPaneTemplate(item);
+    var curPane = this.getPaneInFocus();
+    // protip: current pane in focus in the tray is the 1st element
+    var paneInFocusId = curPane.attr('id');
+    var ancestorId = null;
+    // look for closest ancestor
+    while (curPane.length > 0) {
+      if (curPane.attr('position') < pos) {
+        if (!ancestorId || ancestorId < curPane.attr('id')) {
+          ancestorId = curPane.attr('id');
+        }
+      }
+      curPane = curPane.next();
+    }
+    // couldn't find it == add to end.
+    if (!ancestorId) {
+      $(toAdd).appendTo('.command-tray');
+    } else {
+      // found it, insert after closest ancestor 
+      $('#' + ancestorId).after(toAdd);
+    }
+    // first pane = show tray && inform focus
     if (this.numPanes == 0) {
       this.tray.slideToggle(100);
+      this.onMoveEnd(item.id);
     }
+    this.numPanes++;
+    this.onAdd(this.numPanes);
+  }
+
+  CC.remove = function(id) {
+    var targetId = this.paneIdPrefix + id;
+    var target = $('#' + targetId);
+    if (target.length > 0) {
+      var curPane = this.getPaneInFocus();
+      var requiresMove = false;
+      // if we're removing the pane in focus, this counts as a carousel move
+      if (curPane.attr('id') == targetId) {
+        this.onMoveStart(this.getPaneOrigId(curPane));
+        requiresMove = true;
+      }
+      target.slideToggle(100, (function() {
+        target.remove(); 
+        if (requiresMove) {
+          this.onMoveEnd(this.getInFocusOrigId());
+        }
+      }).bind(this));
+      this.numPanes--;
+      this.onRemove(this.numPanes);
+      // last pane removed, so hide
+      if (this.numPanes == 0) {
+        this.tray.slideToggle(100);
+      }
+    }
+  }
+
+  CC.clear = function() {
+    this.getPaneInFocus().remove();
+    this.numPanes = 0;
+    this.onRemove(this.numPanes);
+  }
+
+  CC.getPaneInFocus = function() {
+    return $('.command-pane',this.obj);
+  }
+
+  CC.getInFocusOrigId = function() {
+    return this.getPaneOrigId(this.getPaneInFocus());
+    
+  }
+  CC.getPaneOrigId = function(pane) {
+    var domId = pane.attr('id');  
+    return domId ? domId.substr(domId.indexOf('_')+1) : undefined;
   }
 }
 
-CC.clear = function() {
-  this.getPaneInFocus().remove();
-  this.numPanes = 0;
-  this.onRemove(this.numPanes);
-}
+atb.MenuTemplate = _.template('<div id="<%= id %>"><div class="menu-bounding" style="position: relative"></div></div>');
 
-CC.getPaneInFocus = function() {
-  return $('.command-pane',this.obj);
-}
+atb.MenuItemsTemplate = _.template(
+    '<ul class="menu-item-list"><% _.each(items, function(item, index) { %>' +
+    '<li id="<%= prefix %><%= index %>"><%= item %></li>' +
+    '<% }); %></ul>');
 
-CC.getInFocusOrigId = function() {
-  return this.getPaneOrigId(this.getPaneInFocus());
-  
+/**
+ * A menu interface supporting a cursor, implied row/column navigation, and
+ * auto-scrolling.  Primarily used to support keyboard-based navigation.
+ */
+atb.Menu = function(container, id, prefix) {
+  this.id = id;
+  this.itemPrefix = prefix ? prefix : this.id + '_it_';
+
+  this.container = container;
+  this.numItems = 0;
+  this.curSelected = null;
+
+  // options
+  this.itemsPerRow = 1;
+  this.isWrapAround = false;
+
+  // callbacks
+  this.onSelect = function() {};
+  this.onDeselect = function() {};
+  // setup blank menu
+  this.container.append(atb.MenuTemplate({id: this.id}));
+
+  // items will be added/maniuplated within here:
+  this.baseContainer = $('#' + this.id);
+  this.itemContainer = this.baseContainer.find('.menu-bounding');
+
+  // FIXME? we only support y (vertical) auto-scroll, not horizontal.
+  var baseContainerCssOverflowY = this.baseContainer.css('overflow-y');
+  this.isScrollY = baseContainerCssOverflowY == 'scroll';
 }
-CC.getPaneOrigId = function(pane) {
-  var domId = pane.attr('id');  
-  return domId ? domId.substr(domId.indexOf('_')+1) : undefined;
+/** Menu prototype functions */
+{
+  var MENU = atb.Menu.prototype;
+
+  MENU.addItems = function(items) {
+    this.numItems = items.length;
+    this.itemContainer.append(atb.MenuItemsTemplate({items: items, prefix: this.itemPrefix}));
+    var selectId = this.itemPrefix + '0';
+    this.curSelected = $('#' + selectId, this.itemContainer).addClass('selected');
+    this.onSelect(this.curSelected);
+  }
+
+  MENU.moveCursor = function(dir) {
+    if (!dir) {
+      return;
+    }
+
+    // determine next position based on current pos and desired dir
+    var curPos = this.curSelected.attr('id');
+    curPos = +curPos.substr(curPos.lastIndexOf('_')+1);
+    var nextPos = null;
+    switch(dir) {
+      case 'left':
+        nextPos = curPos-1;
+        break;
+      case 'right':
+        nextPos = curPos+1;
+        break;
+      case 'up':
+        nextPos = curPos - this.itemsPerRow;
+        break;
+      case 'down':
+        nextPos = curPos + this.itemsPerRow;
+        break;
+      default:
+        // do nothin
+    } // switch
+
+    if (this.isWrapAround) {
+      nextPos = (nextPos + this.numItems) % this.numItems;
+    }
+
+    if (nextPos >= 0 && nextPos < this.numItems) {
+      this.curSelected.removeClass('selected');
+      var selectId = this.itemPrefix + nextPos;
+      this.curSelected = $('#' + selectId, this.itemContainer).addClass('selected');
+      if (this.isScrollY) {
+        $(this.baseContainer).stop().animate({scrollTop: this.curSelected.position().top - this.curSelected.height()}, 100);
+      }
+      this.onSelect(this.curSelected);
+    }
+  }
 }
 
 /** TWEENS **/
