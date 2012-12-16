@@ -1087,7 +1087,7 @@
           this.holder.css('color', rgb);
         };
         onUpdate = _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), hero: curHero });
-        hpIncrementers[curHero.id] = new GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
+        hpIncrementers[curHero.id] = new atb.GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
       }
 
       // attach command carousel

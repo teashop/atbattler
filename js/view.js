@@ -17,7 +17,7 @@ var atb = atb || {};
 
    newStep = (newTarget-current)/duration*tickSize
 */
-var GradualIncrementer = function(theTarget, theCurrent, onUpdate, duration) {
+atb.GradualIncrementer = function(theTarget, theCurrent, onUpdate, duration) {
 	this.target = theTarget;
 	this.current = (+theCurrent);
 	this.duration = duration;
@@ -26,7 +26,7 @@ var GradualIncrementer = function(theTarget, theCurrent, onUpdate, duration) {
 	this.timeout = null;
 	this.step = this.calculateStep();
 }
-var GR_INC = GradualIncrementer.prototype;
+var GR_INC = atb.GradualIncrementer.prototype;
 GR_INC.getTarget = function() {
 	return this.target;
 }
