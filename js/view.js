@@ -253,7 +253,7 @@ atb.CommandCarousel = function(container) {
   }
 }
 
-atb.MenuTemplate = _.template('<div id="<%= id %>"><div class="menu-bounding" style="position: relative"></div></div>');
+atb.MenuTemplate = _.template('<div class="menu-bounding" style="position: relative"></div>');
 
 atb.MenuItemsTemplate = _.template(
     '<ul class="menu-item-list"><% _.each(items, function(item, index) { %>' +
@@ -267,7 +267,7 @@ atb.MenuItemsTemplate = _.template(
  */
 atb.MenuItems = function(container, prefix) {
   this.container = container;
-  this.id = this.container.attr('id').slice(1);
+  this.id = this.container.attr('id');
   this.itemPrefix = prefix ? prefix : this.id + '_it_';
 
   this.numItems = 0;

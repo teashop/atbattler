@@ -11,6 +11,7 @@
   <script src="js/vendor/easeljs-0.5.0.min.js"></script>
   <script src="js/vendor/tweenjs-0.3.0.min.js"></script>
   <script src="js/vendor/preloadjs-0.2.0.min.js"></script>
+  <script src="js/vendor/jquery.hotkeys-0.8.js"></script>
   <script src="js/domain.js"></script>
   <script src="js/util.js"></script>
   <script src="js/durationevent.js"></script>
@@ -273,7 +274,7 @@
       -o-transition-delay: 0s;
       transition-delay: 0s;
     }
-    .command-pane a:hover {
+    .command-pane a:hover, .command-pane li.selected {
       background-color: rgba(38,128,208,0.8);
     }
 
@@ -742,22 +743,27 @@
       // Hero Command Pane Content
       var heroActionPaneTemplate = _.template(
          '<div class="pane-title"><%= hero.name %></div>'
-        + '<ul class="command-list"></ul>'
-        + '<div class="target-pane"></div>');
+        + '<div id="comlist_<%= hero.id %>" class="command-list"></div>'
+        + '<div id="tarlist_<%= hero.id %>" class="target-pane"></div>');
 
       // Hero Command list
-      var heroCommandTemplate = _.template('<% _.each(commands, ' 
-        + ' function(command) { %> <li><a href="#"><%= command.name %></a></li>'
-        + ' <% }); %>');
+      var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
 
+      // Target Pane Content
+      var heroTargetPaneTemplate = _.template('<span class="targets">'
+        + '</span><p><a href="#" class="cancel">Cancel</a></p>');
+
+      var heroTargetTemplate =  _.template('<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
+      var heroCancelTemplate =  _.template('<a href="#" class="cancel" heroId="<%= heroId %>">Cancel</a>');
       // Hero Target list
+      /*
       var heroTargetTemplate = _.template('<span class="targets">'
         + '<% _.each(targets, function(target) { '
         + '   if (!target.statuses.dead) { %>'
         +       '<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>'
         + ' <% } }); %>'
         + '</span><p><a href="#" class="cancel">Cancel</a></p>');
-
+*/
 
       /** END Templates **/
 
@@ -785,8 +791,25 @@
           commandCarousel.add({id: hero.id, content: content, position: hero.id})
           // get the newly added command pane
           var comPane = $("#com_" + hero.id);
-          comPane.find('ul').append(heroCommandTemplate({commands: commands}));
+
+          // populate with menu items
+          var comMenuContainer = comPane.find('.command-list');
+          var comToMenuItems = _.map(commands, function(command) {
+              return heroCommandTemplate({command: command})
+            });
+          var comMenuItems = new atb.MenuItems(comMenuContainer);
+          comMenuItems.isWrapAround = true;
+          comMenuItems.addItems(comToMenuItems);
+
+          // 'embed' this into the command pane
+          comPane.data('menuItems', comMenuItems);
+
           comPane.children('.target-pane').hide();
+
+          // FIXME? no other active menu = make this one active
+          if (!activeMenu) {
+            activeMenu = comMenuItems;
+          }
           heroRow.addClass('ready');
         }
       }
@@ -837,62 +860,89 @@
       $('#player-pane').on('click', '.command-pane a.cancel', function(event) {
           var commandPane = $(event.target).parents('.command-pane');
           var heroId = commandPane.attr('heroId');
-          commandPane.find('ul').show();
+          commandPane.find('.command-list').show();
           commandPane.find('.target-pane').hide();
           return false;
         });
 
       // target list => execute action on target.
-      $('#player-pane').on('click', '.target-pane .targets a', function(event) {
+      $('#player-pane').on('click', '.target-pane a', function(event) {
           var actionType = $(this).attr('class');
-          var hero = gameClient.heroes[$(this).attr('heroId')];
-          var target = gameClient.heroes[$(this).attr('targetId')];
-          switch (actionType) {
-            case 'attack':
-              gameClient.queueEvent(GameEvent.type.player_action, {type: 'attack', by: hero.id, target: target.id});
-              break;
-            case 'skill':
-              gameClient.queueEvent(GameEvent.type.player_action, {type: 'skill', by: hero.id, target: target.id});
-              break;
-            case 'item':
-              gameClient.queueEvent(GameEvent.type.player_action, {type: 'item', by: hero.id, target: target.id});
-              break;
-            default:
-              console.log('Action Not Yet Impl: ' + actionType);
-              break;
-          }
-          closeCommandPane(hero.id);
+          var actorId = $(this).attr('heroId');
+          var targetId = $(this).attr('targetId');
+          executeCommandOnTarget(actionType, actorId, targetId);
           return false;
-        });
+      });
+
+      function executeCommandOnTarget(actionType, actorId, targetId) {
+        var hero = gameClient.heroes[actorId];
+        var target = gameClient.heroes[targetId];
+        switch (actionType) {
+          case 'attack':
+            gameClient.queueEvent(GameEvent.type.player_action, {type: 'attack', by: hero.id, target: target.id});
+            break;
+          case 'skill':
+            gameClient.queueEvent(GameEvent.type.player_action, {type: 'skill', by: hero.id, target: target.id});
+            break;
+          case 'item':
+            gameClient.queueEvent(GameEvent.type.player_action, {type: 'item', by: hero.id, target: target.id});
+            break;
+          default:
+            console.log('Action Not Yet Impl: ' + actionType);
+            break;
+        }
+        closeCommandPane(hero.id);
+      }
 
       // command pane option => target list (or execute command)
       $('#player-pane').on('click', '.command-pane .command-list a', function(event) {
           var commandPane = $(event.target).parents('.command-pane');
-          var heroId = commandPane.attr('heroId');
-          var targets = null;
           var actionType = $(this).text().toLowerCase();
-          switch (actionType) {
-            case 'attack':
-              targets = gameClient.enemy.party.heroes;
-              break;
-            case 'skill':
-              targets = gameClient.enemy.party.heroes;
-              break;
-            case 'item':
-              targets = gameClient.me.party.heroes;
-              break;
-            default:
-              console.log('Command Not Yet Impl: ' + $(this).text());
-              break;
-          }
-
-          if (targets) {
-            commandPane.find('ul').hide();
-            var targetList = heroTargetTemplate({heroId: heroId, actionType: actionType, targets: targets});
-            $('.target-pane', commandPane).html(targetList).show();
-          }
+          commandToTargetList(commandPane, actionType);
           return false;
-          });
+      });
+
+      function commandToTargetList(commandPane, actionType) {
+        var heroId = commandPane.attr('heroId');
+        var targets = null;
+        switch (actionType) {
+          case 'attack':
+            targets = gameClient.enemy.party.heroes;
+            break;
+          case 'skill':
+            targets = gameClient.enemy.party.heroes;
+            break;
+          case 'item':
+            targets = gameClient.me.party.heroes;
+            break;
+          default:
+            console.log('Command Not Yet Impl: ' + actionType);
+            break;
+        }
+
+        if (targets) {
+          commandPane.find('.command-list').hide();
+
+          var tarMenuContainer = commandPane.find('.target-pane');
+
+          // populate with target list as menu items
+          var tarToMenuItems = _.compact(_.map(targets, function(target) {
+              if (target.statuses.dead) { 
+                return null;
+              } else {
+                return heroTargetTemplate({actionType: actionType, heroId: heroId, target: target});
+              }
+            }));
+          var tarMenuItems = new atb.MenuItems(tarMenuContainer);
+          tarMenuItems.isWrapAround = true;
+          tarMenuItems.addItems(tarToMenuItems);
+
+          // 'embed' this into the command pane
+//          comPane.data('menuItems', comMenuItems);
+          $('.target-pane', commandPane).show();
+          activeMenu = tarMenuItems;
+        }
+      }
 
       // show/hide nav buttons for command pane if necessary
       function showCommandNavButtons() {
@@ -921,9 +971,12 @@
       function onCommandCarouselMoveEnd(id) {
         if (id) {
           $('#hero_'+ id).addClass('selected');
+          activeMenu = commandCarousel.getPaneInFocus().data('menuItems');
           if (commandCarousel.numPanes > 1) {
             showCommandNavButtons();
           }
+        } else {
+          activeMenu = null;
         }
       }
 
@@ -1099,6 +1152,63 @@
       commandCarousel.onMoveStart = onCommandCarouselMoveStart;
       commandCarousel.onMoveEnd = onCommandCarouselMoveEnd;
 
+      /** KEYBOARD INPUT SUPPORT **/
+
+      // which menu is in focus and should be modified by keystrokes
+      var activeMenu = null;
+
+      function keyInputHandler(keyEvent) {
+        if (!activeMenu) {
+          return;
+        }
+        //console.log(activeMenu.id);
+        switch(keyEvent.data.key) {
+          case 'left':
+            activeMenu.moveCursor('left');
+            break;
+          case 'right':
+            activeMenu.moveCursor('right');
+            break;
+          case 'up':
+            activeMenu.moveCursor('up');
+            break;
+          case 'down':
+            activeMenu.moveCursor('down');
+            break;
+          case 'action':
+            // Action key
+            var selected = activeMenu.curSelected;
+
+            // FIXME: determining 'action' not directly via that activeMenu
+            // is ugly and bad.
+            var commandPane = selected.parents('.command-pane');
+            var commandList = selected.parents('.command-list');
+            var targetPane = selected.parents('.target-pane');
+            selected = selected.find('a');
+            if (commandList.length > 0 && commandList.not(':hidden')) {
+              var actionType = $(selected).text().toLowerCase();
+              commandToTargetList(commandPane, actionType);
+            } else if (targetPane.length > 0 && targetPane.not(':hidden')) {
+              var actionType = selected.attr('class');
+              var actorId = selected.attr('heroId');
+              var targetId = selected.attr('targetId');
+              executeCommandOnTarget(actionType, actorId, targetId);
+            }
+            break;
+          default:
+            // ignore
+        }
+        keyEvent.stopPropagation();
+        return false;
+      }
+
+      $(document).on('keydown.left', {key:'left'}, keyInputHandler);
+      $(document).on('keydown.right', {key:'right'}, keyInputHandler);
+      $(document).on('keydown.up', {key:'up'}, keyInputHandler);
+      $(document).on('keydown.down', {key:'down'}, keyInputHandler);
+      $(document).on('keydown.space', {key:'action'}, keyInputHandler);
+
+      /** END KEYBOARD INPUT SUPPORT */
     </script>
   </div>
   </body>
