@@ -274,7 +274,7 @@
       -o-transition-delay: 0s;
       transition-delay: 0s;
     }
-    .command-pane a:hover, .command-pane li.selected {
+    .command-pane a:hover, .command-pane li.selected a {
       background-color: rgba(38,128,208,0.8);
     }
 
@@ -1160,10 +1160,10 @@
         //console.log(activeMenu.id);
         switch(keyEvent.data.key) {
           case 'left':
-            activeMenu.moveCursor('left');
+            commandCarousel.moveRight();
             break;
           case 'right':
-            activeMenu.moveCursor('right');
+            commandCarousel.moveLeft();
             break;
           case 'up':
             activeMenu.moveCursor('up');
