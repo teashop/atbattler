@@ -844,6 +844,15 @@
         commandCarousel.remove(heroId);
       }
 
+      function cancelTargetPane(commandPane) {
+        var targetPane = commandPane.find('.target-pane');
+        if (targetPane.not(':hidden')) {
+          commandPane.find('.command-list').show();
+          targetPane.html('').hide();
+          activeMenu = commandPane.data('menuItems');
+        }
+      }
+
       // target list => execute action on target.
       $('#player-pane').on('click', '.target-pane a', function(event) {
           var actionType = $(this).attr('class');
@@ -854,9 +863,7 @@
           if (actionType == 'cancel') {
             // backtrack to command menu
             var commandPane = $(event.target).parents('.command-pane');
-            commandPane.find('.command-list').show();
-            commandPane.find('.target-pane').hide();
-            activeMenu = commandPane.data('menuItems');
+            cancelTargetPane(commandPane);
           } else {
             executeCommandOnTarget(actionType, actorId, targetId);
           }
@@ -954,6 +961,7 @@
         if (id) {
           $('#hero_'+ id).removeClass('selected');
           hideCommandNavButtons();
+          cancelTargetPane(commandCarousel.getPaneInFocus());
         }
       }
       function onCommandCarouselMoveEnd(id) {
@@ -1183,9 +1191,7 @@
               // TODO: move this out
               if (actionType == 'cancel') {
                 // backtrack to command menu
-                commandPane.find('.command-list').show();
-                targetPane.html('').hide();
-                activeMenu = commandPane.data('menuItems');
+                cancelTargetPane(commandPane);
               } else {
                 executeCommandOnTarget(actionType, actorId, targetId);
               }
