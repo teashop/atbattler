@@ -749,21 +749,9 @@
       // Hero Command list
       var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
 
-      // Target Pane Content
-      var heroTargetPaneTemplate = _.template('<span class="targets">'
-        + '</span><p><a href="#" class="cancel">Cancel</a></p>');
-
+      // Hero Target list
       var heroTargetTemplate =  _.template('<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
       var heroCancelTemplate =  _.template('<a href="#" class="cancel" heroId="<%= heroId %>">Cancel</a>');
-      // Hero Target list
-      /*
-      var heroTargetTemplate = _.template('<span class="targets">'
-        + '<% _.each(targets, function(target) { '
-        + '   if (!target.statuses.dead) { %>'
-        +       '<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>'
-        + ' <% } }); %>'
-        + '</span><p><a href="#" class="cancel">Cancel</a></p>');
-*/
 
       /** END Templates **/
 
@@ -856,21 +844,22 @@
         commandCarousel.remove(heroId);
       }
 
-      // Cancel Targets => return to the command pane
-      $('#player-pane').on('click', '.command-pane a.cancel', function(event) {
-          var commandPane = $(event.target).parents('.command-pane');
-          var heroId = commandPane.attr('heroId');
-          commandPane.find('.command-list').show();
-          commandPane.find('.target-pane').hide();
-          return false;
-        });
-
       // target list => execute action on target.
       $('#player-pane').on('click', '.target-pane a', function(event) {
           var actionType = $(this).attr('class');
           var actorId = $(this).attr('heroId');
           var targetId = $(this).attr('targetId');
-          executeCommandOnTarget(actionType, actorId, targetId);
+
+          // TODO: move this out
+          if (actionType == 'cancel') {
+            // backtrack to command menu
+            var commandPane = $(event.target).parents('.command-pane');
+            commandPane.find('.command-list').show();
+            commandPane.find('.target-pane').hide();
+            activeMenu = commandPane.data('menuItems');
+          } else {
+            executeCommandOnTarget(actionType, actorId, targetId);
+          }
           return false;
       });
 
@@ -933,12 +922,11 @@
                 return heroTargetTemplate({actionType: actionType, heroId: heroId, target: target});
               }
             }));
+          tarToMenuItems.push(heroCancelTemplate({heroId: heroId}));
           var tarMenuItems = new atb.MenuItems(tarMenuContainer);
           tarMenuItems.isWrapAround = true;
           tarMenuItems.addItems(tarToMenuItems);
 
-          // 'embed' this into the command pane
-//          comPane.data('menuItems', comMenuItems);
           $('.target-pane', commandPane).show();
           activeMenu = tarMenuItems;
         }
@@ -1192,7 +1180,15 @@
               var actionType = selected.attr('class');
               var actorId = selected.attr('heroId');
               var targetId = selected.attr('targetId');
-              executeCommandOnTarget(actionType, actorId, targetId);
+              // TODO: move this out
+              if (actionType == 'cancel') {
+                // backtrack to command menu
+                commandPane.find('.command-list').show();
+                targetPane.html('').hide();
+                activeMenu = commandPane.data('menuItems');
+              } else {
+                executeCommandOnTarget(actionType, actorId, targetId);
+              }
             }
             break;
           default:
