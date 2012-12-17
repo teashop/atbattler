@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ATBattler GameInstance Tests</title>
+  <link rel="stylesheet" href="resources/qunit-1.10.0.css">
+</head>
+<body>
+  <div id="container" style="display:none;"></div>
+  <div id="qunit"></div>
+  <script src="resources/qunit-1.10.0.js"></script>
+  <script src="../js/vendor/jquery-1.8.2.min.js"></script>
+  <script src="../js/vendor/underscore-min.js"></script>
+  <script src="../js/vendor/jquery.hotkeys-0.8.js"></script>
+  <script src="../js/view.js"></script>
+  <script>
+    var skills = [
+      {id: 1, name: 'Nuke'},
+      {id: 15, name: 'Metaphysics'},
+      {id: 4, name: 'Blue Recon'},
+      {id: 5, name: 'Cupcake Surprise'},
+      {id: 21, name: 'Viral Virus'},
+      {id: 7, name: 'Intimidating Shout'},
+      {id: 8, name: 'Sharp Stationery'},
+      {id: 9, name: 'Firebomb'},
+      {id: 10, name: 'DDoS'},
+      {id: 11, name: 'Hailstorm'},
+      {id: 12, name: 'Crackers'},
+      {id: 378, name: 'Anomaly'}];
+
+    var targets = [
+      {id: 1, name: 'Teh Badguy'},
+      {id: 2, name: 'Wagglerstein'},
+      {id: 4, name: 'Matthias'}];
+
+    var container = $('#container');
+
+    var skillMenu = ('<div id="skill-base"><p><b>Skills Ahoy</b></p><div id="skill-pane"></div></div>');
+    var skillToItem = _.template('<a href="#" id="sk_<%= item.id %>" class="skill"><%= item.name %></a>');
+
+    var targetMenu = ('<div id="target-pane"><p><b>Targets Ahoy</b></p></div>');
+    var targetToItem = _.template('<a href="#" id="tar_<%= item.id %>"><%= item.name %></a>');
+  </script>
+  <script>
+  test( "atb.MenuItems - basic rendering", function() {
+
+    var items = _.map(targets, function(target) {
+        return targetToItem({item: target})
+      });
+
+    container.append('<div id="test"></div>');
+    var testCont = $('#test', container);
+    var menuItems = new atb.MenuItems(testCont);
+
+    // empty menu item smoketests
+    equal(menuItems.container.attr('id'), testCont.attr('id'), 'container is the id="test" div');
+
+    var boundingBox = menuItems.container.find('.menu-bounding');
+    equal(boundingBox.length, 1, 'should be exactly one bounding box');
+
+    var menuItemList =  menuItems.container.find('.menu-item-list');
+    equal(menuItemList.length, 0, 'should be no menu items yet');
+
+
+    // now add items
+    menuItems.addItems(items);
+
+    var menuItemList =  menuItems.container.find('.menu-item-list');
+    equal(menuItemList.length, 1, 'should now contain menu items');
+
+    var listItems = menuItemList.find('li');
+    equal(listItems.length, targets.length, 'should be exactly '+ targets.length + ' list items (targets)');
+    var listItemsAnchors = menuItemList.find('li a');
+    equal(listItemsAnchors.length, targets.length, 'should be exactly '+ targets.length + ' <a>s within list items');
+
+    var missingTargets = _.reduce(targets, function(memo, target) {
+        var idToFind = '#tar_' + target.id;
+        var result = menuItemList.find(idToFind);
+        if (result.length != 1 || result.text() != target.name) {
+          memo.push(target.id);
+        }
+        return memo;
+      }, []);
+
+    equal(missingTargets.length, 0, 'all targets (id, name) were found in the menu items');
+
+    // delete test container
+    testCont.remove();
+  });
+  </script>
+</body>
+</html>
