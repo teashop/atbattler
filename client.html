@@ -221,7 +221,7 @@
   </script>
 
   <style>
-    #commands {
+    #commands-anchor {
       position: absolute;
       top: 0;
       min-height: 300px;
@@ -229,14 +229,13 @@
       left: 375px;
       overflow: hidden;
     }
-    .command-pane {
+    .menu-nested-pane {
       background-color: rgba(10, 50, 110, 0.9);
       border: 2px solid white;
       border-radius: 4px;
       box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
       color:#eee;
       margin: 0 2px;
-      min-height: 120px;
       float: left;
       padding: 10px;
       position: relative;
@@ -244,14 +243,14 @@
       width: 152px;
       overflow: hidden;
     }
-    .command-pane ul {
+    .menu-nested-pane ul {
       list-style-type: none;
       list-style-position: inside;
     /*  margin: 0 0 0 20px;*/
       margin: 0;
       padding: 0;
     }
-    .command-pane a {
+    .menu-nested-pane a {
       border-radius: 4px;
       color: #eee;
       display: block;
@@ -276,11 +275,11 @@
       -o-transition-delay: 0s;
       transition-delay: 0s;
     }
-    .command-pane a:hover, .command-pane li.selected a {
+    .menu-nested-pane a:hover, .menu-nested-pane li.selected a {
       background-color: rgba(38,128,208,0.8);
     }
 
-    .command-pane .pane-title {
+    .menu-nested-pane .pane-title {
       margin-bottom: 8px;
     }
 
@@ -289,8 +288,17 @@
       width:1600px;left:0px;
     }
 
-    .target-pane {
-      display: none;
+    .command-pane {
+      min-height: 120px;
+      z-index:3;
+    }
+
+    .target-menu {
+      display: block;
+      position: absolute;
+      top: 25px;
+      left: 450px;
+      z-index:4;
     }
     #party .selected {
       background-color: rgba(10, 50, 110, 0.9);
@@ -353,7 +361,7 @@
       width: 30px;
       height: 25px;
       padding-bottom: 2px;
-      z-index: 3;
+      z-index:3;
     }
     #command-prev {
       left: 385px;
@@ -374,9 +382,9 @@
       </canvas>
       <div style="position:relative;height:165px;">
         <div id="player-pane" class="menu-pane">
+          <div id="commands-anchor"></div>
           <button id="command-prev" onClick="commandCarousel.moveRight();">&laquo;</button>
           <button id="command-next" onClick="commandCarousel.moveLeft();">&raquo;</button>
-          <div id="commands"></div>
           <table id="party" class="hero-list">
             <thead>
               <th>Name</th>
@@ -751,16 +759,18 @@
       /**
        * Command Pane Container Template
        */
-      var commandContainerTemplate = _.template('<div id="com_<%= id %>" heroId="<%= id %>" class="command-pane" position="<%= position %>"><%= content%></div>');
+      var commandContainerTemplate = _.template('<div id="com_<%= id %>" heroId="<%= id %>" class="command-pane menu-nested-pane" position="<%= position %>"><%= content%></div>');
 
       // Hero Command Pane Content
-      var heroActionPaneTemplate = _.template(
+      var heroCommandPaneTemplate = _.template(
          '<div class="pane-title"><%= hero.name %></div>'
-        + '<div id="comlist_<%= hero.id %>" class="command-list"></div>'
-        + '<div id="tarlist_<%= hero.id %>" class="target-pane"></div>');
+        + '<div id="comlist_<%= hero.id %>" class="command-list"></div>');
 
       // Hero Command list
       var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
+
+      // Target Pane container
+      var heroTargetPaneTemplate = _.template('<div id="tarlist_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-nested-pane"></div>');
 
       // Hero Target list
       var heroTargetTemplate =  _.template('<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
@@ -789,8 +799,8 @@
         if (hero.statuses.ready && isYou && !heroRow.hasClass('ready')) {
           var heroDomId = '#hero_'+ hero.id;
           var commands = hero.commands;
-          var commandContainer= $('#commands');
-          var content = heroActionPaneTemplate({hero: hero});
+          var commandContainer= $('#commands-anchor');
+          var content = heroCommandPaneTemplate({hero: hero});
           commandCarousel.add({id: hero.id, content: content, position: hero.id})
           // get the newly added command pane
           var comPane = $("#com_" + hero.id);
@@ -806,8 +816,6 @@
 
           // 'embed' this into the command pane
           comPane.data('menuItems', comMenuItems);
-
-          comPane.children('.target-pane').hide();
 
           // FIXME? no other active menu = make this one active
           if (!activeMenu) {
@@ -859,17 +867,18 @@
         commandCarousel.remove(heroId);
       }
 
-      function cancelTargetPane(commandPane) {
-        var targetPane = commandPane.find('.target-pane');
+      function cancelTargetPane() {
+        var menuAnchor = $('#player-pane');
+        var targetPane = menuAnchor.find('.target-menu');
+        var commandPane = commandCarousel.getPaneInFocus();
         if (targetPane.not(':hidden')) {
-          commandPane.find('.command-list').show();
-          targetPane.html('').hide();
+          targetPane.remove();
           activeMenu = commandPane.data('menuItems');
         }
       }
 
       // target list => execute action on target.
-      $('#player-pane').on('click', '.target-pane a', function(event) {
+      $('#player-pane').on('click', '.target-menu a', function(event) {
           var actionType = $(this).attr('class');
           var actorId = $(this).attr('heroId');
           var targetId = $(this).attr('targetId');
@@ -877,8 +886,7 @@
           // TODO: move this out
           if (actionType == 'cancel') {
             // backtrack to command menu
-            var commandPane = $(event.target).parents('.command-pane');
-            cancelTargetPane(commandPane);
+            cancelTargetPane();
           } else {
             executeCommandOnTarget(actionType, actorId, targetId);
           }
@@ -915,6 +923,7 @@
 
       function commandToTargetList(commandPane, actionType) {
         var heroId = commandPane.attr('heroId');
+        var hero = gameClient.heroes[heroId];
         var targets = null;
         switch (actionType) {
           case 'attack':
@@ -932,9 +941,9 @@
         }
 
         if (targets) {
-          commandPane.find('.command-list').hide();
-
-          var tarMenuContainer = commandPane.find('.target-pane');
+          var menuAnchor = $('#player-pane');
+          menuAnchor.append(heroTargetPaneTemplate({hero: hero}));
+          var tarMenuContainer = menuAnchor.find('.target-menu');
 
           // populate with target list as menu items
           var tarToMenuItems = _.compact(_.map(targets, function(target) {
@@ -948,8 +957,7 @@
           var tarMenuItems = new atb.MenuItems(tarMenuContainer);
           tarMenuItems.isWrapAround = true;
           tarMenuItems.addItems(tarToMenuItems);
-
-          $('.target-pane', commandPane).show();
+          tarMenuContainer.show();
           activeMenu = tarMenuItems;
         }
       }
@@ -976,7 +984,7 @@
         if (id) {
           $('#hero_'+ id).removeClass('selected');
           hideCommandNavButtons();
-          cancelTargetPane(commandCarousel.getPaneInFocus());
+          cancelTargetPane();
         }
       }
       function onCommandCarouselMoveEnd(id) {
@@ -1156,7 +1164,7 @@
       }
 
       // attach command carousel
-      var commandCarousel = new atb.CommandCarousel($('#commands'));
+      var commandCarousel = new atb.CommandCarousel($('#commands-anchor'));
       commandCarousel.paneWidth = 180;
       commandCarousel.commandPaneTemplate = commandContainerTemplate;
       commandCarousel.onAdd = onAddRemoveCommandPanes;
@@ -1193,9 +1201,9 @@
 
             // FIXME: determining 'action' not directly via that activeMenu
             // is ugly and bad.
-            var commandPane = selected.parents('.command-pane');
+            var commandPane = commandCarousel.getPaneInFocus();
             var commandList = selected.parents('.command-list');
-            var targetPane = selected.parents('.target-pane');
+            var targetPane = selected.parents('.target-menu');
             selected = selected.find('a');
             if (commandList.length > 0 && commandList.not(':hidden')) {
               var actionType = $(selected).text().toLowerCase();
@@ -1207,7 +1215,7 @@
               // TODO: move this out
               if (actionType == 'cancel') {
                 // backtrack to command menu
-                cancelTargetPane(commandPane);
+                cancelTargetPane();
               } else {
                 executeCommandOnTarget(actionType, actorId, targetId);
               }

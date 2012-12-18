@@ -253,7 +253,7 @@ atb.CommandCarousel = function(container) {
   }
 }
 
-atb.MenuTemplate = _.template('<div class="menu-bounding" style="position: relative"></div>');
+atb.MenuItemsBoundingTemplate = _.template('<div class="menu-bounding" style="position: relative"></div>');
 
 atb.MenuItemsTemplate = _.template(
     '<ul class="menu-item-list"><% _.each(items, function(item, index) { %>' +
@@ -281,7 +281,7 @@ atb.MenuItems = function(container, prefix) {
   this.onSelect = function() {};
   this.onDeselect = function() {};
   // setup blank menu
-  this.container.append(atb.MenuTemplate({id: this.id}));
+  this.container.append(atb.MenuItemsBoundingTemplate({id: this.id}));
 
   // items will be added/maniuplated within here:
   this.itemContainer = this.container.find('.menu-bounding');
