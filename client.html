@@ -360,6 +360,12 @@
     #command-prev {
       left: 385px;
     }
+
+    #pointer {
+      display: none;
+      position: absolute;
+      z-index: 99;
+    }
   </style>
 </head>
 <body>
@@ -375,6 +381,7 @@
       <canvas id="main-canvas" height="460" width="960">
       </canvas>
       <div style="position:relative;height:165px;">
+        <img id="pointer" src="img/pointer.png"/>
         <div id="player-pane" class="menu-pane">
           <div id="commands-anchor"></div>
           <button id="command-prev" onClick="commandCarousel.moveRight();">&laquo;</button>
@@ -805,16 +812,17 @@
               return heroCommandTemplate({command: command})
             });
           var comMenuItems = new atb.MenuItems(comMenuContainer);
+          // FIXME? no other active menu = make this one active
+          if (!activeMenu) {
+            setActiveMenu(comMenuItems);
+          }
           comMenuItems.isWrapAround = true;
+          comMenuItems.onSelect = updatePointer;
           comMenuItems.addItems(comToMenuItems);
 
           // 'embed' this into the command pane
           comPane.data('menuItems', comMenuItems);
 
-          // FIXME? no other active menu = make this one active
-          if (!activeMenu) {
-            activeMenu = comMenuItems;
-          }
           heroRow.addClass('ready');
         }
       }
@@ -867,7 +875,7 @@
         var commandPane = commandCarousel.getPaneInFocus();
         if (targetPane.not(':hidden')) {
           targetPane.remove();
-          activeMenu = commandPane.data('menuItems');
+          setActiveMenu(commandPane.data('menuItems'));
         }
       }
 
@@ -949,10 +957,11 @@
             }));
           tarToMenuItems.push(heroCancelTemplate({heroId: heroId}));
           var tarMenuItems = new atb.MenuItems(tarMenuContainer);
+          setActiveMenu(tarMenuItems);
           tarMenuItems.isWrapAround = true;
+          tarMenuItems.onSelect = updatePointer;
           tarMenuItems.addItems(tarToMenuItems);
           tarMenuContainer.show();
-          activeMenu = tarMenuItems;
         }
       }
 
@@ -984,12 +993,12 @@
       function onCommandCarouselMoveEnd(id) {
         if (id) {
           $('#hero_'+ id).addClass('selected');
-          activeMenu = commandCarousel.getPaneInFocus().data('menuItems');
+          setActiveMenu(commandCarousel.getPaneInFocus().data('menuItems'));
           if (commandCarousel.numPanes > 1) {
             showCommandNavButtons();
           }
         } else {
-          activeMenu = null;
+          setActiveMenu(null);
         }
       }
 
@@ -1170,6 +1179,27 @@
 
       // which menu is in focus and should be modified by keystrokes
       var activeMenu = null;
+      function setActiveMenu(newActive) {
+        activeMenu = newActive;
+        if (activeMenu && activeMenu.curSelected) {
+          updatePointer(activeMenu.curSelected);
+        } else {
+          updatePointer();
+        }
+      }
+
+      // pointer
+      var pointer = $('#pointer');
+      // moves pointer based on selected element
+      function updatePointer(selected) {
+        if (!selected) {
+          pointer.hide();
+        } else if (activeMenu && selected[0] === activeMenu.curSelected[0]) {
+          pointer.show();
+          var offset = selected.offset();
+          pointer.offset({ top: offset.top, left: offset.left-20});
+        }
+      }
 
       function keyInputHandler(keyEvent) {
         if (!activeMenu) {
@@ -1227,6 +1257,7 @@
       $(document).on('keydown.up', {key:'up'}, keyInputHandler);
       $(document).on('keydown.down', {key:'down'}, keyInputHandler);
       $(document).on('keydown.space', {key:'action'}, keyInputHandler);
+      $(document).on('keydown.enter', {key:'action'}, keyInputHandler);
 
       /** END KEYBOARD INPUT SUPPORT */
     </script>
