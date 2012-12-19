@@ -812,13 +812,13 @@
               return heroCommandTemplate({command: command})
             });
           var comMenuItems = new atb.MenuItems(comMenuContainer);
+          comMenuItems.isWrapAround = true;
+          comMenuItems.onSelect = updatePointer;
+          comMenuItems.addItems(comToMenuItems);
           // FIXME? no other active menu = make this one active
           if (!activeMenu) {
             setActiveMenu(comMenuItems);
           }
-          comMenuItems.isWrapAround = true;
-          comMenuItems.onSelect = updatePointer;
-          comMenuItems.addItems(comToMenuItems);
 
           // 'embed' this into the command pane
           comPane.data('menuItems', comMenuItems);
@@ -957,10 +957,10 @@
             }));
           tarToMenuItems.push(heroCancelTemplate({heroId: heroId}));
           var tarMenuItems = new atb.MenuItems(tarMenuContainer);
-          setActiveMenu(tarMenuItems);
           tarMenuItems.isWrapAround = true;
           tarMenuItems.onSelect = updatePointer;
           tarMenuItems.addItems(tarToMenuItems);
+          setActiveMenu(tarMenuItems);
           tarMenuContainer.show();
         }
       }
@@ -1195,6 +1195,7 @@
         if (!selected) {
           pointer.hide();
         } else if (activeMenu && selected[0] === activeMenu.curSelected[0]) {
+          // make sure move only occurs if selected is in the active menu.
           pointer.show();
           var offset = selected.offset();
           pointer.offset({ top: offset.top, left: offset.left-20});
@@ -1257,7 +1258,7 @@
       $(document).on('keydown.up', {key:'up'}, keyInputHandler);
       $(document).on('keydown.down', {key:'down'}, keyInputHandler);
       $(document).on('keydown.space', {key:'action'}, keyInputHandler);
-      $(document).on('keydown.enter', {key:'action'}, keyInputHandler);
+      $(document).on('keydown.return', {key:'action'}, keyInputHandler);
 
       /** END KEYBOARD INPUT SUPPORT */
     </script>
