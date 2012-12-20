@@ -225,24 +225,34 @@
       position: absolute;
       top: 0;
       min-height: 300px;
-      width:180px;
+      width:200px;
       left: 375px;
       overflow: hidden;
     }
     .menu-nested-pane {
       background-color: rgba(10, 50, 110, 0.9);
-      margin: 0 2px;
+      margin: 0 10px;
       float: left;
       position: relative;
       z-index: 2;
-      width: 156px;
-      overflow: hidden;
+      width: 158px;
     }
     .menu-nested-pane ul {
       list-style-type: none;
       list-style-position: inside;
       margin: 0;
       padding: 0;
+    }
+    .menu-nested-pane li {
+      position: relative;
+    }
+    /* Selected Menu Item pointer */
+    .menu-nested-pane li.selected:before {
+      content: url('img/pointer.png');
+      left: -18px;
+      top: 2px;
+      z-index: 1000;
+      position: absolute;
     }
     .menu-nested-pane a {
       border-radius: 4px;
@@ -350,7 +360,7 @@
       display: none;
       font-family: arial;
       font-weight: bold;
-      left: 515px;
+      left: 524px;
       position: absolute;
       width: 30px;
       height: 25px;
@@ -358,13 +368,7 @@
       z-index:3;
     }
     #command-prev {
-      left: 385px;
-    }
-
-    #pointer {
-      display: none;
-      position: absolute;
-      z-index: 99;
+      left: 394px;
     }
   </style>
 </head>
@@ -381,7 +385,6 @@
       <canvas id="main-canvas" height="460" width="960">
       </canvas>
       <div style="position:relative;height:165px;">
-        <img id="pointer" src="img/pointer.png"/>
         <div id="player-pane" class="menu-pane">
           <div id="commands-anchor"></div>
           <button id="command-prev" onClick="commandCarousel.moveRight();">&laquo;</button>
@@ -813,7 +816,6 @@
             });
           var comMenuItems = new atb.MenuItems(comMenuContainer);
           comMenuItems.isWrapAround = true;
-          comMenuItems.onSelect = updatePointer;
           comMenuItems.addItems(comToMenuItems);
           // FIXME? no other active menu = make this one active
           if (!activeMenu) {
@@ -958,7 +960,6 @@
           tarToMenuItems.push(heroCancelTemplate({heroId: heroId}));
           var tarMenuItems = new atb.MenuItems(tarMenuContainer);
           tarMenuItems.isWrapAround = true;
-          tarMenuItems.onSelect = updatePointer;
           tarMenuItems.addItems(tarToMenuItems);
           setActiveMenu(tarMenuItems);
           tarMenuContainer.show();
@@ -1181,25 +1182,6 @@
       var activeMenu = null;
       function setActiveMenu(newActive) {
         activeMenu = newActive;
-        if (activeMenu && activeMenu.curSelected) {
-          updatePointer(activeMenu.curSelected);
-        } else {
-          updatePointer();
-        }
-      }
-
-      // pointer
-      var pointer = $('#pointer');
-      // moves pointer based on selected element
-      function updatePointer(selected) {
-        if (!selected) {
-          pointer.hide();
-        } else if (activeMenu && selected[0] === activeMenu.curSelected[0]) {
-          // make sure move only occurs if selected is in the active menu.
-          pointer.show();
-          var offset = selected.offset();
-          pointer.offset({ top: offset.top, left: offset.left-20});
-        }
       }
 
       function keyInputHandler(keyEvent) {
