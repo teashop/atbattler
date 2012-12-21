@@ -176,6 +176,8 @@ atb.CommandCarousel = function(container) {
   }
 
   CC.add = function(item) {
+    // TODO: item should be added as a complete menu
+    // pos should be a separate argument.  Pos should assign an attribute position to the menu content.  Also, .command-pane class to be added.
     var pos = item.position;
     var toAdd = this.commandPaneTemplate(item);
     var curPane = this.getPaneInFocus();
@@ -347,9 +349,10 @@ atb.MenuItems = function(container, prefix) {
 /**
  * A menu class, providing keyboard-input hooks and event hooks.
  */
-atb.Menu = function(container, parentMenu) {
-  this.container = container;
+atb.Menu = function(template, templateParams, parentMenu) {
+  this.container = $(template(templateParams));
   this.id = this.container.prop('id');
+  //  this.container = $('#'+this.id);
   this.items = null;
   this.parentMenu = parentMenu;
 
@@ -368,6 +371,10 @@ atb.Menu = function(container, parentMenu) {
   M.close = function() {
     this.container.remove();
     this.onClose(this.id);
+  }
+
+  M.html = function() {
+    return(this.container.clone().wrap('<p>').parent().html());
   }
 }
 

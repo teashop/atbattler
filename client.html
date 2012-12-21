@@ -767,8 +767,8 @@
 
       // Hero Command Pane Content
       var heroCommandPaneTemplate = _.template(
-         '<div class="pane-title"><%= hero.name %></div>'
-        + '<div id="comlist_<%= hero.id %>" class="command-list"></div>');
+         '<div><div class="pane-title"><%= hero.name %></div>'
+        + '<div id="comlist_<%= hero.id %>" class="command-list"></div></div>');
 
       // Hero Command list
       var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
@@ -803,10 +803,7 @@
         if (hero.statuses.ready && isYou && !heroRow.hasClass('ready')) {
           var heroDomId = '#hero_'+ hero.id;
           var commands = hero.commands;
-          var content = heroCommandPaneTemplate({hero: hero});
-          commandCarousel.add({id: hero.id, content: content, position: hero.id})
-          // get the newly added command pane - this is the menu
-          var comMenu = new atb.Menu($("#com_" + hero.id));
+          var comMenu = new atb.Menu(heroCommandPaneTemplate, {hero: hero});
 
           // populate with menu items
           var comToMenuItems = _.map(commands, function(command) {
@@ -817,9 +814,15 @@
           comMenu.items.addItems(comToMenuItems);
           comMenu.onKeyInput = comMenuKeyInputHandler.bind(comMenu);
           comMenu.container.data('menu', comMenu);
+          console.log('whatup:' + comMenu.id);
+
+          // FIXME:
+          // add to command carousel 
+          commandCarousel.add({id: hero.id, content: comMenu.html(), position: hero.id})
           if (!activeMenu) {
             setActiveMenu(comMenu);
           }
+
           heroRow.addClass('ready');
         }
       }
@@ -1186,6 +1189,8 @@
 
       // Command menu keyboard input
       function comMenuKeyInputHandler(keyEvent) {
+        console.log('movan com menu [' + this.id + ']: ' + keyEvent.data.key);
+        //console.dir(this);
         switch(keyEvent.data.key) {
           case 'left':
             commandCarousel.moveRight();
