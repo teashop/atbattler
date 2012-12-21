@@ -816,7 +816,7 @@
           comMenu.items.isWrapAround = true;
           comMenu.items.addItems(comToMenuItems);
           comMenu.onKeyInput = comMenuKeyInputHandler.bind(comMenu);
-          comMenu.container.data('menuItems', comMenu);
+          comMenu.container.data('menu', comMenu);
           if (!activeMenu) {
             setActiveMenu(comMenu);
           }
@@ -868,11 +868,10 @@
 
       function cancelTargetPane(toClose) {
         var menuAnchor = $('#player-pane');
-        var targetPane = menuAnchor.find('.target-menu');
-        var commandPane = commandCarousel.getPaneInFocus();
-        if (targetPane.not(':hidden')) {
-          targetPane.remove();
-          setActiveMenu(commandPane.data('menuItems'));
+        targetMenu = menuAnchor.find('.target-menu');
+        if (targetMenu.length > 0) {
+          targetMenu = targetMenu.data('menu');
+          targetMenu.close();
         }
       }
 
@@ -942,7 +941,7 @@
         if (targets) {
           var menuAnchor = $('#player-pane');
           menuAnchor.append(heroTargetPaneTemplate({hero: hero}));
-          var tarMenu = new atb.Menu(menuAnchor.find('.target-menu'));
+          var tarMenu = new atb.Menu(menuAnchor.find('.target-menu'), activeMenu);
 
           // populate with target list as menu items
           var tarToMenuItems = _.compact(_.map(targets, function(target) {
@@ -958,6 +957,9 @@
           tarMenu.items.addItems(tarToMenuItems);
 
           tarMenu.onKeyInput = tarMenuKeyInputHandler.bind(tarMenu);
+          tarMenu.onClose = (function() { setActiveMenu(this.parentMenu) }).bind(tarMenu);
+
+          tarMenu.container.data('menu', tarMenu);
           setActiveMenu(tarMenu);
           tarMenu.container.show();
         }
@@ -991,7 +993,7 @@
       function onCommandCarouselMoveEnd(id) {
         if (id) {
           $('#hero_'+ id).addClass('selected');
-          setActiveMenu(commandCarousel.getPaneInFocus().data('menuItems'));
+          setActiveMenu(commandCarousel.getPaneInFocus().data('menu'));
           if (commandCarousel.numPanes > 1) {
             showCommandNavButtons();
           }
