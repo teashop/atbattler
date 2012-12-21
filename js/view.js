@@ -280,7 +280,7 @@ atb.MenuItems = function(container, prefix) {
   // callbacks
   this.onSelect = function() {};
   this.onDeselect = function() {};
-  // setup blank menu
+  // setup blank menu items
   this.container.append(atb.MenuItemsBoundingTemplate({id: this.id}));
 
   // items will be added/maniuplated within here:
@@ -292,9 +292,9 @@ atb.MenuItems = function(container, prefix) {
 }
 /** Menu prototype functions */
 {
-  var MENU = atb.MenuItems.prototype;
+  var MI = atb.MenuItems.prototype;
 
-  MENU.addItems = function(items) {
+  MI.addItems = function(items) {
     this.numItems = items.length;
     this.itemContainer.append(atb.MenuItemsTemplate({items: items, prefix: this.itemPrefix}));
     var selectId = this.itemPrefix + '0';
@@ -302,7 +302,7 @@ atb.MenuItems = function(container, prefix) {
     this.onSelect(this.curSelected);
   }
 
-  MENU.moveCursor = function(dir) {
+  MI.moveCursor = function(dir) {
     if (!dir) {
       return;
     }
@@ -343,6 +343,34 @@ atb.MenuItems = function(container, prefix) {
     }
   }
 }
+
+/**
+ * A menu class, providing keyboard-input hooks and event hooks.
+ */
+atb.Menu = function(container, parentMenu) {
+  this.container = container;
+  this.id = this.container.prop('id');
+  this.items = null;
+  this.parentMenu = parentMenu;
+
+  this.onKeydInput = function() {};
+  this.onClose = function() {};
+}
+
+
+{
+  M = atb.Menu.prototype;
+
+  M.addMenuItems = function(selector) {
+    this.items = new atb.MenuItems($(selector, this.container));
+  }
+
+  M.close = function() {
+    this.container.remove();
+    this.onClose(this.id);
+  }
+}
+
 
 /** TWEENS **/
 

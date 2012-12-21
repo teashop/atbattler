@@ -774,7 +774,7 @@
       var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
 
       // Target Pane container
-      var heroTargetPaneTemplate = _.template('<div id="tarlist_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-nested-pane"></div>');
+      var heroTargetPaneTemplate = _.template('<div id="tarlist_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-nested-pane"><div class="target-list"></div></div>');
 
       // Hero Target list
       var heroTargetTemplate =  _.template('<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
@@ -803,28 +803,23 @@
         if (hero.statuses.ready && isYou && !heroRow.hasClass('ready')) {
           var heroDomId = '#hero_'+ hero.id;
           var commands = hero.commands;
-          var commandContainer= $('#commands-anchor');
           var content = heroCommandPaneTemplate({hero: hero});
           commandCarousel.add({id: hero.id, content: content, position: hero.id})
-          // get the newly added command pane
-          var comPane = $("#com_" + hero.id);
+          // get the newly added command pane - this is the menu
+          var comMenu = new atb.Menu($("#com_" + hero.id));
 
           // populate with menu items
-          var comMenuContainer = comPane.find('.command-list');
           var comToMenuItems = _.map(commands, function(command) {
               return heroCommandTemplate({command: command})
             });
-          var comMenuItems = new atb.MenuItems(comMenuContainer);
-          comMenuItems.isWrapAround = true;
-          comMenuItems.addItems(comToMenuItems);
-          // FIXME? no other active menu = make this one active
+          comMenu.addMenuItems('.command-list');
+          comMenu.items.isWrapAround = true;
+          comMenu.items.addItems(comToMenuItems);
+          comMenu.onKeyInput = comMenuKeyInputHandler.bind(comMenu);
+          comMenu.container.data('menuItems', comMenu);
           if (!activeMenu) {
-            setActiveMenu(comMenuItems);
+            setActiveMenu(comMenu);
           }
-
-          // 'embed' this into the command pane
-          comPane.data('menuItems', comMenuItems);
-
           heroRow.addClass('ready');
         }
       }
@@ -871,7 +866,7 @@
         commandCarousel.remove(heroId);
       }
 
-      function cancelTargetPane() {
+      function cancelTargetPane(toClose) {
         var menuAnchor = $('#player-pane');
         var targetPane = menuAnchor.find('.target-menu');
         var commandPane = commandCarousel.getPaneInFocus();
@@ -947,7 +942,7 @@
         if (targets) {
           var menuAnchor = $('#player-pane');
           menuAnchor.append(heroTargetPaneTemplate({hero: hero}));
-          var tarMenuContainer = menuAnchor.find('.target-menu');
+          var tarMenu = new atb.Menu(menuAnchor.find('.target-menu'));
 
           // populate with target list as menu items
           var tarToMenuItems = _.compact(_.map(targets, function(target) {
@@ -958,11 +953,13 @@
               }
             }));
           tarToMenuItems.push(heroCancelTemplate({heroId: heroId}));
-          var tarMenuItems = new atb.MenuItems(tarMenuContainer);
-          tarMenuItems.isWrapAround = true;
-          tarMenuItems.addItems(tarToMenuItems);
-          setActiveMenu(tarMenuItems);
-          tarMenuContainer.show();
+          tarMenu.addMenuItems('.target-list');
+          tarMenu.items.isWrapAround = true;
+          tarMenu.items.addItems(tarToMenuItems);
+
+          tarMenu.onKeyInput = tarMenuKeyInputHandler.bind(tarMenu);
+          setActiveMenu(tarMenu);
+          tarMenu.container.show();
         }
       }
 
@@ -1184,11 +1181,8 @@
         activeMenu = newActive;
       }
 
-      function keyInputHandler(keyEvent) {
-        if (!activeMenu) {
-          return;
-        }
-        //console.log(activeMenu.id);
+      // Command menu keyboard input
+      function comMenuKeyInputHandler(keyEvent) {
         switch(keyEvent.data.key) {
           case 'left':
             commandCarousel.moveRight();
@@ -1197,40 +1191,61 @@
             commandCarousel.moveLeft();
             break;
           case 'up':
-            activeMenu.moveCursor('up');
+            this.items.moveCursor('up');
             break;
           case 'down':
-            activeMenu.moveCursor('down');
+            this.items.moveCursor('down');
             break;
           case 'action':
             // Action key
-            var selected = activeMenu.curSelected;
-
-            // FIXME: determining 'action' not directly via that activeMenu
-            // is ugly and bad.
+            var selected = this.items.curSelected.find('a');
             var commandPane = commandCarousel.getPaneInFocus();
-            var commandList = selected.parents('.command-list');
-            var targetPane = selected.parents('.target-menu');
-            selected = selected.find('a');
-            if (commandList.length > 0 && commandList.not(':hidden')) {
-              var actionType = $(selected).text().toLowerCase();
-              commandToTargetList(commandPane, actionType);
-            } else if (targetPane.length > 0 && targetPane.not(':hidden')) {
-              var actionType = selected.attr('class');
-              var actorId = selected.attr('heroId');
-              var targetId = selected.attr('targetId');
-              // TODO: move this out
-              if (actionType == 'cancel') {
-                // backtrack to command menu
-                cancelTargetPane();
-              } else {
-                executeCommandOnTarget(actionType, actorId, targetId);
-              }
+            var actionType = $(selected).text().toLowerCase();
+            commandToTargetList(commandPane, actionType);
+            break;
+          default:
+            // ignore
+        }
+      }
+
+      // Target menu keyboard input
+      function tarMenuKeyInputHandler(keyEvent) {
+        switch(keyEvent.data.key) {
+          case 'left':
+            commandCarousel.moveRight();
+            break;
+          case 'right':
+            commandCarousel.moveLeft();
+            break;
+          case 'up':
+            this.items.moveCursor('up');
+            break;
+          case 'down':
+            this.items.moveCursor('down');
+            break;
+          case 'action':
+            // Action key
+            var selected = this.items.curSelected.find('a');
+            var actionType = selected.attr('class');
+            var actorId = selected.attr('heroId');
+            var targetId = selected.attr('targetId');
+            if (actionType == 'cancel') {
+              // backtrack to command menu
+              cancelTargetPane();
+            } else {
+              executeCommandOnTarget(actionType, actorId, targetId);
             }
             break;
           default:
             // ignore
         }
+      }
+
+      function keyInputHandler(keyEvent) {
+        if (!activeMenu) {
+          return;
+        }
+        activeMenu.onKeyInput(keyEvent);
         keyEvent.stopPropagation();
         return false;
       }
