@@ -767,8 +767,10 @@
 
       // Hero Command Pane Content
       var heroCommandPaneTemplate = _.template(
-         '<div><div class="pane-title"><%= hero.name %></div>'
-        + '<div id="comlist_<%= hero.id %>" class="command-list"></div></div>');
+        '<div id="com_<%= hero.id %>" heroId="<%= hero.id %>" class="menu-nested-pane">'
+        + '<div class="pane-title"><%= hero.name %></div>'
+        + '<div id="comlist_<%= hero.id %>" class="command-list"></div>'
+        + '</div>');
 
       // Hero Command list
       var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
@@ -818,7 +820,7 @@
 
           // FIXME:
           // add to command carousel 
-          commandCarousel.add({id: hero.id, content: comMenu.html(), position: hero.id})
+          commandCarousel.add(comMenu, hero.id)
           if (!activeMenu) {
             setActiveMenu(comMenu);
           }
@@ -1190,7 +1192,6 @@
       // Command menu keyboard input
       function comMenuKeyInputHandler(keyEvent) {
         console.log('movan com menu [' + this.id + ']: ' + keyEvent.data.key);
-        //console.dir(this);
         switch(keyEvent.data.key) {
           case 'left':
             commandCarousel.moveRight();

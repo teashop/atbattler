@@ -175,18 +175,19 @@ atb.CommandCarousel = function(container) {
     );
   }
 
-  CC.add = function(item) {
+  CC.add = function(item, position) {
     // TODO: item should be added as a complete menu
     // pos should be a separate argument.  Pos should assign an attribute position to the menu content.  Also, .command-pane class to be added.
-    var pos = item.position;
-    var toAdd = this.commandPaneTemplate(item);
+    var toAdd = $(item.html());
+    toAdd.addClass('command-pane');
+    toAdd.data('position', position);
     var curPane = this.getPaneInFocus();
     // protip: current pane in focus in the tray is the 1st element
     var paneInFocusId = curPane.attr('id');
     var ancestorId = null;
     // look for closest ancestor
     while (curPane.length > 0) {
-      if (curPane.attr('position') < pos) {
+      if (curPane.data('position') < position) {
         if (!ancestorId || ancestorId < curPane.attr('id')) {
           ancestorId = curPane.attr('id');
         }
@@ -194,8 +195,9 @@ atb.CommandCarousel = function(container) {
       curPane = curPane.next();
     }
     // couldn't find it == add to end.
+    //console.log(toAdd.clone().wrap('<p>').parent().html());
     if (!ancestorId) {
-      $(toAdd).appendTo('.command-tray');
+      toAdd.appendTo('.command-tray');
     } else {
       // found it, insert after closest ancestor 
       $('#' + ancestorId).after(toAdd);
@@ -242,7 +244,8 @@ atb.CommandCarousel = function(container) {
   }
 
   CC.getPaneInFocus = function() {
-    return $('.command-pane',this.obj);
+    console.log(this.obj.find('.command-pane').prop('id'));
+    return this.obj.find('.command-pane');
   }
 
   CC.getInFocusOrigId = function() {
@@ -338,6 +341,7 @@ atb.MenuItems = function(container, prefix) {
       this.curSelected.removeClass('selected');
       var selectId = this.itemPrefix + nextPos;
       this.curSelected = $('#' + selectId, this.itemContainer).addClass('selected');
+    console.log('moving ' + dir + ' to [' + this.curSelected.attr('class') + "]");
       if (this.isScrollY) {
         $(this.container).stop().animate({scrollTop: this.curSelected.position().top - this.curSelected.height()}, 100);
       }
