@@ -128,14 +128,12 @@ atb.EffectNumberGenerator = function(stage) {
  * Carousel for 'command panes' (command list for ready heroes)
  */
 atb.CommandCarousel = function(container) {
-  var defaultPaneTemplate =  _.template('<div id="com_<%= id %>" class="command-pane" position="<%= position %>"><%= content%></div>');
   this.obj = container;
   this.paneWidth = 200;
   this.paneIdPrefix = 'com_';
   this.obj.append('<div class="command-tray" style="display:none"></div>');
   this.tray = $('.command-tray',this.obj);
   this.numPanes = 0;
-  this.commandPaneTemplate = defaultPaneTemplate;
   // callbacks - provide as required
   this.onAdd = function() {};
   this.onRemove = function() {};
@@ -178,7 +176,7 @@ atb.CommandCarousel = function(container) {
   CC.add = function(item, position) {
     // TODO: item should be added as a complete menu
     // pos should be a separate argument.  Pos should assign an attribute position to the menu content.  Also, .command-pane class to be added.
-    var toAdd = $(item.html());
+    var toAdd = item.container;
     toAdd.addClass('command-pane');
     toAdd.data('position', position);
     var curPane = this.getPaneInFocus();
@@ -195,7 +193,6 @@ atb.CommandCarousel = function(container) {
       curPane = curPane.next();
     }
     // couldn't find it == add to end.
-    //console.log(toAdd.clone().wrap('<p>').parent().html());
     if (!ancestorId) {
       toAdd.appendTo('.command-tray');
     } else {
@@ -244,7 +241,6 @@ atb.CommandCarousel = function(container) {
   }
 
   CC.getPaneInFocus = function() {
-    console.log(this.obj.find('.command-pane').prop('id'));
     return this.obj.find('.command-pane');
   }
 
@@ -341,7 +337,6 @@ atb.MenuItems = function(container, prefix) {
       this.curSelected.removeClass('selected');
       var selectId = this.itemPrefix + nextPos;
       this.curSelected = $('#' + selectId, this.itemContainer).addClass('selected');
-    console.log('moving ' + dir + ' to [' + this.curSelected.attr('class') + "]");
       if (this.isScrollY) {
         $(this.container).stop().animate({scrollTop: this.curSelected.position().top - this.curSelected.height()}, 100);
       }
@@ -364,7 +359,6 @@ atb.Menu = function(template, templateParams, parentMenu) {
   this.onClose = function() {};
 }
 
-
 {
   M = atb.Menu.prototype;
 
@@ -375,10 +369,6 @@ atb.Menu = function(template, templateParams, parentMenu) {
   M.close = function() {
     this.container.remove();
     this.onClose(this.id);
-  }
-
-  M.html = function() {
-    return(this.container.clone().wrap('<p>').parent().html());
   }
 }
 

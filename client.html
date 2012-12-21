@@ -761,11 +761,8 @@
          );
 
       /**
-       * Command Pane Container Template
+       * Hero Command Menu Content
        */
-      var commandContainerTemplate = _.template('<div id="com_<%= id %>" heroId="<%= id %>" class="command-pane menu-nested-pane" position="<%= position %>"><%= content%></div>');
-
-      // Hero Command Pane Content
       var heroCommandPaneTemplate = _.template(
         '<div id="com_<%= hero.id %>" heroId="<%= hero.id %>" class="menu-nested-pane">'
         + '<div class="pane-title"><%= hero.name %></div>'
@@ -816,7 +813,6 @@
           comMenu.items.addItems(comToMenuItems);
           comMenu.onKeyInput = comMenuKeyInputHandler.bind(comMenu);
           comMenu.container.data('menu', comMenu);
-          console.log('whatup:' + comMenu.id);
 
           // FIXME:
           // add to command carousel 
@@ -1175,7 +1171,6 @@
       // attach command carousel
       var commandCarousel = new atb.CommandCarousel($('#commands-anchor'));
       commandCarousel.paneWidth = 180;
-      commandCarousel.commandPaneTemplate = commandContainerTemplate;
       commandCarousel.onAdd = onAddRemoveCommandPanes;
       commandCarousel.onRemove = onAddRemoveCommandPanes;
       commandCarousel.onMoveStart = onCommandCarouselMoveStart;
@@ -1191,7 +1186,6 @@
 
       // Command menu keyboard input
       function comMenuKeyInputHandler(keyEvent) {
-        console.log('movan com menu [' + this.id + ']: ' + keyEvent.data.key);
         switch(keyEvent.data.key) {
           case 'left':
             commandCarousel.moveRight();
@@ -1219,6 +1213,7 @@
 
       // Target menu keyboard input
       function tarMenuKeyInputHandler(keyEvent) {
+        console.log('movan com menu [' + this.id + ']: ' + keyEvent.data.key);
         switch(keyEvent.data.key) {
           case 'left':
             commandCarousel.moveRight();
