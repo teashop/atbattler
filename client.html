@@ -942,8 +942,8 @@
 
         if (targets) {
           var menuAnchor = $('#player-pane');
-          menuAnchor.append(heroTargetPaneTemplate({hero: hero}));
-          var tarMenu = new atb.Menu(menuAnchor.find('.target-menu'), activeMenu);
+          var tarMenu = new atb.Menu(heroTargetPaneTemplate, {hero: hero}, activeMenu);
+          menuAnchor.append(tarMenu.container);
 
           // populate with target list as menu items
           var tarToMenuItems = _.compact(_.map(targets, function(target) {
@@ -960,7 +960,6 @@
 
           tarMenu.onKeyInput = tarMenuKeyInputHandler.bind(tarMenu);
           tarMenu.onClose = (function() { setActiveMenu(this.parentMenu) }).bind(tarMenu);
-
           tarMenu.container.data('menu', tarMenu);
           setActiveMenu(tarMenu);
           tarMenu.container.show();
