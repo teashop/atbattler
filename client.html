@@ -302,8 +302,31 @@
       position: absolute;
       top: 25px;
       left: 450px;
+      z-index:5;
+    }
+
+    .item-menu {
+      display: block;
+      height: 160px;
+      left: 250px;
+      position: absolute;
+      top: 0px;
+      width: 610px;
       z-index:4;
     }
+    .item-list {
+      overflow-y: scroll;
+      /* TODO: specify a height/width */
+    }
+    .item-menu li {
+      width: 280px;
+      float: left;
+    }
+    .item-menu li .qty {
+      float: right;
+      display: block;
+    }
+
     #party .selected {
       background-color: rgba(10, 50, 110, 0.9);
     }
@@ -772,12 +795,19 @@
       // Hero Command list
       var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
 
-      // Target Pane container
-      var heroTargetPaneTemplate = _.template('<div id="tarlist_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-nested-pane"><div class="target-list"></div></div>');
+      // Target Menu 
+      var heroTargetMenuTemplate = _.template('<div id="tarlist_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-nested-pane"><div class="target-list"></div></div>');
 
-      // Hero Target list
+      // Target Menu list item
       var heroTargetTemplate =  _.template('<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
+
+      // Cancel (close nested menu) list item
       var heroCancelTemplate =  _.template('<a href="#" class="cancel" heroId="<%= heroId %>">Cancel</a>');
+
+      // Item menu
+      var heroItemMenuTemplate = _.template('<div id="item_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="item-menu menu-nested-pane"><div class="item-list"></div></div>');
+      // Item Menu list item
+      var heroItemTemplate =  _.template('<a href="#" id="it_<% item.id %>" heroId="<%= heroId %>"><%= item.name %><div class="qty"><%= item.qty %></div></a>');
 
       /** END Templates **/
 
@@ -910,6 +940,12 @@
             console.log('Action Not Yet Impl: ' + actionType);
             break;
         }
+        // TODO: should have menus 'cascade up' to close all.
+        var itemMenuContainer = $('#player-pane').find('.item-menu');
+        if (itemMenuContainer.length > 0) {
+          var itemMenu = itemMenuContainer.data('menu');
+          itemMenu.close();
+        }
         closeCommandPane(hero.id);
       }
 
@@ -924,6 +960,54 @@
       function commandToTargetList(commandPane, actionType) {
         var heroId = commandPane.attr('heroId');
         var hero = gameClient.heroes[heroId];
+        switch (actionType) {
+          case 'attack':
+          case 'skill':
+            openTargetMenu(hero, actionType, activeMenu);
+            break;
+          case 'item':
+            openItemMenu(hero, activeMenu);
+            break;
+          default:
+            console.log('Command Not Yet Impl: ' + actionType);
+            break;
+        }
+      }
+
+      
+      // "Item" command menu
+      function openItemMenu(hero, parentMenu) {
+        var menuAnchor = $('#player-pane');
+        var itemMenu = new atb.Menu(heroItemMenuTemplate, {hero: hero}, parentMenu);
+        menuAnchor.append(itemMenu.container);
+
+        // populate with items in inventory.
+        // TODO: have an inventory, this is hardcoded:
+        var items = [
+            {id:1, name:'Crimson Cow', qty: 10},
+            {id:2, name:'Lentil Samosa', qty: 30},
+            {id:3, name:'Spicy Pepperette', qty: 6},
+            {id:4, name:'X-Large Double-Double', qty: 1}
+          ];
+        var itemToMenuItems = _.compact(_.map(items, function(item) {
+            return heroItemTemplate({heroId: hero.id, item: item});
+          }));
+
+        itemToMenuItems.push(heroCancelTemplate({heroId: hero.id}));
+        itemMenu.addMenuItems('.item-list');
+        itemMenu.items.isWrapAround = false;
+        itemMenu.items.itemsPerRow = 2;
+        itemMenu.items.addItems(itemToMenuItems);
+
+        itemMenu.onKeyInput = itemMenuKeyInputHandler.bind(itemMenu);
+        itemMenu.onClose = (function() { setActiveMenu(this.parentMenu) }).bind(itemMenu);
+        itemMenu.container.data('menu', itemMenu);
+        setActiveMenu(itemMenu);
+        itemMenu.container.show();
+      }
+
+      // Target Selection Menu
+      function openTargetMenu(hero, actionType, parentMenu) {
         var targets = null;
         switch (actionType) {
           case 'attack':
@@ -939,10 +1023,9 @@
             console.log('Command Not Yet Impl: ' + actionType);
             break;
         }
-
         if (targets) {
           var menuAnchor = $('#player-pane');
-          var tarMenu = new atb.Menu(heroTargetPaneTemplate, {hero: hero}, activeMenu);
+          var tarMenu = new atb.Menu(heroTargetMenuTemplate, {hero: hero}, parentMenu);
           menuAnchor.append(tarMenu.container);
 
           // populate with target list as menu items
@@ -950,10 +1033,10 @@
               if (target.statuses.dead) { 
                 return null;
               } else {
-                return heroTargetTemplate({actionType: actionType, heroId: heroId, target: target});
+                return heroTargetTemplate({actionType: actionType, heroId: hero.id, target: target});
               }
             }));
-          tarToMenuItems.push(heroCancelTemplate({heroId: heroId}));
+          tarToMenuItems.push(heroCancelTemplate({heroId: hero.id}));
           tarMenu.addMenuItems('.target-list');
           tarMenu.items.isWrapAround = true;
           tarMenu.items.addItems(tarToMenuItems);
@@ -1210,9 +1293,29 @@
         }
       }
 
+      function itemMenuKeyInputHandler(keyEvent) {
+        switch(keyEvent.data.key) {
+          case 'left':
+          case 'right':
+          case 'up':
+          case 'down':
+            this.items.moveCursor(keyEvent.data.key);
+            break;
+          case 'action':
+            // Action key
+            var selected = this.items.curSelected.find('a');
+            var heroId = selected.attr('heroId');
+            var hero = gameClient.heroes[heroId];
+            var actionType = 'item';
+            openTargetMenu(hero, actionType, this);
+            break;
+          default:
+            // ignore
+        }
+      }
+
       // Target menu keyboard input
       function tarMenuKeyInputHandler(keyEvent) {
-        console.log('movan com menu [' + this.id + ']: ' + keyEvent.data.key);
         switch(keyEvent.data.key) {
           case 'left':
             commandCarousel.moveRight();
