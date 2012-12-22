@@ -216,7 +216,7 @@ atb.CommandCarousel = function(container) {
       var requiresMove = false;
       // if we're removing the pane in focus, this counts as a carousel move
       if (curPane.attr('id') == targetId) {
-        this.onMoveStart(this.getPaneOrigId(curPane));
+        this.onMoveStart(this.getPaneOrigId(curPane.prop('id')));
         requiresMove = true;
       }
       target.slideToggle(100, (function() {
@@ -231,7 +231,9 @@ atb.CommandCarousel = function(container) {
       if (this.numPanes == 0) {
         this.tray.slideToggle(100);
       }
+      return false;
     }
+    return true;
   }
 
   CC.clear = function() {
@@ -245,11 +247,10 @@ atb.CommandCarousel = function(container) {
   }
 
   CC.getInFocusOrigId = function() {
-    return this.getPaneOrigId(this.getPaneInFocus());
+    return this.getPaneOrigId(this.getPaneInFocus().prop('id'));
     
   }
-  CC.getPaneOrigId = function(pane) {
-    var domId = pane.attr('id');  
+  CC.getPaneOrigId = function(domId) {
     return domId ? domId.substr(domId.indexOf('_')+1) : undefined;
   }
 }
@@ -356,6 +357,7 @@ atb.Menu = function(template, templateParams, parentMenu) {
   this.parentMenu = parentMenu;
 
   this.onKeydInput = function() {};
+  this.onPreClose = function() { return true;};
   this.onClose = function() {};
 }
 
@@ -367,8 +369,19 @@ atb.Menu = function(template, templateParams, parentMenu) {
   }
 
   M.close = function() {
-    this.container.remove();
-    this.onClose(this.id);
+    var continueClosing = this.onPreClose(this);
+    if (continueClosing) {
+      this.container.remove();
+      this.onClose(this);
+    }
+    return continueClosing;
+  }
+
+  M.cascadeClose = function() {
+    this.close();
+    if (this.parentMenu) {
+      this.parentMenu.cascadeClose(this);
+    }
   }
 }
 

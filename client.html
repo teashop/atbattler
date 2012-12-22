@@ -515,6 +515,7 @@
           comMenu.items.isWrapAround = true;
           comMenu.items.addItems(comToMenuItems);
           comMenu.onKeyInput = comMenuKeyInputHandler.bind(comMenu);
+          comMenu.onPreClose = function() { return commandCarousel.remove(hero.id); };
           comMenu.container.data('menu', comMenu);
 
           // FIXME:
@@ -565,12 +566,6 @@
         updateHeroHp(target, type, amount, isCrit);
       }
 
-      function closeCommandPane(heroId) {
-        var heroDomId = '#hero_'+ heroId;
-        // FIXME: need to use the Menu's close!
-        commandCarousel.remove(heroId);
-      }
-
       function cancelTargetPane(toClose) {
         var menuAnchor = $('#player-pane');
         targetMenu = menuAnchor.find('.target-menu');
@@ -613,24 +608,18 @@
             console.log('Action Not Yet Impl: ' + actionType);
             break;
         }
-        // TODO: should have menus 'cascade up' to close all.
-        var itemMenuContainer = $('#player-pane').find('.item-menu');
-        if (itemMenuContainer.length > 0) {
-          var itemMenu = itemMenuContainer.data('menu');
-          itemMenu.close();
-        }
-        closeCommandPane(hero.id);
+        activeMenu.cascadeClose();
       }
 
-      // command pane option => target list (or execute command)
+      // command list item => process the command
       $('#player-pane').on('click', '.command-pane .command-list a', function(event) {
           var commandPane = $(event.target).parents('.command-pane');
           var actionType = $(this).text().toLowerCase();
-          commandToTargetList(commandPane, actionType);
+          processCommand(commandPane, actionType);
           return false;
       });
 
-      function commandToTargetList(commandPane, actionType) {
+      function processCommand(commandPane, actionType) {
         var heroId = commandPane.attr('heroId');
         var hero = gameClient.heroes[heroId];
         switch (actionType) {
@@ -646,7 +635,6 @@
             break;
         }
       }
-
       
       // "Item" command menu
       function openItemMenu(hero, parentMenu) {
@@ -959,7 +947,7 @@
             var selected = this.items.curSelected.find('a');
             var commandPane = commandCarousel.getPaneInFocus();
             var actionType = $(selected).text().toLowerCase();
-            commandToTargetList(commandPane, actionType);
+            processCommand(commandPane, actionType);
             break;
           default:
             // ignore
