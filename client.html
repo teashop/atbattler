@@ -732,7 +732,6 @@
         if (id) {
           $('#hero_'+ id).removeClass('selected');
           hideCommandNavButtons();
-          cancelTargetPane();
         }
       }
       function onCommandCarouselMoveEnd(id) {
@@ -979,16 +978,10 @@
       function tarMenuKeyInputHandler(keyEvent) {
         switch(keyEvent.data.key) {
           case 'left':
-            commandCarousel.moveRight();
-            break;
           case 'right':
-            commandCarousel.moveLeft();
-            break;
           case 'up':
-            this.items.moveCursor('up');
-            break;
           case 'down':
-            this.items.moveCursor('down');
+            this.items.moveCursor(keyEvent.data.key);
             break;
           case 'action':
             // Action key
