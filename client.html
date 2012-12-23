@@ -16,6 +16,7 @@
   <script src="js/util.js"></script>
   <script src="js/durationevent.js"></script>
   <script src="js/gameevent.js"></script>
+  <script src="js/item.js"></script>
   <script src="js/gameinstance.js"></script>
   <script src="js/gameclient.js"></script>
   <script src="js/view.js"></script>
@@ -474,26 +475,17 @@
       // Item Menu
       var heroItemMenuTemplate = _.template('<div id="item_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="item-menu menu-nested-pane"><div class="tooltip"></div><div id="item_list_<%= hero.id %>" class="item-list"></div></div>');
       // Item Menu list item
-      var heroItemTemplate =  _.template('<a href="#" id="it_<% item.id %>" heroId="<%= heroId %>"><%= item.name %><div class="qty"><%= item.qty %></div></a>');
+      var heroItemTemplate =  _.template('<a href="#" id="it_<% item[atb.Item.field.id] %>" heroId="<%= heroId %>"><%= item[atb.Item.field.name] %><div class="qty"><%= qty %></div></a>');
 
       /** END Templates **/
 
       /** INVENTORY **/
       // TODO: have an inventory, this is hardcoded:
       var inventory = [
-          {id:0, name:'Juicy Fruit', desc:'The taste is gonna move ya', qty: 10},
-          {id:1, name:'Crimson Cow', desc:'Energy drink', qty: 10},
-          {id:2, name:'Lentil Samosa',  desc:'Deep-fried and tasty', qty: 30},
-          {id:3, name:'Spicy Pepperette', desc:'Do not eat all in one sitting',qty: 6},
-          {id:4, name:'Baguette', desc:'Freshly-baked', qty: 10},
-          {id:5, name:'2L Coca-Cola', desc:'A popular beverage', qty: 2},
-          {id:6, name:'X-Large Double-Double', desc:'An extra-large coffee', qty: 1},
-          {id:7, name:'Panic Button', desc:'For when things get really hairy', qty: 1},
-          {id:8, name:'Engineering Logbook', desc:'Keep up-to-date for SRED tax credits!', qty: 1},
-          {id:9, name:'Mango Jelly', desc:'Delicious but pose a choking-hazard to small children', qty: 10},
-          {id:10, name:'Leftover Spaghetti', desc:'Can be eaten cold', qty: 10},
-          {id:11, name:'Assorted Weeds', desc:'High in fibre', qty: 10},
-          {id:12, name:'Dried Cuttlefish', desc:'Pungent dried seafood snack', qty: 10}
+          {item: atb.Item[0], qty: 10},
+          {item: atb.Item[1], qty: 10},
+          {item: atb.Item[2], qty: 10},
+          {item: atb.Item[3], qty: 10}
         ];
       /** END INVENTORY **/
 
@@ -656,8 +648,8 @@
         menuAnchor.append(itemMenu.container);
 
         // populate with items in inventory.
-        var itemToMenuItems = _.compact(_.map(inventory, function(item) {
-            return heroItemTemplate({heroId: hero.id, item: item});
+        var itemToMenuItems = _.compact(_.map(inventory, function(slot) {
+            return heroItemTemplate({heroId: hero.id, item: slot.item, qty: slot.qty});
           }));
 
         itemToMenuItems.push(heroCancelTemplate({heroId: hero.id}));
@@ -667,7 +659,7 @@
         itemMenu.items.onSelect = function(selected) {
           var domId = selected.prop('id');
           var itemId = domId.substr(domId.lastIndexOf('_')+1);
-          itemMenu.container.find('.tooltip').html(inventory[itemId].desc);
+          itemMenu.container.find('.tooltip').html(atb.Item[itemId][atb.Item.field.desc]);
         }
         itemMenu.items.addItems(itemToMenuItems);
         itemMenu.onKeyInput = itemMenuKeyInputHandler.bind(itemMenu);
