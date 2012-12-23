@@ -309,19 +309,26 @@
     .item-menu {
       display: block;
       height: 160px;
-      left: 250px;
+      left: 230px;
       position: absolute;
       top: 0px;
-      width: 610px;
+      width: 630px;
       z-index:4;
+    }
+    .item-menu .tooltip {
+      background-color: rgba(0, 25, 70, 0.9);
+      font-weight: normal;
+      padding: 5px 10px;
+      margin: 0 0 10px 0;
     }
     .item-list {
       overflow-y: scroll;
-      /* TODO: specify a height/width */
+      height: 120px;
     }
     .item-menu li {
       width: 280px;
       float: left;
+      margin-left: 20px;
     }
     .item-menu li .qty {
       float: right;
@@ -477,12 +484,31 @@
       // Cancel (close nested menu) list item
       var heroCancelTemplate =  _.template('<a href="#" class="cancel" heroId="<%= heroId %>">Cancel</a>');
 
-      // Item menu
-      var heroItemMenuTemplate = _.template('<div id="item_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="item-menu menu-nested-pane"><div class="item-list"></div></div>');
+      // Item Menu
+      var heroItemMenuTemplate = _.template('<div id="item_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="item-menu menu-nested-pane"><div class="tooltip"></div><div id="item_list_<%= hero.id %>" class="item-list"></div></div>');
       // Item Menu list item
       var heroItemTemplate =  _.template('<a href="#" id="it_<% item.id %>" heroId="<%= heroId %>"><%= item.name %><div class="qty"><%= item.qty %></div></a>');
 
       /** END Templates **/
+
+      /** INVENTORY **/
+      // TODO: have an inventory, this is hardcoded:
+      var inventory = [
+          {id:0, name:'Juicy Fruit', desc:'The taste is gonna move ya', qty: 10},
+          {id:1, name:'Crimson Cow', desc:'Energy drink', qty: 10},
+          {id:2, name:'Lentil Samosa',  desc:'Deep-fried and tasty', qty: 30},
+          {id:3, name:'Spicy Pepperette', desc:'Do not eat all in one sitting',qty: 6},
+          {id:4, name:'Baguette', desc:'Freshly-baked', qty: 10},
+          {id:5, name:'2L Coca-Cola', desc:'A popular beverage', qty: 2},
+          {id:6, name:'X-Large Double-Double', desc:'An extra-large coffee', qty: 1},
+          {id:7, name:'Panic Button', desc:'For when things get really hairy', qty: 1},
+          {id:8, name:'Engineering Logbook', desc:'Keep up-to-date for SRED tax credits!', qty: 1},
+          {id:9, name:'Mango Jelly', desc:'Delicious but pose a choking-hazard to small children', qty: 10},
+          {id:10, name:'Leftover Spaghetti', desc:'Can be eaten cold', qty: 10},
+          {id:11, name:'Assorted Weeds', desc:'High in fibre', qty: 10},
+          {id:12, name:'Dried Cuttlefish', desc:'Pungent dried seafood snack', qty: 10}
+        ];
+      /** END INVENTORY **/
 
       function updateHero(hero) {
         var player = hero.player;
@@ -643,14 +669,7 @@
         menuAnchor.append(itemMenu.container);
 
         // populate with items in inventory.
-        // TODO: have an inventory, this is hardcoded:
-        var items = [
-            {id:1, name:'Crimson Cow', qty: 10},
-            {id:2, name:'Lentil Samosa', qty: 30},
-            {id:3, name:'Spicy Pepperette', qty: 6},
-            {id:4, name:'X-Large Double-Double', qty: 1}
-          ];
-        var itemToMenuItems = _.compact(_.map(items, function(item) {
+        var itemToMenuItems = _.compact(_.map(inventory, function(item) {
             return heroItemTemplate({heroId: hero.id, item: item});
           }));
 
@@ -658,8 +677,12 @@
         itemMenu.addMenuItems('.item-list');
         itemMenu.items.isWrapAround = false;
         itemMenu.items.itemsPerRow = 2;
+        itemMenu.items.onSelect = function(selected) {
+          var domId = selected.prop('id');
+          var itemId = domId.substr(domId.lastIndexOf('_')+1);
+          itemMenu.container.find('.tooltip').html(inventory[itemId].desc);
+        }
         itemMenu.items.addItems(itemToMenuItems);
-
         itemMenu.onKeyInput = itemMenuKeyInputHandler.bind(itemMenu);
         itemMenu.onClose = (function() { setActiveMenu(this.parentMenu) }).bind(itemMenu);
         itemMenu.container.data('menu', itemMenu);
