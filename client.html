@@ -231,7 +231,7 @@
       left: 375px;
       overflow: hidden;
     }
-    .menu-nested-pane {
+    .menu-pane {
       background-color: rgba(10, 50, 110, 0.9);
       margin: 0 10px;
       float: left;
@@ -239,24 +239,24 @@
       z-index: 2;
       width: 158px;
     }
-    .menu-nested-pane ul {
+    .menu-pane ul {
       list-style-type: none;
       list-style-position: inside;
       margin: 0;
       padding: 0;
     }
-    .menu-nested-pane li {
+    .menu-pane li {
       position: relative;
     }
     /* Selected Menu Item pointer */
-    .menu-nested-pane li.selected:before {
+    .menu-pane li.selected:before {
       content: url('img/pointer.png');
       left: -18px;
       top: 2px;
       z-index: 1000;
       position: absolute;
     }
-    .menu-nested-pane a {
+    .menu-pane a {
       border-radius: 4px;
       color: #eee;
       display: block;
@@ -268,11 +268,11 @@
       -o-transition: background-color 0.2s ease-out 0s;
       transition: background-color 0.2s ease-out 0s;
     }
-    .menu-nested-pane a:hover, .menu-nested-pane li.selected a {
+    .menu-pane a:hover, .menu-pane li.selected a {
       background-color: rgba(38,128,208,0.8);
     }
 
-    .menu-nested-pane .pane-title {
+    .menu-pane .pane-title {
       margin-bottom: 8px;
     }
 
@@ -404,7 +404,7 @@
       <canvas id="main-canvas" height="460" width="960">
       </canvas>
       <div style="position:relative;height:165px;">
-        <div id="player-pane" class="menu-pane">
+        <div id="player-pane" class="base-pane">
           <div id="commands-anchor"></div>
           <button id="command-prev" onClick="commandCarousel.moveRight();">&laquo;</button>
           <button id="command-next" onClick="commandCarousel.moveLeft();">&raquo;</button>
@@ -419,7 +419,7 @@
             </tbody>
           </table>
         </div>
-        <div id="enemy-pane" class="menu-pane">
+        <div id="enemy-pane" class="base-pane">
           <table id="enemy" class="hero-list">
             <thead>
               <th>Name</th>
@@ -455,7 +455,7 @@
        * Hero Command Menu Content
        */
       var heroCommandPaneTemplate = _.template(
-        '<div id="com_<%= hero.id %>" heroId="<%= hero.id %>" class="menu-nested-pane">'
+        '<div id="com_<%= hero.id %>" heroId="<%= hero.id %>" class="menu-pane">'
         + '<div class="pane-title"><%= hero.name %></div>'
         + '<div id="comlist_<%= hero.id %>" class="command-list"></div>'
         + '</div>');
@@ -464,7 +464,7 @@
       var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
 
       // Target Menu 
-      var heroTargetMenuTemplate = _.template('<div id="tarlist_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-nested-pane"><div class="target-list"></div></div>');
+      var heroTargetMenuTemplate = _.template('<div id="tarlist_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-pane"><div class="target-list"></div></div>');
 
       // Target Menu list item
       var heroTargetTemplate =  _.template('<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
@@ -473,7 +473,7 @@
       var heroCancelTemplate =  _.template('<a href="#" class="cancel" heroId="<%= heroId %>">Cancel</a>');
 
       // Item Menu
-      var heroItemMenuTemplate = _.template('<div id="item_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="item-menu menu-nested-pane"><div class="tooltip"></div><div id="item_list_<%= hero.id %>" class="item-list"></div></div>');
+      var heroItemMenuTemplate = _.template('<div id="item_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="item-menu menu-pane"><div class="tooltip"></div><div id="item_list_<%= hero.id %>" class="item-list"></div></div>');
       // Item Menu list item
       var heroItemTemplate =  _.template('<a href="#" id="it_<%= item[atb.Item.field.id] %>" heroId="<%= heroId %>"><%= item[atb.Item.field.name] %><div class="qty"><%= qty %></div></a>');
 
