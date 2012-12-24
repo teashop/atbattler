@@ -178,8 +178,6 @@ atb.CommandCarousel = function(container) {
   }
 
   CC.add = function(item, position) {
-    // TODO: item should be added as a complete menu
-    // pos should be a separate argument.  Pos should assign an attribute position to the menu content.  Also, .command-pane class to be added.
     var toAdd = item.container;
     toAdd.addClass('command-pane');
     toAdd.data('position', position);
@@ -224,7 +222,7 @@ atb.CommandCarousel = function(container) {
         requiresMove = true;
       }
       target.slideToggle(100, (function() {
-        target.remove(); 
+        target.detach(); 
         if (requiresMove) {
           this.onMoveEnd(this.getInFocusOrigId());
         }
@@ -235,13 +233,11 @@ atb.CommandCarousel = function(container) {
       if (this.numPanes == 0) {
         this.tray.slideToggle(100);
       }
-      return false;
     }
-    return true;
   }
 
   CC.clear = function() {
-    this.getPaneInFocus().remove();
+    this.getPaneInFocus().detach();
     this.numPanes = 0;
     this.onRemove(this.numPanes);
   }
@@ -359,10 +355,15 @@ atb.Menu = function(template, templateParams, parentMenu) {
   //  this.container = $('#'+this.id);
   this.items = null;
   this.parentMenu = parentMenu;
+  this.childMenus = [];
 
   this.onKeydInput = function() {};
   this.onPreClose = function() { return true;};
   this.onClose = function() {};
+
+  if (this.parentMenu) {
+    this.parentMenu.registerChild(this);
+  }
 }
 
 {
@@ -373,20 +374,23 @@ atb.Menu = function(template, templateParams, parentMenu) {
   }
 
   M.close = function() {
-    var continueClosing = this.onPreClose(this);
-    if (continueClosing) {
-      this.container.empty().remove();
-      this.container = null;
-      this.onClose(this);
-    }
-    return continueClosing;
+    this.onPreClose(this);
+    this.container.empty().remove();
+    this.container = null;
+    this.onClose(this);
   }
 
+  // recursively closes all child menus
   M.cascadeClose = function() {
+    _.each(this.childMenus, function(menu) {
+      menu.cascadeClose();
+    });
     this.close();
-    if (this.parentMenu) {
-      this.parentMenu.cascadeClose(this);
-    }
+  }
+
+  M.registerChild = function(child) {
+    //console.log('registering ' + child.id + ' as child of: ' + this.id);
+    this.childMenus.push(child);
   }
 }
 

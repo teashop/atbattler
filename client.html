@@ -494,13 +494,19 @@
         var isYou = player.id == gameClient.myId;
         var heroRow = heroRows[hero.id];
         var heroGauge = heroRow.find('div.gauge-bar');
-        // don't update dead people!
+        // don't update dead people...
         if (hero.statuses.dead) {
+          // ...except the first time 'dead' is detected.
           if (!heroRow.hasClass('dead')) {
             heroRow.addClass('dead');
             var heroSprite = heroIdToSprite[hero.id];
             atb.tweenHeroDead(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
             updateHeroHp(hero, null, 0);
+            // close all menus
+            var deadMenuToClose = $('#com_' + hero.id).data('menu');
+            if (deadMenuToClose) {
+              deadMenuToClose.cascadeClose();
+            }
           }
           return;
         }
@@ -520,7 +526,7 @@
           comMenu.items.isWrapAround = true;
           comMenu.items.addItems(comToMenuItems);
           comMenu.onKeyInput = comMenuKeyInputHandler.bind(comMenu);
-          comMenu.onPreClose = function() { return commandCarousel.remove(hero.id); };
+          comMenu.onPreClose = function() { commandCarousel.remove(hero.id); };
           comMenu.container.data('menu', comMenu);
 
           // FIXME:
@@ -620,15 +626,9 @@
             console.log('Action Not Yet Impl: ' + actionType);
             break;
         }
-        // FIXME: is this hacky?  Want to avoid a race condition with rapid
-        // closing - 'activeMenu'; force 'target-menu' to close instead. 
-        var tarMenuToClose = $('#tar_menu_' + actorId).data('menu');
-        tarMenuToClose.cascadeClose();
-
-        var targetsleft = $('.target-list').each(function(t) {
-            $(this).remove();
-          });
-        //activeMenu.cascadeClose();
+        var menuToClose = commandCarousel.getPaneInFocus().data('menu'); 
+//        console.log('the menu to cascade close is: ' + menuToClose.id);
+        menuToClose.cascadeClose();
       }
 
       // command list item => process the command
@@ -642,10 +642,14 @@
       function processCommand(commandPane, actionType) {
         var heroId = commandPane.attr('heroId');
         var hero = gameClient.heroes[heroId];
+        // 'activemenu' is unreliable, so explicitly attach to the command 
+        // menu of the current hero
+        // FIXME: is there a cleaner way to do this?
+        var heroComMenu = commandPane.data('menu'); 
         switch (actionType) {
           case 'attack':
           case 'skill':
-            openTargetMenu(hero, actionType, null, activeMenu);
+            openTargetMenu(hero, actionType, null, heroComMenu);
             break;
           case 'item':
             openItemMenu(hero, activeMenu);
@@ -977,6 +981,8 @@
       }
 
       function itemMenuKeyInputHandler(keyEvent) {
+        // FIXME: too-fast keyboard input can have an action processed multiple
+        // times by the client... need to figure out how to prevent this.
         switch(keyEvent.data.key) {
           case 'left':
           case 'right':

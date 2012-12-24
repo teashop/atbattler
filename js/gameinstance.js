@@ -260,6 +260,10 @@ GI.executeAction = function(action) {
   if (!actor || !actor.statuses.ready) {
     console.log('GI: ' + actor.name + ' is not ready; ignoring action request');
     return;
+  } else if (actor.statuses.dead) {
+    // drop actions from dead actors
+    console.log('GI: ' + actor.name + ' is dead; ignoring action request');
+    return;
   }
   // TODO: these should be in handlers or something more organized
   switch(action.type) {
