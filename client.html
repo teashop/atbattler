@@ -561,14 +561,18 @@
         }
       }
 
-      // take action => reset gauge 
+      // take action => reset hero & update targets 
       function takeAction(hero, target, type, amount, isCrit) {
+        resetHero(hero);
+        updateHeroHp(target, type, amount, isCrit);
+      }
+
+      function resetHero(hero) {
         var heroRow = heroRows[hero.id];
         hero.statuses.ready = false;
         hero.turnGauge = 0.00;
         heroRow.removeClass('ready');
         updateHero(hero);
-        updateHeroHp(target, type, amount, isCrit);
       }
 
       function cancelTargetPane(toClose) {
@@ -854,6 +858,9 @@
           case 'clientHeroActionEvent':
             // source, target, type, amount, isCrit
             takeAction(args[0], args[1], args[2], args[3], args[4]); 
+            break;
+          case 'clientResetHeroEvent':
+            resetHero(args);
             break;
           case 'clientSyncHeroEvent':
             var hero = args;

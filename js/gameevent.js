@@ -43,7 +43,8 @@ var GameEvent = {
     heroes_sync: 'H_SYNC',
     heroes_ready: 'H_READY',
     heroes_dead: 'H_DEAD',
-    heroes_action: 'H_ACTION'
+    heroes_action: 'H_ACTION',
+    heroes_invalid_action: 'H_INV_ACTION'
   }
 };
 

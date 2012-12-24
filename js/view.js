@@ -33,6 +33,10 @@ atb.GradualIncrementer = function(theTarget, theCurrent, onUpdate, duration) {
     return this.target;
   }
   GR_INC.setTarget = function(newTarget, newDuration) {
+    // don't bother incrementing if there's no change
+    if (this.target == newTarget) {
+      return;
+    }
     this.target = newTarget;
     if (newDuration) {
       this.duration = newDuration;

@@ -188,6 +188,12 @@ GC.processEvent = function() {
       }
       this.emitterCallback('clientHeroActionEvent', [source, target, args.type, amount, isCrit]);
       break;
+    case GameEvent.type.heroes_invalid_action:
+      // action was invalidated; turn consumed.
+      var msg = source.name + ' could not complete ' + args.type + ' because ' + target.name + ' is dead.';
+      this.log(msg);
+      this.emitterCallback('clientResetHeroEvent', source);
+      break;
     case GameEvent.type.player_action:
     case GameEvent.type.player_request_pause:
     case GameEvent.type.player_request_resume:

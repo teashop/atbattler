@@ -265,21 +265,26 @@ GI.executeAction = function(action) {
   switch(action.type) {
     case 'attack':
     case 'skill':
-      var dmg = actor.attributes.attack * (_.random(95, 105)/100); //5% variance for now.
-      // 5% crit chance for now
-      var isCrit = (_.random(0,99)) < 5;
-      if (isCrit) {
-        dmg *= 1.5;
-      }
-      dmg = Math.round(dmg);
-      var overkill = 0;
-      target.attributes.hp -= dmg;
-      this.bufferOutbound(GameEvent.type.heroes_action, {type: action.type, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
-      if (target.attributes.hp <= 0) {
-        overkill = -(target.attributes.hp);
-        target.attributes.hp = 0;
-        target.statuses.dead = true;
-        this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
+      if (target.statuses.dead) {
+        // reject attacks on dead people.
+        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {type: action.type, by: actor.id, target: target.id});
+      } else {
+        var dmg = actor.attributes.attack * (_.random(95, 105)/100); //5% variance for now.
+        // 5% crit chance for now
+        var isCrit = (_.random(0,99)) < 5;
+        if (isCrit) {
+          dmg *= 1.5;
+        }
+        dmg = Math.round(dmg);
+        var overkill = 0;
+        target.attributes.hp -= dmg;
+        this.bufferOutbound(GameEvent.type.heroes_action, {type: action.type, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
+        if (target.attributes.hp <= 0) {
+          overkill = -(target.attributes.hp);
+          target.attributes.hp = 0;
+          target.statuses.dead = true;
+          this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
+        }
       }
       // reset actor
       actor.statuses.ready = false;
