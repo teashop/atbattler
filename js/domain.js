@@ -1,21 +1,27 @@
 /** === DOMAIN === **/
 function rollPlayerHero(id, name) {
 	var theHp =  _.random(1000, 1300);
+	var theSp =  _.random(100, 300);
 	var attributes = {
 		speed: _.random(100, 130),
 		attack: _.random(200, 220),
 		hp: theHp,
-		maxHp: theHp
+		maxHp: theHp,
+		sp: theSp,
+		maxSp: theSp
 	};
 	return new Hero(id, name, attributes);
 }
 function rollCpuHero(id, name) {
 	var theHp = _.random(1200, 1700);
+	var theSp =  _.random(300, 500);
 	var attributes = {
 		speed: _.random(80, 100),
 		attack: _.random(90, 390),
 		hp: theHp,
-		maxHp: theHp
+		maxHp: theHp,
+		sp: theSp,
+		maxSp: theSp
 	};
 	return new Hero(id, name, attributes);
 }
