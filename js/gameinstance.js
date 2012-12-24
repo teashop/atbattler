@@ -286,14 +286,13 @@ GI.executeAction = function(action) {
       actor.turnGauge = 0.00;
       break;
     case 'item':
-      // FIXME: this is a placeholder for a 'heal'
-      // Heals 20% of maxHp
-      var amount = Math.round(target.attributes.maxHp * 0.20);
+      var itemId = action.id;
+      var amount = atb.Item[itemId][atb.Item.field.hp]; 
       target.attributes.hp += amount;
       if (target.attributes.hp > target.attributes.maxHp) {
         target.attributes.hp = target.attributes.maxHp;
       }
-      this.bufferOutbound(GameEvent.type.heroes_action, {type: 'item', by: actor.id, target: target.id, amount: amount});
+      this.bufferOutbound(GameEvent.type.heroes_action, {type: 'item', id: itemId, by: actor.id, target: target.id, amount: amount});
       // reset actor
       actor.statuses.ready = false;
       actor.turnGauge = 0.00;

@@ -148,6 +148,7 @@ GC.processEvent = function() {
 
       var source = this.heroes[args.by];
       var target = this.heroes[args.target];
+      var actionId = args.id;
       var amount = args.amount;
       var isCrit = args.isCrit ? args.isCrit : false;
       switch(args.type) {
@@ -174,7 +175,8 @@ GC.processEvent = function() {
           }
           break;
         case 'item':
-          this.log(source.name + ' uses item on ' + target.name + ' for ' + args.amount + ' healing.');
+          var itemName = atb.Item[actionId][atb.Item.field.name];
+          this.log(source.name + ' uses ['+ itemName +'] on ' + target.name + ' for ' + args.amount + ' healing.');
           target.attributes.hp += args.amount;
           if (target.attributes.hp > target.attributes.maxHp) {
             target.attributes.hp = target.attributes.maxHp;

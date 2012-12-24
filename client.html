@@ -475,7 +475,7 @@
       // Item Menu
       var heroItemMenuTemplate = _.template('<div id="item_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="item-menu menu-nested-pane"><div class="tooltip"></div><div id="item_list_<%= hero.id %>" class="item-list"></div></div>');
       // Item Menu list item
-      var heroItemTemplate =  _.template('<a href="#" id="it_<% item[atb.Item.field.id] %>" heroId="<%= heroId %>"><%= item[atb.Item.field.name] %><div class="qty"><%= qty %></div></a>');
+      var heroItemTemplate =  _.template('<a href="#" id="it_<%= item[atb.Item.field.id] %>" heroId="<%= heroId %>"><%= item[atb.Item.field.name] %><div class="qty"><%= qty %></div></a>');
 
       /** END Templates **/
 
@@ -582,21 +582,22 @@
 
       // target list => execute action on target.
       $('#player-pane').on('click', '.target-menu a', function(event) {
-          var actionType = $(this).attr('class');
+          var actionType = $(this).prop('class');
           var actorId = $(this).attr('heroId');
           var targetId = $(this).attr('targetId');
+          var actionArgs = activeMenu.container.data('args');
 
           // TODO: move this out
           if (actionType == 'cancel') {
             // backtrack to command menu
             cancelTargetPane();
           } else {
-            executeCommandOnTarget(actionType, actorId, targetId);
+            executeCommandOnTarget(actionType, actionArgs, actorId, targetId);
           }
           return false;
       });
 
-      function executeCommandOnTarget(actionType, actorId, targetId) {
+      function executeCommandOnTarget(actionType, actionArgs, actorId, targetId) {
         var hero = gameClient.heroes[actorId];
         var target = gameClient.heroes[targetId];
         switch (actionType) {
@@ -607,7 +608,9 @@
             gameClient.queueEvent(GameEvent.type.player_action, {type: 'skill', by: hero.id, target: target.id});
             break;
           case 'item':
-            gameClient.queueEvent(GameEvent.type.player_action, {type: 'item', by: hero.id, target: target.id});
+            // Item takes the Item ID as an argument
+            var itemId = actionArgs;
+            gameClient.queueEvent(GameEvent.type.player_action, {type: 'item', id: itemId, by: hero.id, target: target.id});
             break;
           default:
             console.log('Action Not Yet Impl: ' + actionType);
@@ -630,7 +633,7 @@
         switch (actionType) {
           case 'attack':
           case 'skill':
-            openTargetMenu(hero, actionType, activeMenu);
+            openTargetMenu(hero, actionType, null, activeMenu);
             break;
           case 'item':
             openItemMenu(hero, activeMenu);
@@ -670,7 +673,7 @@
       }
 
       // Target Selection Menu
-      function openTargetMenu(hero, actionType, parentMenu) {
+      function openTargetMenu(hero, actionType, actionArgs, parentMenu) {
         var targets = null;
         switch (actionType) {
           case 'attack':
@@ -707,6 +710,9 @@
           tarMenu.onKeyInput = tarMenuKeyInputHandler.bind(tarMenu);
           tarMenu.onClose = (function() { setActiveMenu(this.parentMenu) }).bind(tarMenu);
           tarMenu.container.data('menu', tarMenu);
+          if (actionArgs) {
+            tarMenu.container.data('args', actionArgs);
+          }
           setActiveMenu(tarMenu);
           tarMenu.container.show();
         }
@@ -968,8 +974,10 @@
             var selected = this.items.curSelected.find('a');
             var heroId = selected.attr('heroId');
             var hero = gameClient.heroes[heroId];
+            var itemId = selected.prop('id');
+            itemId = itemId.substr(itemId.lastIndexOf('_')+1);
             var actionType = 'item';
-            openTargetMenu(hero, actionType, this);
+            openTargetMenu(hero, actionType, itemId, this);
             break;
           default:
             // ignore
@@ -988,14 +996,15 @@
           case 'action':
             // Action key
             var selected = this.items.curSelected.find('a');
-            var actionType = selected.attr('class');
+            var actionType = selected.prop('class');
             var actorId = selected.attr('heroId');
             var targetId = selected.attr('targetId');
+            var actionArgs = this.container.data('args');
             if (actionType == 'cancel') {
               // backtrack to command menu
               cancelTargetPane();
             } else {
-              executeCommandOnTarget(actionType, actorId, targetId);
+              executeCommandOnTarget(actionType, actionArgs, actorId, targetId);
             }
             break;
           default:
