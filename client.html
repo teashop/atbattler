@@ -464,7 +464,7 @@
       var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
 
       // Target Menu 
-      var heroTargetMenuTemplate = _.template('<div id="tarlist_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-pane"><div class="target-list"></div></div>');
+      var heroTargetMenuTemplate = _.template('<div id="tar_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-pane"><div id="tar_list_<%= hero.id %>" class="target-list"></div></div>');
 
       // Target Menu list item
       var heroTargetTemplate =  _.template('<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
@@ -620,7 +620,15 @@
             console.log('Action Not Yet Impl: ' + actionType);
             break;
         }
-        activeMenu.cascadeClose();
+        // FIXME: is this hacky?  Want to avoid a race condition with rapid
+        // closing - 'activeMenu'; force 'target-menu' to close instead. 
+        var tarMenuToClose = $('#tar_menu_' + actorId).data('menu');
+        tarMenuToClose.cascadeClose();
+
+        var targetsleft = $('.target-list').each(function(t) {
+            $(this).remove();
+          });
+        //activeMenu.cascadeClose();
       }
 
       // command list item => process the command

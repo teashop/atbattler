@@ -375,7 +375,8 @@ atb.Menu = function(template, templateParams, parentMenu) {
   M.close = function() {
     var continueClosing = this.onPreClose(this);
     if (continueClosing) {
-      this.container.remove();
+      this.container.empty().remove();
+      this.container = null;
       this.onClose(this);
     }
     return continueClosing;
