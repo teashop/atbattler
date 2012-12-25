@@ -330,6 +330,10 @@ atb.MenuItems = function(container, prefix) {
         // do nothin
     } // switch
 
+    this.selectItem(nextPos);
+  }
+
+  MI.selectItem = function(nextPos) {
     if (this.isWrapAround) {
       nextPos = (nextPos + this.numItems) % this.numItems;
     }
@@ -343,6 +347,7 @@ atb.MenuItems = function(container, prefix) {
       }
       this.onSelect(this.curSelected);
     }
+
   }
 }
 
