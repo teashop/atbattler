@@ -591,37 +591,6 @@
         }
       }
 
-      // command list => process the command
-      $('#player-pane').on('click', '.command-pane .command-list a', function(event) {
-          var commandPane = $(event.target).parents('.command-pane');
-          var actionType = $(this).text().toLowerCase();
-          processCommand(commandPane, actionType);
-          return false;
-      });
-
-      // target list => execute action on target.
-      $('#player-pane').on('click', '.target-menu a', function(event) {
-          var target = $(event.target);
-          var position = target.parents('li').index();
-          // move cursor to clicked position
-          var tarMenu = target.parents('.target-menu').data('menu');
-          tarMenu.items.selectItem(position);
-          // funnel through as an action
-          (tarMenuKeyInputHandler.bind(tarMenu))({data: {key:'action'}});
-          return false;
-      });
-      // Item menu click => treat same as keyboard input 'action'
-      $('#player-pane').on('click', '.item-menu a', function(event) {
-          var target = $(event.target);
-          var position = target.parents('li').index();
-          // move cursor to clicked position
-          var itemMenu = target.parents('.item-menu').data('menu');
-          itemMenu.items.selectItem(position);
-          // funnel through as an action
-          (itemMenuKeyInputHandler.bind(itemMenu))({data: {key:'action'}});
-          return false;
-      });
-
 
       function executeCommandOnTarget(actionType, actionArgs, actorId, targetId) {
         var hero = gameClient.heroes[actorId];
@@ -777,6 +746,33 @@
         }
       }
 
+      /** MOUSE INPUT HANDLING */
+
+      // command list => handler
+      $('#player-pane').on('click', '.command-pane .command-list a', function(event) {
+          convertListClickToKeyAction($(event.target), '.command-pane', comMenuKeyInputHandler);
+          return false;
+      });
+      // Target list => handler
+      $('#player-pane').on('click', '.target-menu a', function(event) {
+          convertListClickToKeyAction($(event.target), '.target-menu', tarMenuKeyInputHandler);
+          return false;
+      });
+      // Item menu click => handler 
+      $('#player-pane').on('click', '.item-menu a', function(event) {
+          convertListClickToKeyAction($(event.target), '.item-menu', itemMenuKeyInputHandler);
+          return false;
+      });
+
+      function convertListClickToKeyAction(target, menuSelector, handler) {
+          var position = target.parents('li').index();
+          // move cursor to clicked position
+          var menu = target.parents(menuSelector).data('menu');
+          menu.items.selectItem(position);
+          // funnel through as an action
+          (handler.bind(menu))({data: {key:'action'}});
+      }
+
       // Start Game
       $('#start').on('click', function(event) {
           gameClient.ready();
@@ -797,7 +793,7 @@
           $('#pause').show();
           });
 
-      /** END View stuff */
+      /** END MOUSE INPUT HANDLING */
       
 
       // TODO: much of this should be 'server side'.
