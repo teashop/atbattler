@@ -355,7 +355,7 @@ atb.Menu = function(template, templateParams, parentMenu) {
   //  this.container = $('#'+this.id);
   this.items = null;
   this.parentMenu = parentMenu;
-  this.childMenus = [];
+  this.childMenus = {};
 
   this.onKeydInput = function() {};
   this.onPreClose = function() { return true;};
@@ -377,20 +377,28 @@ atb.Menu = function(template, templateParams, parentMenu) {
     this.onPreClose(this);
     this.container.empty().remove();
     this.container = null;
+    if (this.parentMenu) {
+      this.parentMenu.deregisterChild(this);
+    }
     this.onClose(this);
   }
 
   // recursively closes all child menus
   M.cascadeClose = function() {
-    _.each(this.childMenus, function(menu) {
+    _.each(this.childMenus, (function(menu) {
       menu.cascadeClose();
-    });
+      this.deregisterChild(menu);
+    }).bind(this));
     this.close();
   }
 
   M.registerChild = function(child) {
     //console.log('registering ' + child.id + ' as child of: ' + this.id);
-    this.childMenus.push(child);
+    this.childMenus[child.id] = child;
+  }
+
+  M.deregisterChild = function(child) {
+    delete this.childMenus[child.id];
   }
 }
 

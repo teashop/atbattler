@@ -9,6 +9,7 @@ atb.Item = [
   [3, 'Red Rose Tea', 'Orange Pekoe tea', 0, 50],
   [4, 'Chai Latte', 'Spiced milk tea', 0, 100],
   [5, 'Green Tea', 'Contains several antioxidant compounds', 0, 200],
+  [6, 'Jumper Cables', 'Shocks a dead hero back to life', 50, 0, [-1]]
 ];
 
 

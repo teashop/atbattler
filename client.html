@@ -485,7 +485,8 @@
           {item: atb.Item[0], qty: 10},
           {item: atb.Item[1], qty: 10},
           {item: atb.Item[2], qty: 10},
-          {item: atb.Item[3], qty: 10}
+          {item: atb.Item[3], qty: 10},
+          {item: atb.Item[6], qty: 10}
         ];
       /** END INVENTORY **/
 
@@ -627,7 +628,6 @@
             break;
         }
         var menuToClose = commandCarousel.getPaneInFocus().data('menu'); 
-//        console.log('the menu to cascade close is: ' + menuToClose.id);
         menuToClose.cascadeClose();
       }
 
@@ -994,11 +994,17 @@
             // Action key
             var selected = this.items.curSelected.find('a');
             var heroId = selected.attr('heroId');
+            var isCancel = selected.prop('class') == 'cancel';
             var hero = gameClient.heroes[heroId];
             var itemId = selected.prop('id');
             itemId = itemId.substr(itemId.lastIndexOf('_')+1);
-            var actionType = 'item';
-            openTargetMenu(hero, actionType, itemId, this);
+            if (isCancel) {
+              // backtrack to command menu
+              this.cascadeClose();
+            } else {
+              var actionType = 'item';
+              openTargetMenu(hero, actionType, itemId, this);
+            }
             break;
           default:
             // ignore
