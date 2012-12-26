@@ -140,6 +140,7 @@ GC.processEvent = function() {
         theHero.statuses.ready = false;
         theHero.turnGauge = 0.00;
         theHero.attributes.hp = 0;
+        this.emitterCallback('clientHeroDeadEvent', theHero);
         this.emitterCallback('clientUpdateHeroEvent', theHero);
       }
       break;
@@ -182,7 +183,7 @@ GC.processEvent = function() {
           if (args.isRez) {
             target.statuses.dead = false;
             this.log(target.name + ' was revived!');
-            this.emitterCallback('clientRezHeroEvent', target);
+            this.emitterCallback('clientHeroRezEvent', target);
           }
           if (args.hp > 0) {
             this.log(target.name + ' was healed for ' + args.hp);

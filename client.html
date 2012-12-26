@@ -491,6 +491,7 @@
         ];
       /** END INVENTORY **/
 
+      // setup/teardown when a hero is rez'd
       function rezHero(hero) {
         var player = hero.player;
         var heroRow = heroRows[hero.id];
@@ -498,30 +499,32 @@
         var heroSprite = heroIdToSprite[hero.id];
         atb.tweenHeroRez(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
       }
+      // setup/teardown when a hero is killed
+      function killHero(hero) {
+        var player = hero.player;
+        var heroRow = heroRows[hero.id];
+        var heroGauge = heroRow.find('div.gauge-bar');
+        heroRow.addClass('dead');
+        heroRow.removeClass('ready');
+        var heroSprite = heroIdToSprite[hero.id];
+        atb.tweenHeroDead(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
+        heroGauge.width('0%');
+        updateHeroHp(hero, null, 0);
+        // close all menus
+        var deadMenuToClose = $('#com_' + hero.id).data('menu');
+        if (deadMenuToClose) {
+          deadMenuToClose.cascadeClose();
+        }
+      }
       function updateHero(hero) {
+        // don't update dead people!
+        if (hero.statuses.dead) {
+          return;
+        }
         var player = hero.player;
         var isYou = player.id == gameClient.myId;
         var heroRow = heroRows[hero.id];
         var heroGauge = heroRow.find('div.gauge-bar');
-        // don't update dead people...
-        if (hero.statuses.dead) {
-          // ...except the first time 'dead' is detected.
-          if (!heroRow.hasClass('dead')) {
-            heroRow.addClass('dead');
-            heroRow.removeClass('ready');
-            var heroSprite = heroIdToSprite[hero.id];
-            atb.tweenHeroDead(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
-
-            heroGauge.width('0%');
-            updateHeroHp(hero, null, 0);
-            // close all menus
-            var deadMenuToClose = $('#com_' + hero.id).data('menu');
-            if (deadMenuToClose) {
-              deadMenuToClose.cascadeClose();
-            }
-          }
-          return;
-        }
         // update gauge
         heroGauge.width(hero.turnGauge + '%');
         // update readiness
@@ -891,7 +894,11 @@
             var hero = args;
             updateHero(hero);
             break;
-          case 'clientRezHeroEvent':
+          case 'clientHeroDeadEvent':
+            var hero = args;
+            killHero(hero);
+            break;
+          case 'clientHeroRezEvent':
             var hero = args;
             rezHero(hero);
             break;
