@@ -306,8 +306,9 @@
     .item-menu .tooltip {
       background-color: rgba(0, 25, 70, 0.9);
       font-weight: normal;
-      padding: 5px 10px;
+      height: 20px;
       margin: 0 0 10px 0;
+      padding: 5px 10px;
     }
     .item-list {
       overflow-y: scroll;
@@ -490,6 +491,13 @@
         ];
       /** END INVENTORY **/
 
+      function rezHero(hero) {
+        var player = hero.player;
+        var heroRow = heroRows[hero.id];
+        heroRow.removeClass('dead');
+        var heroSprite = heroIdToSprite[hero.id];
+        atb.tweenHeroRez(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
+      }
       function updateHero(hero) {
         var player = hero.player;
         var isYou = player.id == gameClient.myId;
@@ -500,8 +508,11 @@
           // ...except the first time 'dead' is detected.
           if (!heroRow.hasClass('dead')) {
             heroRow.addClass('dead');
+            heroRow.removeClass('ready');
             var heroSprite = heroIdToSprite[hero.id];
             atb.tweenHeroDead(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
+
+            heroGauge.width('0%');
             updateHeroHp(hero, null, 0);
             // close all menus
             var deadMenuToClose = $('#com_' + hero.id).data('menu');
@@ -652,9 +663,10 @@
         itemMenu.items.isWrapAround = false;
         itemMenu.items.itemsPerRow = 2;
         itemMenu.items.onSelect = function(selected) {
-          var domId = selected.prop('id');
+          var domId = selected.find('a').prop('id');
           var itemId = domId.substr(domId.lastIndexOf('_')+1);
-          itemMenu.container.find('.tooltip').html(atb.Item[itemId][atb.Item.field.desc]);
+          var tooltip = itemId ? atb.Item[itemId][atb.Item.field.desc] : '';
+          itemMenu.container.find('.tooltip').html(tooltip);
         }
         itemMenu.items.addItems(itemToMenuItems);
         itemMenu.onKeyInput = itemMenuKeyInputHandler.bind(itemMenu);
@@ -667,6 +679,7 @@
       // Target Selection Menu
       function openTargetMenu(hero, actionType, actionArgs, parentMenu) {
         var targets = null;
+        var allowDeadTargets = false;
         switch (actionType) {
           case 'attack':
             targets = gameClient.enemy.party.heroes;
@@ -676,6 +689,10 @@
             break;
           case 'item':
             targets = gameClient.me.party.heroes;
+            // allow dead targets if the item removes the 'dead' status
+            var itemId = actionArgs;
+            var statuses = atb.Item[itemId][atb.Item.field.statuses];
+            allowDeadTargets = (statuses && statuses[0] < 0);
             break;
           default:
             console.log('Command Not Yet Impl: ' + actionType);
@@ -688,7 +705,7 @@
 
           // populate with target list as menu items
           var tarToMenuItems = _.compact(_.map(targets, function(target) {
-              if (target.statuses.dead) { 
+              if (target.statuses.dead && !allowDeadTargets) { 
                 return null;
               } else {
                 return heroTargetTemplate({actionType: actionType, heroId: hero.id, target: target});
@@ -869,6 +886,10 @@
           case 'clientUpdateHeroEvent':
             var hero = args;
             updateHero(hero);
+            break;
+          case 'clientRezHeroEvent':
+            var hero = args;
+            rezHero(hero);
             break;
           case 'clientHeroActionEvent':
             // source, target, type, amount, isCrit

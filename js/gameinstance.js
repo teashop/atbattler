@@ -287,6 +287,8 @@ GI.executeAction = function(action) {
           overkill = -(target.attributes.hp);
           target.attributes.hp = 0;
           target.statuses.dead = true;
+          target.statuses.ready = false;
+          target.turnGauge = 0.00;
           this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
         }
       }
@@ -296,12 +298,44 @@ GI.executeAction = function(action) {
       break;
     case 'item':
       var itemId = action.id;
-      var amount = atb.Item[itemId][atb.Item.field.hp]; 
-      target.attributes.hp += amount;
+      // FIXME - these placeholders and flags are annoying
+      var hp = 0;
+      var sp = 0;
+      var isRez = false;
+
+      // breakdown into component fields
+      var statuses = atb.Item[itemId][atb.Item.field.statuses];
+      if (statuses) {
+        if (statuses[0] < 0 && target.statuses.dead) {
+          isRez = true;
+          target.statuses.dead = false;
+        }
+      }
+      // non rezzing items can't be used on dead targets
+      if (!isRez && target.statuses.dead) {
+        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {type: action.type, by: actor.id, target: target.id});
+        break;
+      }
+      var attr = atb.Item[itemId][atb.Item.field.attr]; 
+      if (attr) {
+        hp = attr[0]; 
+        sp = attr[1]; 
+      }
+      target.attributes.hp += hp;
       if (target.attributes.hp > target.attributes.maxHp) {
         target.attributes.hp = target.attributes.maxHp;
       }
-      this.bufferOutbound(GameEvent.type.heroes_action, {type: 'item', id: itemId, by: actor.id, target: target.id, amount: amount});
+      target.attributes.sp += sp;
+      if (target.attributes.sp > target.attributes.maxSp) {
+        target.attributes.sp = target.attributes.maxSp;
+      }
+
+      // TODO: need a consistent way to enumerate status effects.
+      var itemEffects = {type: 'item', id: itemId, by: actor.id, target: target.id, hp: hp, sp: sp};
+      if (isRez) {
+        itemEffects.isRez = true;
+      }
+      this.bufferOutbound(GameEvent.type.heroes_action, itemEffects);
       // reset actor
       actor.statuses.ready = false;
       actor.turnGauge = 0.00;

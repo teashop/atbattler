@@ -137,6 +137,7 @@ GC.processEvent = function() {
         var theHero = this.heroes[deadHeroes[i]];
         this.log(theHero.name + ' was slain!');
         theHero.statuses.dead = true;
+        theHero.statuses.ready = false;
         theHero.turnGauge = 0.00;
         theHero.attributes.hp = 0;
         this.emitterCallback('clientUpdateHeroEvent', theHero);
@@ -144,12 +145,9 @@ GC.processEvent = function() {
       break;
     case GameEvent.type.heroes_action:
       // execute action
-      //            console.log('SERVER sent action: ' + JSON.stringify(theEvent.content));
-
       var source = this.heroes[args.by];
       var target = this.heroes[args.target];
       var actionId = args.id;
-      var amount = args.amount;
       var isCrit = args.isCrit ? args.isCrit : false;
       switch(args.type) {
         case 'attack':
@@ -162,6 +160,7 @@ GC.processEvent = function() {
           if (target.attributes.hp < 0) {
             target.attributes.hp = 0;
           }
+          this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.amount, isCrit]);
           break;
         case 'skill':
           var msg = source.name + ' uses skill on ' + target.name + ' for ' + args.amount + ' damage.';
@@ -173,20 +172,38 @@ GC.processEvent = function() {
           if (target.attributes.hp < 0) {
             target.attributes.hp = 0;
           }
+          this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.amount, isCrit]);
           break;
         case 'item':
-          var itemName = atb.Item[actionId][atb.Item.field.name];
-          this.log(source.name + ' uses ['+ itemName +'] on ' + target.name + ' for ' + args.amount + ' healing.');
-          target.attributes.hp += args.amount;
-          if (target.attributes.hp > target.attributes.maxHp) {
-            target.attributes.hp = target.attributes.maxHp;
+          var item = atb.Item[actionId];
+          var itemName = item[atb.Item.field.name];
+
+          this.log(source.name + ' uses ['+ itemName +'] on ' + target.name);
+          if (args.isRez) {
+            target.statuses.dead = false;
+            this.log(target.name + ' was revived!');
+            this.emitterCallback('clientRezHeroEvent', target);
           }
+          if (args.hp > 0) {
+            this.log(target.name + ' was healed for ' + args.hp);
+            target.attributes.hp += args.hp;
+            if (target.attributes.hp > target.attributes.maxHp) {
+              target.attributes.hp = target.attributes.maxHp;
+            }
+          }
+          if (args.sp > 0) {
+            this.log(target.name + ' recovered ' + args.sp + ' SP');
+            target.attributes.sp += args.sp;
+            if (target.attributes.sp > target.attributes.maxSp) {
+              target.attributes.sp = target.attributes.maxSp;
+            }
+          }
+          this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.hp, isCrit]);
           break;
         default:
           console.log('Client received unknown action.type: ' + action.type);
           break;
       }
-      this.emitterCallback('clientHeroActionEvent', [source, target, args.type, amount, isCrit]);
       break;
     case GameEvent.type.heroes_invalid_action:
       // action was invalidated; turn consumed.
@@ -308,7 +325,30 @@ CPUGC.processEvent = function() {
         if (target.statuses.dead) {
           target = _.find(enemyHeroes, function(theHero) { return !theHero.statuses.dead });
         }
+        if (!target) {
+          console.log('CPU Player[' + this.myId + '] ERROR! Could not identify any valid targets. Hero dump follows:');
+          console.dir(enemyHeroes);
+        }
         this.sendToServer(this.msgFactory.create(GameEvent.type.player_action, {type: 'attack', by: myReadyHeroes[i].id, target: target.id}));
+      }
+      break;
+    case GameEvent.type.heroes_action:
+      // TODO: for now, we only care about actions that rez heroes.
+      var source = this.heroes[args.by];
+      var target = this.heroes[args.target];
+      var actionId = args.id;
+
+      switch(args.type) {
+        case 'item':
+          var item = atb.Item[actionId];
+          var itemName = item[atb.Item.field.name];
+          if (args.isRez) {
+            target.statuses.dead = false;
+          }
+          break;
+        default:
+          // don't care
+          break;
       }
       break;
     case GameEvent.type.heroes_dead:                                                  var deadHeroes = args;
