@@ -267,8 +267,8 @@ GI.executeAction = function(action) {
   }
   // TODO: these should be in handlers or something more organized
   switch(action.type) {
-    case 'attack':
-    case 'skill':
+    case atb.Skill.ATTACK:
+//    case 'skill':
       if (target.statuses.dead) {
         // reject attacks on dead people.
         this.bufferOutbound(GameEvent.type.heroes_invalid_action, {type: action.type, by: actor.id, target: target.id});
@@ -296,7 +296,7 @@ GI.executeAction = function(action) {
       actor.statuses.ready = false;
       actor.turnGauge = 0.00;
       break;
-    case 'item':
+    case atb.Skill.ITEM:
       var itemId = action.id;
       // FIXME - these placeholders and flags are annoying
       var hp = 0;
@@ -331,7 +331,7 @@ GI.executeAction = function(action) {
       }
 
       // TODO: need a consistent way to enumerate status effects.
-      var itemEffects = {type: 'item', id: itemId, by: actor.id, target: target.id, hp: hp, sp: sp};
+      var itemEffects = {type: atb.Skill.ITEM, id: itemId, by: actor.id, target: target.id, hp: hp, sp: sp};
       if (isRez) {
         itemEffects.isRez = true;
       }

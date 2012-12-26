@@ -17,6 +17,7 @@
   <script src="js/durationevent.js"></script>
   <script src="js/gameevent.js"></script>
   <script src="js/item.js"></script>
+  <script src="js/skill.js"></script>
   <script src="js/gameinstance.js"></script>
   <script src="js/gameclient.js"></script>
   <script src="js/view.js"></script>
@@ -522,13 +523,12 @@
           return;
         }
         var player = hero.player;
-        var isYou = player.id == gameClient.myId;
         var heroRow = heroRows[hero.id];
         var heroGauge = heroRow.find('div.gauge-bar');
         // update gauge
         heroGauge.width(hero.turnGauge + '%');
-        // update readiness
-        if (hero.statuses.ready && isYou && !heroRow.hasClass('ready')) {
+        // update readiness for player heroes
+        if (hero.statuses.ready && hero.player == gameClient.me && !heroRow.hasClass('ready')) {
           var heroDomId = '#hero_'+ hero.id;
           var commands = hero.commands;
           var comMenu = new atb.Menu(heroCommandPaneTemplate, {hero: hero});
@@ -557,16 +557,16 @@
 
       function updateHeroHp(hero, type, amount, isCrit, effectType) {
         // update hp
-        if (type) {
+        if (type != null) {
           // let incrementer take care of update
           hpIncrementers[hero.id].setTarget(hero.attributes.hp);
           switch (type) {
-            case 'attack':
-            case 'skill':
+            case atb.Skill.ATTACK:
+//            case 'skill':
               atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
               effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
               break;
-            case 'item':
+            case atb.Skill.ITEM:
               if (effectType == 'heal_sp') {
                 effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal_sp');
               } else {
@@ -615,15 +615,16 @@
         var target = gameClient.heroes[targetId];
         switch (actionType) {
           case 'attack':
-            gameClient.queueEvent(GameEvent.type.player_action, {type: 'attack', by: hero.id, target: target.id});
+            gameClient.queueEvent(GameEvent.type.player_action, {type: atb.Skill.ATTACK, by: hero.id, target: target.id});
             break;
           case 'skill':
-            gameClient.queueEvent(GameEvent.type.player_action, {type: 'skill', by: hero.id, target: target.id});
+          // FixME
+            gameClient.queueEvent(GameEvent.type.player_action, {type: atb.Skill.ATTACK, by: hero.id, target: target.id});
             break;
           case 'item':
             // Item takes the Item ID as an argument
             var itemId = actionArgs;
-            gameClient.queueEvent(GameEvent.type.player_action, {type: 'item', id: itemId, by: hero.id, target: target.id});
+            gameClient.queueEvent(GameEvent.type.player_action, {type: atb.Skill.ITEM, id: itemId, by: hero.id, target: target.id});
             break;
           default:
             console.log('Action Not Yet Impl: ' + actionType);
@@ -942,14 +943,11 @@
 
         // FIXME: here's that command list (shared instance!)
         curHero.commands = commands;
-        var isYou = curHero.player.id == gameClient.myId;
+        var isPlayer = curHero.player == gameClient.me;
         var heroDomId = 'hero_'+ curHero.id;
         var heroHp = curHero.attributes.hp;
 
-        var heroPane = $("#party > tbody");
-        if (!isYou) {
-          heroPane = $("#enemy > tbody");
-        }
+        var heroPane = isPlayer ? $("#party > tbody") : $("#enemy > tbody");
         heroPane.append(heroRowTemplate({heroDomId: heroDomId, position: i, hero: curHero}));
 
         heroRows[curHero.id] = $('#' + heroDomId);

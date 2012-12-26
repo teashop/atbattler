@@ -151,7 +151,7 @@ GC.processEvent = function() {
       var actionId = args.id;
       var isCrit = args.isCrit ? args.isCrit : false;
       switch(args.type) {
-        case 'attack':
+        case atb.Skill.ATTACK:
           var msg = source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.';
           if (isCrit) {
             msg += ' (Critical Hit)';
@@ -163,7 +163,7 @@ GC.processEvent = function() {
           }
           this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.amount, isCrit]);
           break;
-        case 'skill':
+/*        case 'skill':
           var msg = source.name + ' uses skill on ' + target.name + ' for ' + args.amount + ' damage.';
           if (isCrit) {
             msg += ' (Critical Hit)';
@@ -175,7 +175,8 @@ GC.processEvent = function() {
           }
           this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.amount, isCrit]);
           break;
-        case 'item':
+*/          
+        case atb.Skill.ITEM:
           var item = atb.Item[actionId];
           var itemName = item[atb.Item.field.name];
 
@@ -203,7 +204,7 @@ GC.processEvent = function() {
           }
           break;
         default:
-          console.log('Client received unknown action.type: ' + action.type);
+          console.log('Client received unknown action.type: ' + args.type);
           break;
       }
       break;
@@ -331,7 +332,7 @@ CPUGC.processEvent = function() {
           console.log('CPU Player[' + this.myId + '] ERROR! Could not identify any valid targets. Hero dump follows:');
           console.dir(enemyHeroes);
         }
-        this.sendToServer(this.msgFactory.create(GameEvent.type.player_action, {type: 'attack', by: myReadyHeroes[i].id, target: target.id}));
+        this.sendToServer(this.msgFactory.create(GameEvent.type.player_action, {type: atb.Skill.ATTACK, by: myReadyHeroes[i].id, target: target.id}));
       }
       break;
     case GameEvent.type.heroes_action:
