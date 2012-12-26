@@ -251,13 +251,20 @@ GI.doTickUpkeep = function() {
   // TODO: do the rest of the stuff!
   this.update();
 }
+
+GI.resetHero = function(hero) {
+  hero.statuses.ready = false;
+  hero.turnGauge = 0.00;
+}
 // execute an action
 GI.executeAction = function(action) {
   // FIXME: this precludes dual-tech/triple-tech etc.
   var actor = this.heroes[action.by];
   var target = this.heroes[action.target];
   // drop actions from non-ready actors
-  if (!actor || !actor.statuses.ready) {
+  if (!actor) {
+    console.log('GI: no/invalid actor specified, ignoring action request');
+  } else if (!actor.statuses.ready) {
     console.log('GI: ' + actor.name + ' is not ready; ignoring action request');
     return;
   } else if (actor.statuses.dead) {
@@ -292,9 +299,6 @@ GI.executeAction = function(action) {
           this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
         }
       }
-      // reset actor
-      actor.statuses.ready = false;
-      actor.turnGauge = 0.00;
       break;
     case atb.Skill.ITEM:
       var itemId = action.objectId;
@@ -336,15 +340,18 @@ GI.executeAction = function(action) {
         itemEffects.isRez = true;
       }
       this.bufferOutbound(GameEvent.type.heroes_action, itemEffects);
-      // reset actor
-      actor.statuses.ready = false;
-      actor.turnGauge = 0.00;
+      break;
+    case atb.Skill.DEFEND:
+      // FIXME: Defend = skip a turn for now :)
+      this.bufferOutbound(GameEvent.type.heroes_action, {skillId: action.skillId, by: actor.id});
       break;
     default:
       console.log('GI: Unknown action.skillId ' + action.skillId);
       break;
   } // switch
 
+  // reset actor
+  this.resetHero(actor);
   // FIXME: special case, i can't handle a multi-push yet.
   this.eventsOut.flush();
 }

@@ -504,17 +504,15 @@
       function killHero(hero) {
         var player = hero.player;
         var heroRow = heroRows[hero.id];
-        var heroGauge = heroRow.find('div.gauge-bar');
         heroRow.addClass('dead');
-        heroRow.removeClass('ready');
         var heroSprite = heroIdToSprite[hero.id];
         atb.tweenHeroDead(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
-        heroGauge.width('0%');
+        resetHero(hero);
         updateHeroHp(hero, null, 0);
         // close all menus
-        var deadMenuToClose = $('#com_' + hero.id).data('menu');
-        if (deadMenuToClose) {
-          deadMenuToClose.cascadeClose();
+        var menuToClose = $('#com_' + hero.id).data('menu');
+        if (menuToClose) {
+          menuToClose.cascadeClose();
         }
       }
       function updateHero(hero) {
@@ -648,6 +646,11 @@
             break;
           case 'item':
             openItemMenu(hero, activeMenu);
+            break;
+          case 'defend':
+            gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.DEFEND, by: hero.id});
+            var menuToClose = commandCarousel.getPaneInFocus().data('menu'); 
+            menuToClose.cascadeClose();
             break;
           default:
             console.log('Command Not Yet Impl: ' + actionType);
@@ -908,6 +911,7 @@
             takeAction(args[0], args[1], args[2], args[3], args[4], args[5]); 
             break;
           case 'clientResetHeroEvent':
+            console.log('resetting hero ' + args.name);
             resetHero(args);
             break;
           case 'clientSyncHeroEvent':

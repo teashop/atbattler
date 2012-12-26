@@ -203,6 +203,11 @@ GC.processEvent = function() {
             this.emitterCallback('clientHeroActionEvent', [source, target, args.skillId, args.sp, isCrit, 'heal_sp']);
           }
           break;
+        case atb.Skill.DEFEND:
+          // FIXME: as you can see, this does nothing
+          this.log(source.name + ' defends!');
+          this.emitterCallback('clientResetHeroEvent', source);
+          break;
         default:
           console.log('Client received unknown action.skillId: ' + args.skillId);
           break;
