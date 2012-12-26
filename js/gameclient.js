@@ -190,6 +190,7 @@ GC.processEvent = function() {
             if (target.attributes.hp > target.attributes.maxHp) {
               target.attributes.hp = target.attributes.maxHp;
             }
+            this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.hp, isCrit]);
           }
           if (args.sp > 0) {
             this.log(target.name + ' recovered ' + args.sp + ' SP');
@@ -197,8 +198,8 @@ GC.processEvent = function() {
             if (target.attributes.sp > target.attributes.maxSp) {
               target.attributes.sp = target.attributes.maxSp;
             }
+            this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.sp, isCrit, 'heal_sp']);
           }
-          this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.hp, isCrit]);
           break;
         default:
           console.log('Client received unknown action.type: ' + action.type);

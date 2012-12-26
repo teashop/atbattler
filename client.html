@@ -552,7 +552,7 @@
         }
       }
 
-      function updateHeroHp(hero, type, amount, isCrit) {
+      function updateHeroHp(hero, type, amount, isCrit, effectType) {
         // update hp
         if (type) {
           // let incrementer take care of update
@@ -564,7 +564,11 @@
               effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
               break;
             case 'item':
-              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal');
+              if (effectType == 'heal_sp') {
+                effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal_sp');
+              } else {
+                effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal');
+              }
               break;
             default:
               console.log('unknown type, using default increment');
@@ -580,9 +584,9 @@
       }
 
       // take action => reset hero & update targets 
-      function takeAction(hero, target, type, amount, isCrit) {
+      function takeAction(hero, target, type, amount, isCrit, effectType) {
         resetHero(hero);
-        updateHeroHp(target, type, amount, isCrit);
+        updateHeroHp(target, type, amount, isCrit, effectType);
       }
 
       function resetHero(hero) {
@@ -892,8 +896,8 @@
             rezHero(hero);
             break;
           case 'clientHeroActionEvent':
-            // source, target, type, amount, isCrit
-            takeAction(args[0], args[1], args[2], args[3], args[4]); 
+            // source, target, type, amount, isCrit, effectType
+            takeAction(args[0], args[1], args[2], args[3], args[4], args[5]); 
             break;
           case 'clientResetHeroEvent':
             resetHero(args);
