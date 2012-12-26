@@ -555,12 +555,12 @@
         }
       }
 
-      function updateHeroHp(hero, type, amount, isCrit, effectType) {
+      function updateHeroHp(hero, skillId, amount, isCrit, effectType) {
         // update hp
-        if (type != null) {
+        if (skillId != null) {
           // let incrementer take care of update
           hpIncrementers[hero.id].setTarget(hero.attributes.hp);
-          switch (type) {
+          switch (skillId) {
             case atb.Skill.ATTACK:
 //            case 'skill':
               atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
@@ -587,9 +587,9 @@
       }
 
       // take action => reset hero & update targets 
-      function takeAction(hero, target, type, amount, isCrit, effectType) {
+      function takeAction(hero, target, skillId, amount, isCrit, effectType) {
         resetHero(hero);
-        updateHeroHp(target, type, amount, isCrit, effectType);
+        updateHeroHp(target, skillId, amount, isCrit, effectType);
       }
 
       function resetHero(hero) {
@@ -615,16 +615,16 @@
         var target = gameClient.heroes[targetId];
         switch (actionType) {
           case 'attack':
-            gameClient.queueEvent(GameEvent.type.player_action, {type: atb.Skill.ATTACK, by: hero.id, target: target.id});
+            gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: hero.id, target: target.id});
             break;
           case 'skill':
           // FixME
-            gameClient.queueEvent(GameEvent.type.player_action, {type: atb.Skill.ATTACK, by: hero.id, target: target.id});
+            gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: hero.id, target: target.id});
             break;
           case 'item':
             // Item takes the Item ID as an argument
             var itemId = actionArgs;
-            gameClient.queueEvent(GameEvent.type.player_action, {type: atb.Skill.ITEM, id: itemId, by: hero.id, target: target.id});
+            gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ITEM, objectId: itemId, by: hero.id, target: target.id});
             break;
           default:
             console.log('Action Not Yet Impl: ' + actionType);
@@ -904,7 +904,7 @@
             rezHero(hero);
             break;
           case 'clientHeroActionEvent':
-            // source, target, type, amount, isCrit, effectType
+            // source, target, skillId, amount, isCrit, effectType
             takeAction(args[0], args[1], args[2], args[3], args[4], args[5]); 
             break;
           case 'clientResetHeroEvent':

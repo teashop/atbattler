@@ -266,12 +266,12 @@ GI.executeAction = function(action) {
     return;
   }
   // TODO: these should be in handlers or something more organized
-  switch(action.type) {
+  switch(action.skillId) {
     case atb.Skill.ATTACK:
 //    case 'skill':
       if (target.statuses.dead) {
         // reject attacks on dead people.
-        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {type: action.type, by: actor.id, target: target.id});
+        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: action.skillId, by: actor.id, target: target.id});
       } else {
         var dmg = actor.attributes.attack * (_.random(95, 105)/100); //5% variance for now.
         // 5% crit chance for now
@@ -282,7 +282,7 @@ GI.executeAction = function(action) {
         dmg = Math.round(dmg);
         var overkill = 0;
         target.attributes.hp -= dmg;
-        this.bufferOutbound(GameEvent.type.heroes_action, {type: action.type, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
+        this.bufferOutbound(GameEvent.type.heroes_action, {skillId: action.skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
         if (target.attributes.hp <= 0) {
           overkill = -(target.attributes.hp);
           target.attributes.hp = 0;
@@ -297,7 +297,7 @@ GI.executeAction = function(action) {
       actor.turnGauge = 0.00;
       break;
     case atb.Skill.ITEM:
-      var itemId = action.id;
+      var itemId = action.objectId;
       // FIXME - these placeholders and flags are annoying
       var hp = 0;
       var sp = 0;
@@ -313,7 +313,7 @@ GI.executeAction = function(action) {
       }
       // non rezzing items can't be used on dead targets
       if (!isRez && target.statuses.dead) {
-        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {type: action.type, by: actor.id, target: target.id});
+        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: action.skillId, by: actor.id, target: target.id});
         break;
       }
       var attr = atb.Item[itemId][atb.Item.field.attr]; 
@@ -331,7 +331,7 @@ GI.executeAction = function(action) {
       }
 
       // TODO: need a consistent way to enumerate status effects.
-      var itemEffects = {type: atb.Skill.ITEM, id: itemId, by: actor.id, target: target.id, hp: hp, sp: sp};
+      var itemEffects = {skillId: atb.Skill.ITEM, objectId: itemId, by: actor.id, target: target.id, hp: hp, sp: sp};
       if (isRez) {
         itemEffects.isRez = true;
       }
@@ -341,7 +341,7 @@ GI.executeAction = function(action) {
       actor.turnGauge = 0.00;
       break;
     default:
-      console.log('GI: Unknown action type ' + action.type);
+      console.log('GI: Unknown action.skillId ' + action.skillId);
       break;
   } // switch
 

@@ -148,9 +148,9 @@ GC.processEvent = function() {
       // execute action
       var source = this.heroes[args.by];
       var target = this.heroes[args.target];
-      var actionId = args.id;
+      var objectId = args.objectId;
       var isCrit = args.isCrit ? args.isCrit : false;
-      switch(args.type) {
+      switch(args.skillId) {
         case atb.Skill.ATTACK:
           var msg = source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.';
           if (isCrit) {
@@ -161,7 +161,7 @@ GC.processEvent = function() {
           if (target.attributes.hp < 0) {
             target.attributes.hp = 0;
           }
-          this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.amount, isCrit]);
+          this.emitterCallback('clientHeroActionEvent', [source, target, args.skillId, args.amount, isCrit]);
           break;
 /*        case 'skill':
           var msg = source.name + ' uses skill on ' + target.name + ' for ' + args.amount + ' damage.';
@@ -173,11 +173,11 @@ GC.processEvent = function() {
           if (target.attributes.hp < 0) {
             target.attributes.hp = 0;
           }
-          this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.amount, isCrit]);
+          this.emitterCallback('clientHeroActionEvent', [source, target, args.skillId, args.amount, isCrit]);
           break;
 */          
         case atb.Skill.ITEM:
-          var item = atb.Item[actionId];
+          var item = atb.Item[objectId];
           var itemName = item[atb.Item.field.name];
 
           this.log(source.name + ' uses ['+ itemName +'] on ' + target.name);
@@ -192,7 +192,7 @@ GC.processEvent = function() {
             if (target.attributes.hp > target.attributes.maxHp) {
               target.attributes.hp = target.attributes.maxHp;
             }
-            this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.hp, isCrit]);
+            this.emitterCallback('clientHeroActionEvent', [source, target, args.skillId, args.hp, isCrit]);
           }
           if (args.sp > 0) {
             this.log(target.name + ' recovered ' + args.sp + ' SP');
@@ -200,17 +200,17 @@ GC.processEvent = function() {
             if (target.attributes.sp > target.attributes.maxSp) {
               target.attributes.sp = target.attributes.maxSp;
             }
-            this.emitterCallback('clientHeroActionEvent', [source, target, args.type, args.sp, isCrit, 'heal_sp']);
+            this.emitterCallback('clientHeroActionEvent', [source, target, args.skillId, args.sp, isCrit, 'heal_sp']);
           }
           break;
         default:
-          console.log('Client received unknown action.type: ' + args.type);
+          console.log('Client received unknown action.skillId: ' + args.skillId);
           break;
       }
       break;
     case GameEvent.type.heroes_invalid_action:
       // action was invalidated; turn consumed.
-      var msg = source.name + ' could not complete ' + args.type + ' because ' + target.name + ' is dead.';
+      var msg = source.name + ' could not complete ' + args.skillId + ' because ' + target.name + ' is dead.';
       this.log(msg);
       this.emitterCallback('clientResetHeroEvent', source);
       break;
@@ -332,18 +332,18 @@ CPUGC.processEvent = function() {
           console.log('CPU Player[' + this.myId + '] ERROR! Could not identify any valid targets. Hero dump follows:');
           console.dir(enemyHeroes);
         }
-        this.sendToServer(this.msgFactory.create(GameEvent.type.player_action, {type: atb.Skill.ATTACK, by: myReadyHeroes[i].id, target: target.id}));
+        this.sendToServer(this.msgFactory.create(GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: myReadyHeroes[i].id, target: target.id}));
       }
       break;
     case GameEvent.type.heroes_action:
       // TODO: for now, we only care about actions that rez heroes.
       var source = this.heroes[args.by];
       var target = this.heroes[args.target];
-      var actionId = args.id;
+      var objectId = args.objectId;
 
-      switch(args.type) {
-        case 'item':
-          var item = atb.Item[actionId];
+      switch(args.skillId) {
+        case atb.Skill.ITEM:
+          var item = atb.Item[objectId];
           var itemName = item[atb.Item.field.name];
           if (args.isRez) {
             target.statuses.dead = false;
