@@ -463,13 +463,13 @@
         + '</div>');
 
       // Hero Command list
-      var heroCommandTemplate = _.template('<a href="#"><%= command.name %></a>');
+      var heroCommandTemplate = _.template('<a href="#" data-skill-id="<%= command[atb.Skill.field.id] %>"><%= command[atb.Skill.field.name] %></a>');
 
       // Target Menu 
       var heroTargetMenuTemplate = _.template('<div id="tar_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-pane"><div id="tar_list_<%= hero.id %>" class="target-list"></div></div>');
 
       // Target Menu list item
-      var heroTargetTemplate =  _.template('<a href="#" class="<%= actionType %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
+      var heroTargetTemplate =  _.template('<a href="#" data-skill-id="<%= skillId %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
 
       // Cancel (close nested menu) list item
       var heroCancelTemplate =  _.template('<a href="#" class="cancel" heroId="<%= heroId %>">Cancel</a>');
@@ -533,7 +533,7 @@
 
           // populate with menu items
           var comToMenuItems = _.map(commands, function(command) {
-              return heroCommandTemplate({command: command})
+              return heroCommandTemplate({command: atb.Skill[command]})
             });
           comMenu.addMenuItems('.command-list');
           comMenu.items.isWrapAround = true;
@@ -608,52 +608,53 @@
       }
 
 
-      function executeCommandOnTarget(actionType, actionArgs, actorId, targetId) {
+      function executeCommandOnTarget(skillId, actionArgs, actorId, targetId) {
         var hero = gameClient.heroes[actorId];
         var target = gameClient.heroes[targetId];
-        switch (actionType) {
-          case 'attack':
+        switch (skillId) {
+          case atb.Skill.ATTACK:
             gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: hero.id, target: target.id});
             break;
-          case 'skill':
+/*          case 'skill':
           // FixME
             gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: hero.id, target: target.id});
             break;
-          case 'item':
+*/            
+          case atb.Skill.ITEM:
             // Item takes the Item ID as an argument
             var itemId = actionArgs;
             gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ITEM, objectId: itemId, by: hero.id, target: target.id});
             break;
           default:
-            console.log('Action Not Yet Impl: ' + actionType);
+            console.log('Action Not Yet Impl for SkillId: ' + skillId);
             break;
         }
         var menuToClose = commandCarousel.getPaneInFocus().data('menu'); 
         menuToClose.cascadeClose();
       }
 
-      function processCommand(commandPane, actionType) {
+      function processCommand(commandPane, skillId) {
         var heroId = commandPane.attr('heroId');
         var hero = gameClient.heroes[heroId];
         // 'activemenu' is unreliable, so explicitly attach to the command 
         // menu of the current hero
         // FIXME: is there a cleaner way to do this?
         var heroComMenu = commandPane.data('menu'); 
-        switch (actionType) {
-          case 'attack':
-          case 'skill':
-            openTargetMenu(hero, actionType, null, heroComMenu);
+        switch (skillId) {
+          case atb.Skill.ATTACK:
+//          case 'skill':
+            openTargetMenu(hero, skillId, null, heroComMenu);
             break;
-          case 'item':
+          case atb.Skill.ITEM:
             openItemMenu(hero, activeMenu);
             break;
-          case 'defend':
+          case atb.Skill.DEFEND:
             gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.DEFEND, by: hero.id});
             var menuToClose = commandCarousel.getPaneInFocus().data('menu'); 
             menuToClose.cascadeClose();
             break;
           default:
-            console.log('Command Not Yet Impl: ' + actionType);
+            console.log('Command Not Yet Impl for skillId: ' + skillId);
             break;
         }
       }
@@ -688,17 +689,18 @@
       }
 
       // Target Selection Menu
-      function openTargetMenu(hero, actionType, actionArgs, parentMenu) {
+      function openTargetMenu(hero, skillId, actionArgs, parentMenu) {
         var targets = null;
         var allowDeadTargets = false;
-        switch (actionType) {
-          case 'attack':
+        switch (skillId) {
+          case atb.Skill.ATTACK:
             targets = gameClient.enemy.party.heroes;
             break;
-          case 'skill':
+/*          case 'skill':
             targets = gameClient.enemy.party.heroes;
             break;
-          case 'item':
+*/            
+          case atb.Skill.ITEM:
             targets = gameClient.me.party.heroes;
             // allow dead targets if the item removes the 'dead' status
             var itemId = actionArgs;
@@ -706,7 +708,7 @@
             allowDeadTargets = (statuses && statuses[0] < 0);
             break;
           default:
-            console.log('Command Not Yet Impl: ' + actionType);
+            console.log('Command Not Yet Impl for skillId: ' + skillId);
             break;
         }
         if (targets) {
@@ -719,7 +721,7 @@
               if (target.statuses.dead && !allowDeadTargets) { 
                 return null;
               } else {
-                return heroTargetTemplate({actionType: actionType, heroId: hero.id, target: target});
+                return heroTargetTemplate({skillId: skillId, heroId: hero.id, target: target});
               }
             }));
           tarToMenuItems.push(heroCancelTemplate({heroId: hero.id}));
@@ -932,10 +934,10 @@
       // TODO: Command list needs to come down from server, separate instances
       // for each Hero
       var commands = [
-          {name: 'Attack'},
-          {name: 'Skill'},
-          {name: 'Item'},
-          {name: 'Defend'}
+          atb.Skill.ATTACK,
+          null, 
+          atb.Skill.ITEM,
+          atb.Skill.DEFEND
         ];
 
       // TODO: this should be somewhere better 
@@ -946,7 +948,8 @@
         }
 
         // FIXME: here's that command list (shared instance!)
-        curHero.commands = commands;
+        curHero.commands = _.clone(commands);
+        curHero.commands[1] = _.random(atb.Skill.FLEE+1, atb.Skill.length-1);
         var isPlayer = curHero.player == gameClient.me;
         var heroDomId = 'hero_'+ curHero.id;
         var heroHp = curHero.attributes.hp;
@@ -1009,8 +1012,8 @@
             // Action key
             var selected = this.items.curSelected.find('a');
             var commandPane = commandCarousel.getPaneInFocus();
-            var actionType = $(selected).text().toLowerCase();
-            processCommand(commandPane, actionType);
+            var skillId = $(selected).data('skill-id');
+            processCommand(commandPane, skillId);
             break;
           default:
             // ignore
@@ -1039,8 +1042,7 @@
               // backtrack to command menu
               this.cascadeClose();
             } else {
-              var actionType = 'item';
-              openTargetMenu(hero, actionType, itemId, this);
+              openTargetMenu(hero, atb.Skill.ITEM, itemId, this);
             }
             break;
           default:
@@ -1060,15 +1062,16 @@
           case 'action':
             // Action key
             var selected = this.items.curSelected.find('a');
-            var actionType = selected.prop('class');
+            var skillId = selected.data('skill-id');
             var actorId = selected.attr('heroId');
             var targetId = selected.attr('targetId');
             var actionArgs = this.container.data('args');
-            if (actionType == 'cancel') {
+            // TODO: fix cancel.
+            if (skillId == 'cancel') {
               // backtrack to command menu
               cancelTargetPane();
             } else {
-              executeCommandOnTarget(actionType, actionArgs, actorId, targetId);
+              executeCommandOnTarget(skillId, actionArgs, actorId, targetId);
             }
             break;
           default:
