@@ -273,6 +273,10 @@
       background-color: rgba(38,128,208,0.8);
     }
 
+    .menu-pane a.disabled {
+      color: #888;
+    }
+
     .menu-pane .pane-title {
       margin-bottom: 8px;
     }
@@ -464,7 +468,7 @@
         + '</div>');
 
       // Hero Command list
-      var heroCommandTemplate = _.template('<a href="#" data-skill-id="<%= command[atb.Skill.field.id] %>"><%= command[atb.Skill.field.name] %></a>');
+      var heroCommandTemplate = _.template('<a href="#" <% if (isDisabled) { %>class="disabled"<% } %> data-skill-id="<%= skill[atb.Skill.field.id] %>"><%= skill[atb.Skill.field.name] %></a>');
 
       // Target Menu 
       var heroTargetMenuTemplate = _.template('<div id="tar_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-pane"><div id="tar_list_<%= hero.id %>" class="target-list"></div></div>');
@@ -533,8 +537,11 @@
           var comMenu = new atb.Menu(heroCommandPaneTemplate, {hero: hero});
 
           // populate with menu items
-          var comToMenuItems = _.map(commands, function(command) {
-              return heroCommandTemplate({command: atb.Skill[command]})
+          var comToMenuItems = _.map(commands, function(skillId) {
+              var skill = atb.Skill[skillId];
+              var isDisabled = !atb.Skill.meetsPrereqCast(skillId, hero);
+              var comHolder = heroCommandTemplate({skill: skill, isDisabled: isDisabled})
+              return comHolder;
             });
           comMenu.addMenuItems('.command-list');
           comMenu.items.isWrapAround = true;
@@ -1030,9 +1037,11 @@
           case 'action':
             // Action key
             var selected = this.items.curSelected.find('a');
-            var commandPane = commandCarousel.getPaneInFocus();
-            var skillId = $(selected).data('skill-id');
-            processCommand(commandPane, skillId);
+            if (!selected.hasClass('disabled')) {
+              var commandPane = commandCarousel.getPaneInFocus();
+              var skillId = $(selected).data('skill-id');
+              processCommand(commandPane, skillId);
+            }
             break;
           default:
             // ignore

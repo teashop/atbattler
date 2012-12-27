@@ -43,15 +43,22 @@ atb.Skill.isValid = function(skillId) {
  * 
  * @return {boolean} true iff the provided state satisfies skill prereqs.
  */
-atb.Skill.meetsPrereq = function(skillId, hero, target) {
+atb.Skill.meetsPrereqCast = function(skillId, hero) {
   // TODO: generalize for other skills, including items.
   var skill = atb.Skill[skillId];
   var skillCost = skill[atb.Skill.field.cost];
-  var skillCostSp = skillCost[1] ? skillCost[1] : 0;
+  var skillCostSp = 0;
+  
+  if (skillCost && skillCost[1]) {
+    skillCostSp = skillCost[1];
+  }
 
   return (!hero.statuses.dead 
-    && !target.statuses.dead 
     && hero.attributes.sp >= skillCostSp);
+}
+atb.Skill.meetsPrereq = function(skillId, hero, target) {
+  return (atb.Skill.meetsPrereqCast(skillId, hero)
+    && !target.statuses.dead);
 }
 
 /**
