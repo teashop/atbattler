@@ -150,8 +150,10 @@ GC.processEvent = function() {
       var target = this.heroes[args.target];
       var objectId = args.objectId;
       var isCrit = args.isCrit ? args.isCrit : false;
-      switch(args.skillId) {
-        case atb.Skill.ATTACK:
+      var skillId = args.skillId;
+
+      switch(true) {
+        case (skillId == atb.Skill.ATTACK):
           var msg = source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.';
           if (isCrit) {
             msg += ' (Critical Hit)';
@@ -161,22 +163,9 @@ GC.processEvent = function() {
           if (target.attributes.hp < 0) {
             target.attributes.hp = 0;
           }
-          this.emitterCallback('clientHeroActionEvent', [source, target, args.skillId, args.amount, isCrit]);
+          this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.amount, isCrit]);
           break;
-/*        case 'skill':
-          var msg = source.name + ' uses skill on ' + target.name + ' for ' + args.amount + ' damage.';
-          if (isCrit) {
-            msg += ' (Critical Hit)';
-          }
-          this.log(msg);
-          target.attributes.hp -= args.amount;
-          if (target.attributes.hp < 0) {
-            target.attributes.hp = 0;
-          }
-          this.emitterCallback('clientHeroActionEvent', [source, target, args.skillId, args.amount, isCrit]);
-          break;
-*/          
-        case atb.Skill.ITEM:
+        case (skillId == atb.Skill.ITEM):
           var item = atb.Item[objectId];
           var itemName = item[atb.Item.field.name];
 
@@ -192,7 +181,7 @@ GC.processEvent = function() {
             if (target.attributes.hp > target.attributes.maxHp) {
               target.attributes.hp = target.attributes.maxHp;
             }
-            this.emitterCallback('clientHeroActionEvent', [source, target, args.skillId, args.hp, isCrit]);
+            this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.hp, isCrit]);
           }
           if (args.sp > 0) {
             this.log(target.name + ' recovered ' + args.sp + ' SP');
@@ -200,22 +189,37 @@ GC.processEvent = function() {
             if (target.attributes.sp > target.attributes.maxSp) {
               target.attributes.sp = target.attributes.maxSp;
             }
-            this.emitterCallback('clientHeroActionEvent', [source, target, args.skillId, args.sp, isCrit, 'heal_sp']);
+            this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.sp, isCrit, 'heal_sp']);
           }
           break;
-        case atb.Skill.DEFEND:
+        case (skillId == atb.Skill.DEFEND):
           // FIXME: as you can see, this does nothing
           this.log(source.name + ' defends!');
           this.emitterCallback('clientResetHeroEvent', source);
           break;
+
+        // FIXME: everything else valid is a 'generic skill'
+        case (atb.Skill.isValid(skillId)):
+          var skill =  atb.Skill[skillId];
+          var msg = source.name + ' uses [' + skill[atb.Skill.field.name] + '] on ' + target.name + ' for ' + args.amount + ' damage.';
+          if (isCrit) {
+            msg += ' (Critical Hit)';
+          }
+          this.log(msg);
+          target.attributes.hp -= args.amount;
+          if (target.attributes.hp < 0) {
+            target.attributes.hp = 0;
+          }
+          this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.amount, isCrit]);
+          break;
         default:
-          console.log('Client received unknown action.skillId: ' + args.skillId);
+          console.log('Client received unknown action.skillId: ' + skillId);
           break;
       }
       break;
     case GameEvent.type.heroes_invalid_action:
       // action was invalidated; turn consumed.
-      var msg = source.name + ' could not complete ' + args.skillId + ' because ' + target.name + ' is dead.';
+      var msg = source.name + ' could not complete ' + skillId + ' because ' + target.name + ' is dead.';
       this.log(msg);
       this.emitterCallback('clientResetHeroEvent', source);
       break;

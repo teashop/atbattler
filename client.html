@@ -560,7 +560,6 @@
           hpIncrementers[hero.id].setTarget(hero.attributes.hp);
           switch (skillId) {
             case atb.Skill.ATTACK:
-//            case 'skill':
               atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
               effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
               break;
@@ -572,8 +571,13 @@
               }
               break;
             default:
-              console.log('unknown type, using default increment');
-              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
+              if (atb.Skill.isValid(skillId)) {
+                atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
+                effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
+              } else {
+                console.log('unknown type, using default increment');
+                effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
+              }
               break;
           }
         } else {
@@ -615,18 +619,17 @@
           case atb.Skill.ATTACK:
             gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: hero.id, target: target.id});
             break;
-/*          case 'skill':
-          // FixME
-            gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: hero.id, target: target.id});
-            break;
-*/            
           case atb.Skill.ITEM:
             // Item takes the Item ID as an argument
             var itemId = actionArgs;
             gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ITEM, objectId: itemId, by: hero.id, target: target.id});
             break;
           default:
-            console.log('Action Not Yet Impl for SkillId: ' + skillId);
+            if (atb.Skill.isValid(skillId)) {
+              gameClient.queueEvent(GameEvent.type.player_action, {skillId: skillId, by: hero.id, target: target.id});
+            } else {
+              console.log('Action Not Yet Impl for SkillId: ' + skillId);
+            }
             break;
         }
         var menuToClose = commandCarousel.getPaneInFocus().data('menu'); 
@@ -642,7 +645,6 @@
         var heroComMenu = commandPane.data('menu'); 
         switch (skillId) {
           case atb.Skill.ATTACK:
-//          case 'skill':
             openTargetMenu(hero, skillId, null, heroComMenu);
             break;
           case atb.Skill.ITEM:
@@ -654,7 +656,11 @@
             menuToClose.cascadeClose();
             break;
           default:
-            console.log('Command Not Yet Impl for skillId: ' + skillId);
+            if (atb.Skill.isValid(skillId)) {
+              openTargetMenu(hero, skillId, null, heroComMenu);
+            } else {
+              console.log('Command Not Yet Impl for skillId: ' + skillId);
+            }
             break;
         }
       }
@@ -696,10 +702,6 @@
           case atb.Skill.ATTACK:
             targets = gameClient.enemy.party.heroes;
             break;
-/*          case 'skill':
-            targets = gameClient.enemy.party.heroes;
-            break;
-*/            
           case atb.Skill.ITEM:
             targets = gameClient.me.party.heroes;
             // allow dead targets if the item removes the 'dead' status
@@ -708,7 +710,11 @@
             allowDeadTargets = (statuses && statuses[0] < 0);
             break;
           default:
-            console.log('Command Not Yet Impl for skillId: ' + skillId);
+            if (atb.Skill.isValid(skillId)) {
+              targets = gameClient.enemy.party.heroes;
+            } else {
+              console.log('Command Not Yet Impl for skillId: ' + skillId);
+            }
             break;
         }
         if (targets) {
@@ -949,7 +955,7 @@
 
         // FIXME: here's that command list (shared instance!)
         curHero.commands = _.clone(commands);
-        curHero.commands[1] = _.random(atb.Skill.FLEE+1, atb.Skill.length-1);
+        curHero.commands[1] = _.random(atb.Skill.SKILLS_START, atb.Skill.length-1);
         var isPlayer = curHero.player == gameClient.me;
         var heroDomId = 'hero_'+ curHero.id;
         var heroHp = curHero.attributes.hp;

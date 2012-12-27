@@ -28,3 +28,11 @@ atb.Skill.ATTACK = 0;
 atb.Skill.DEFEND = 1;
 atb.Skill.ITEM = 2;
 atb.Skill.FLEE = 3;
+
+// FIXME: this is a hack to specify the range of 'everything else'
+atb.Skill.SKILLS_START = 4;
+
+
+atb.Skill.isValid = function(skillId) {
+  return (skillId >= 0 && skillId < atb.Skill.length);
+}

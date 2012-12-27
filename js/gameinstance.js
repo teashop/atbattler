@@ -256,11 +256,19 @@ GI.resetHero = function(hero) {
   hero.statuses.ready = false;
   hero.turnGauge = 0.00;
 }
+
+GI.killHero = function(hero) {
+  hero.attributes.hp = 0;
+  hero.statuses.dead = true;
+  this.resetHero(hero);
+
+}
 // execute an action
 GI.executeAction = function(action) {
   // FIXME: this precludes dual-tech/triple-tech etc.
   var actor = this.heroes[action.by];
   var target = this.heroes[action.target];
+  var skillId = action.skillId;
   // drop actions from non-ready actors
   if (!actor) {
     console.log('GI: no/invalid actor specified, ignoring action request');
@@ -273,12 +281,11 @@ GI.executeAction = function(action) {
     return;
   }
   // TODO: these should be in handlers or something more organized
-  switch(action.skillId) {
+  switch(skillId) {
     case atb.Skill.ATTACK:
-//    case 'skill':
       if (target.statuses.dead) {
         // reject attacks on dead people.
-        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: action.skillId, by: actor.id, target: target.id});
+        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
       } else {
         var dmg = actor.attributes.attack * (_.random(95, 105)/100); //5% variance for now.
         // 5% crit chance for now
@@ -289,13 +296,10 @@ GI.executeAction = function(action) {
         dmg = Math.round(dmg);
         var overkill = 0;
         target.attributes.hp -= dmg;
-        this.bufferOutbound(GameEvent.type.heroes_action, {skillId: action.skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
+        this.bufferOutbound(GameEvent.type.heroes_action, {skillId: skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
         if (target.attributes.hp <= 0) {
           overkill = -(target.attributes.hp);
-          target.attributes.hp = 0;
-          target.statuses.dead = true;
-          target.statuses.ready = false;
-          target.turnGauge = 0.00;
+          this.killHero(target);
           this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
         }
       }
@@ -317,7 +321,7 @@ GI.executeAction = function(action) {
       }
       // non rezzing items can't be used on dead targets
       if (!isRez && target.statuses.dead) {
-        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: action.skillId, by: actor.id, target: target.id});
+        this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
         break;
       }
       var attr = atb.Item[itemId][atb.Item.field.attr]; 
@@ -343,10 +347,36 @@ GI.executeAction = function(action) {
       break;
     case atb.Skill.DEFEND:
       // FIXME: Defend = skip a turn for now :)
-      this.bufferOutbound(GameEvent.type.heroes_action, {skillId: action.skillId, by: actor.id});
+      this.bufferOutbound(GameEvent.type.heroes_action, {skillId: skillId, by: actor.id});
       break;
     default:
-      console.log('GI: Unknown action.skillId ' + action.skillId);
+      // FIXME generically to dealing with 'everything else'
+      if (atb.Skill.isValid(skillId)) { 
+        // TODO: note the huge repetition with ATTACK.  Need to refactor this
+        // into a proper 'engine'.
+        if (target.statuses.dead) {
+          // reject attacks on dead people.
+          this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
+        } else {
+          var dmg = actor.attributes.attack * (_.random(120, 150)/100); //1.35x multiplier, with 0.15 variance 
+          // 5% crit chance for now
+          var isCrit = (_.random(0,99)) < 5;
+          if (isCrit) {
+            dmg *= 1.5;
+          }
+          dmg = Math.round(dmg);
+          var overkill = 0;
+          target.attributes.hp -= dmg;
+          this.bufferOutbound(GameEvent.type.heroes_action, {skillId: skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
+          if (target.attributes.hp <= 0) {
+            overkill = -(target.attributes.hp);
+            this.killHero(target);
+            this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
+          }
+        }
+      } else {
+        console.log('GI: Unknown skillId ' + skillId);
+      }
       break;
   } // switch
 
