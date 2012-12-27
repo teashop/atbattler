@@ -210,6 +210,13 @@ GC.processEvent = function() {
           if (target.attributes.hp < 0) {
             target.attributes.hp = 0;
           }
+
+          // decrement cost of skill from source
+          if (args.cost > 0) {
+            source.attributes.sp -= args.cost;
+//            console.log(skill[atb.Skill.field.name] + ' cost ' + args.cost + '; ' + source.name + ' SP should be set to: ' + source.attributes.sp);
+          }
+
           this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.amount, isCrit]);
           break;
         default:
@@ -219,7 +226,8 @@ GC.processEvent = function() {
       break;
     case GameEvent.type.heroes_invalid_action:
       // action was invalidated; turn consumed.
-      var msg = source.name + ' could not complete ' + skillId + ' because ' + target.name + ' is dead.';
+      var source = this.heroes[args.by];
+      var msg = source.name + ' could not complete ' + atb.Skill[skillId][atb.Skill.field.name];
       this.log(msg);
       this.emitterCallback('clientResetHeroEvent', source);
       break;

@@ -443,6 +443,7 @@
     <script type="text/javascript">
       /** View stuff */
       var hpIncrementers = [];
+      var spIncrementers = [];
       var heroRows = [];
 
       /** Templates **/
@@ -558,6 +559,7 @@
         if (skillId != null) {
           // let incrementer take care of update
           hpIncrementers[hero.id].setTarget(hero.attributes.hp);
+          spIncrementers[hero.id].setTarget(hero.attributes.sp);
           switch (skillId) {
             case atb.Skill.ATTACK:
               atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
@@ -583,14 +585,24 @@
         } else {
           // stop any existing incrementer, then set your value
           var heroHp = heroRows[hero.id].find('.hp');
+          var heroSp = heroRows[hero.id].find('.sp');
           hpIncrementers[hero.id].complete();
+          spIncrementers[hero.id].complete();
           heroHp.text(hero.attributes.hp);
+          heroSp.text(hero.attributes.sp);
         }
       }
 
       // take action => reset hero & update targets 
       function takeAction(hero, target, skillId, amount, isCrit, effectType) {
         resetHero(hero);
+        // fixme: this is HAXXX
+        var skill = atb.Skill[skillId];
+        var skillCost = skill[atb.Skill.field.cost];
+        if (skillCost && skillCost[1]) {
+          console.log(hero.name + ' s SP should be set to: ' + hero.attributes.sp);
+          updateHeroHp(hero, skillId, skillCost[1], false, effectType);
+        }
         updateHeroHp(target, skillId, amount, isCrit, effectType);
       }
 
@@ -959,13 +971,14 @@
         var isPlayer = curHero.player == gameClient.me;
         var heroDomId = 'hero_'+ curHero.id;
         var heroHp = curHero.attributes.hp;
+        var heroSp = curHero.attributes.sp;
 
         var heroPane = isPlayer ? $("#party > tbody") : $("#enemy > tbody");
         heroPane.append(heroRowTemplate({heroDomId: heroDomId, position: i, hero: curHero}));
 
         heroRows[curHero.id] = $('#' + heroDomId);
         var onUpdate = function(val, isPositive) {
-          var percent = val/this.hero.attributes.maxHp;
+          var percent = val/this.attrMax;
           var rgb = '#fff';
           if (isPositive) {	
             rgb = '#2e6';
@@ -979,8 +992,8 @@
           this.holder.text(val);
           this.holder.css('color', rgb);
         };
-        onUpdate = _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), hero: curHero });
-        hpIncrementers[curHero.id] = new atb.GradualIncrementer(heroHp, heroHp, onUpdate, 0.5);
+        hpIncrementers[curHero.id] = new atb.GradualIncrementer(heroHp, heroHp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), attrMax: curHero.attributes.maxHp }), 0.5);
+        spIncrementers[curHero.id] = new atb.GradualIncrementer(heroSp, heroSp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.sp'), attrMax: curHero.attributes.maxSp }), 0.5);
       }
 
       // attach command carousel

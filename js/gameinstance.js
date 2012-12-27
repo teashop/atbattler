@@ -352,10 +352,13 @@ GI.executeAction = function(action) {
     default:
       // FIXME generically to dealing with 'everything else'
       if (atb.Skill.isValid(skillId)) { 
+        var skill = atb.Skill[skillId];
+        var skillCost = skill[atb.Skill.field.cost];
+        var skillCostSp = skillCost[1] ? skillCost[1] : 0;
         // TODO: note the huge repetition with ATTACK.  Need to refactor this
         // into a proper 'engine'.
-        if (target.statuses.dead) {
-          // reject attacks on dead people.
+        if (target.statuses.dead || actor.attributes.sp < skillCostSp) {
+          // reject attacks on dead people or if insufficient SP
           this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
         } else {
           var dmg = actor.attributes.attack * (_.random(120, 150)/100); //1.35x multiplier, with 0.15 variance 
@@ -364,10 +367,19 @@ GI.executeAction = function(action) {
           if (isCrit) {
             dmg *= 1.5;
           }
+          // determine damage
           dmg = Math.round(dmg);
           var overkill = 0;
           target.attributes.hp -= dmg;
-          this.bufferOutbound(GameEvent.type.heroes_action, {skillId: skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
+
+          // construct the result message
+          var skillEffect = {skillId: skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit};
+          // decrement skill's cost from actor
+          if (skillCostSp > 0) {
+            actor.attributes.sp -= skillCostSp;
+            skillEffect.cost = skillCostSp;
+          }
+          this.bufferOutbound(GameEvent.type.heroes_action, skillEffect);
           if (target.attributes.hp <= 0) {
             overkill = -(target.attributes.hp);
             this.killHero(target);
