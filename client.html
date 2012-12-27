@@ -448,7 +448,7 @@
       /** Templates **/
       // Hero Row (name, hp, gauge, etc)
       var heroRowTemplate = _.template('<tr id="<%= heroDomId %>" class="hero"'
-        + 'position="<%= position %>" heroId="<%= hero.id %>"><td>'
+        + 'position="<%= position %>" data-hero-id="<%= hero.id %>"><td>'
         + '<%= hero.name %></td><td class="hp"><%= hero.attributes.hp %></td>'
         + '<td class="sp"><%= hero.attributes.sp %></td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td></tr>'
          );
@@ -457,7 +457,7 @@
        * Hero Command Menu Content
        */
       var heroCommandPaneTemplate = _.template(
-        '<div id="com_<%= hero.id %>" heroId="<%= hero.id %>" class="menu-pane">'
+        '<div id="com_<%= hero.id %>" data-hero-id="<%= hero.id %>" class="menu-pane">'
         + '<div class="pane-title"><%= hero.name %></div>'
         + '<div id="comlist_<%= hero.id %>" class="command-list"></div>'
         + '</div>');
@@ -469,7 +469,7 @@
       var heroTargetMenuTemplate = _.template('<div id="tar_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="target-menu menu-pane"><div id="tar_list_<%= hero.id %>" class="target-list"></div></div>');
 
       // Target Menu list item
-      var heroTargetTemplate =  _.template('<a href="#" data-skill-id="<%= skillId %>" heroId="<%= heroId %>" targetId="<%= target.id %>"><%= target.name %></a>');
+      var heroTargetTemplate =  _.template('<a href="#" data-skill-id="<%= skillId %>" data-hero-id="<%= heroId %>" data-target-id="<%= target.id %>"><%= target.name %></a>');
 
       // Cancel (close nested menu) list item
       var heroCancelTemplate =  _.template('<a href="#" class="cancel" heroId="<%= heroId %>">Cancel</a>');
@@ -477,7 +477,7 @@
       // Item Menu
       var heroItemMenuTemplate = _.template('<div id="item_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="item-menu menu-pane"><div class="tooltip"></div><div id="item_list_<%= hero.id %>" class="item-list"></div></div>');
       // Item Menu list item
-      var heroItemTemplate =  _.template('<a href="#" id="it_<%= item[atb.Item.field.id] %>" heroId="<%= heroId %>"><%= item[atb.Item.field.name] %><div class="qty"><%= qty %></div></a>');
+      var heroItemTemplate =  _.template('<a href="#" id="it_<%= item[atb.Item.field.id] %>" data-hero-id="<%= heroId %>"><%= item[atb.Item.field.name] %><div class="qty"><%= qty %></div></a>');
 
       /** END Templates **/
 
@@ -634,7 +634,7 @@
       }
 
       function processCommand(commandPane, skillId) {
-        var heroId = commandPane.attr('heroId');
+        var heroId = commandPane.data('hero-id');
         var hero = gameClient.heroes[heroId];
         // 'activemenu' is unreliable, so explicitly attach to the command 
         // menu of the current hero
@@ -1033,7 +1033,7 @@
           case 'action':
             // Action key
             var selected = this.items.curSelected.find('a');
-            var heroId = selected.attr('heroId');
+            var heroId = selected.data('hero-id');
             var isCancel = selected.prop('class') == 'cancel';
             var hero = gameClient.heroes[heroId];
             var itemId = selected.prop('id');
@@ -1063,8 +1063,8 @@
             // Action key
             var selected = this.items.curSelected.find('a');
             var skillId = selected.data('skill-id');
-            var actorId = selected.attr('heroId');
-            var targetId = selected.attr('targetId');
+            var actorId = selected.data('hero-id');
+            var targetId = selected.data('target-id');
             var actionArgs = this.container.data('args');
             // TODO: fix cancel.
             if (skillId == 'cancel') {
