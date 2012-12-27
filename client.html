@@ -600,7 +600,7 @@
         var skill = atb.Skill[skillId];
         var skillCost = skill[atb.Skill.field.cost];
         if (skillCost && skillCost[1]) {
-          console.log(hero.name + ' s SP should be set to: ' + hero.attributes.sp);
+//          console.log(hero.name + ' s SP should be set to: ' + hero.attributes.sp);
           updateHeroHp(hero, skillId, skillCost[1], false, effectType);
         }
         updateHeroHp(target, skillId, amount, isCrit, effectType);
@@ -931,7 +931,7 @@
             takeAction(args[0], args[1], args[2], args[3], args[4], args[5]); 
             break;
           case 'clientResetHeroEvent':
-            console.log('resetting hero ' + args.name);
+//            console.log('resetting hero ' + args.name);
             resetHero(args);
             break;
           case 'clientSyncHeroEvent':

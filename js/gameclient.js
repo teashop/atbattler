@@ -227,6 +227,7 @@ GC.processEvent = function() {
     case GameEvent.type.heroes_invalid_action:
       // action was invalidated; turn consumed.
       var source = this.heroes[args.by];
+      var skillId = args.skillId;
       var msg = source.name + ' could not complete ' + atb.Skill[skillId][atb.Skill.field.name];
       this.log(msg);
       this.emitterCallback('clientResetHeroEvent', source);
