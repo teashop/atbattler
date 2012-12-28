@@ -513,7 +513,7 @@
         var heroSprite = heroIdToSprite[hero.id];
         atb.tweenHeroDead(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
         resetHero(hero);
-        updateHeroHp(hero, null, 0);
+        forceHeroHpSp(hero);
         // close all menus
         var menuToClose = $('#com_' + hero.id).data('menu');
         if (menuToClose) {
@@ -561,39 +561,41 @@
         }
       }
 
-      function updateHeroHp(hero, skillId, amount, isCrit, effectType) {
+      function showSkillResult(hero, skillId, amount, isCrit, effectType) {
         // update hp
         var skill = atb.Skill.get(skillId);
-        if (skill) {
-          // let incrementer take care of update
-          hpIncrementers[hero.id].setTarget(hero.attributes.hp);
-          spIncrementers[hero.id].setTarget(hero.attributes.sp);
-          switch (skillId) {
-            case atb.Skill.ATTACK:
-              atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
-              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
-              break;
-            case atb.Skill.ITEM:
-              if (effectType == 'heal_sp') {
-                effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal_sp');
-              } else {
-                effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal');
-              }
-              break;
-            default:
-              atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
-              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
-              break;
-          }
-        } else {
-          // stop any existing incrementer, then set your value
-          var heroHp = heroRows[hero.id].find('.hp');
-          var heroSp = heroRows[hero.id].find('.sp');
-          hpIncrementers[hero.id].complete();
-          spIncrementers[hero.id].complete();
-          heroHp.text(hero.attributes.hp);
-          heroSp.text(hero.attributes.sp);
+        switch (skillId) {
+          case atb.Skill.ATTACK:
+            atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
+            effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
+            break;
+          case atb.Skill.ITEM:
+            if (effectType == 'heal_sp') {
+              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal_sp');
+            } else {
+              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal');
+            }
+            break;
+          default:
+            atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
+            effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
+            break;
         }
+      }
+
+      function incrementHeroHpSp(hero) {
+        // let incrementer take care of update
+        hpIncrementers[hero.id].setTarget(hero.attributes.hp);
+        spIncrementers[hero.id].setTarget(hero.attributes.sp);
+      }
+      function forceHeroHpSp(hero) {
+        // stop any existing incrementer, then set current value
+        var heroHp = heroRows[hero.id].find('.hp');
+        var heroSp = heroRows[hero.id].find('.sp');
+        hpIncrementers[hero.id].complete();
+        spIncrementers[hero.id].complete();
+        heroHp.text(hero.attributes.hp);
+        heroSp.text(hero.attributes.sp);
       }
 
       // take action => reset hero & update targets 
@@ -604,9 +606,10 @@
         var skillCost = skill.cost;
         if (skillCost && skillCost[1]) {
 //          console.log(hero.name + ' s SP should be set to: ' + hero.attributes.sp);
-          updateHeroHp(hero, skillId, skillCost[1], false, effectType);
+          incrementHeroHpSp(hero);
         }
-        updateHeroHp(target, skillId, amount, isCrit, effectType);
+        incrementHeroHpSp(hero);
+        showSkillResult(target, skillId, amount, isCrit, effectType);
       }
 
       function resetHero(hero) {
