@@ -532,31 +532,7 @@
         heroGauge.width(hero.turnGauge + '%');
         // update readiness for player heroes
         if (hero.statuses.ready && hero.player == gameClient.me && !heroRow.hasClass('ready')) {
-          var heroDomId = '#hero_'+ hero.id;
-          var commands = hero.commands;
-          var comMenu = new atb.Menu(heroCommandPaneTemplate, {hero: hero});
-
-          // populate with menu items
-          var comToMenuItems = _.map(commands, function(skillId) {
-              var skill = atb.Skill.get(skillId);
-              var isDisabled = !skill.meetsPrereqCast(hero);
-              var comHolder = heroCommandTemplate({skill: skill, isDisabled: isDisabled})
-              return comHolder;
-            });
-          comMenu.addMenuItems('.command-list');
-          comMenu.items.isWrapAround = true;
-          comMenu.items.addItems(comToMenuItems);
-          comMenu.onKeyInput = comMenuKeyInputHandler.bind(comMenu);
-          comMenu.onPreClose = function() { commandCarousel.remove(hero.id); };
-          comMenu.container.data('menu', comMenu);
-
-          // FIXME:
-          // add to command carousel 
-          commandCarousel.add(comMenu, hero.id)
-          if (!activeMenu) {
-            setActiveMenu(comMenu);
-          }
-
+          openCommandMenu(hero);
           heroRow.addClass('ready');
         }
       }
@@ -583,11 +559,17 @@
         }
       }
 
+      /**
+       * Uses Incrementers to set hero's HP/SP to the model's current value.
+       */
       function incrementHeroHpSp(hero) {
-        // let incrementer take care of update
         hpIncrementers[hero.id].setTarget(hero.attributes.hp);
         spIncrementers[hero.id].setTarget(hero.attributes.sp);
       }
+      /**
+       * Forces hero's HP/SP to the model's current value, stopping and
+       * overriding running Incrementers.
+       */
       function forceHeroHpSp(hero) {
         // stop any existing incrementer, then set current value
         var heroHp = heroRows[hero.id].find('.hp');
@@ -608,7 +590,7 @@
 //          console.log(hero.name + ' s SP should be set to: ' + hero.attributes.sp);
           incrementHeroHpSp(hero);
         }
-        incrementHeroHpSp(hero);
+        incrementHeroHpSp(target);
         showSkillResult(target, skillId, amount, isCrit, effectType);
       }
 
@@ -683,7 +665,35 @@
             break;
         }
       }
-      
+
+      // Main command menu - populated with hero's list of commands
+      function openCommandMenu(hero) {
+        var heroDomId = '#hero_'+ hero.id;
+        var commands = hero.commands;
+        var comMenu = new atb.Menu(heroCommandPaneTemplate, {hero: hero});
+
+        // populate with menu items
+        var comToMenuItems = _.map(commands, function(skillId) {
+            var skill = atb.Skill.get(skillId);
+            var isDisabled = !skill.meetsPrereqCast(hero);
+            var comHolder = heroCommandTemplate({skill: skill, isDisabled: isDisabled})
+            return comHolder;
+          });
+        comMenu.addMenuItems('.command-list');
+        comMenu.items.isWrapAround = true;
+        comMenu.items.addItems(comToMenuItems);
+        comMenu.onKeyInput = comMenuKeyInputHandler.bind(comMenu);
+        comMenu.onPreClose = function() { commandCarousel.remove(hero.id); };
+        comMenu.container.data('menu', comMenu);
+
+        // FIXME:
+        // add to command carousel 
+        commandCarousel.add(comMenu, hero.id)
+        if (!activeMenu) {
+          setActiveMenu(comMenu);
+        }
+      }
+
       // "Item" command menu
       function openItemMenu(hero, parentMenu) {
         var menuAnchor = $('#player-pane');
