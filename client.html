@@ -835,7 +835,7 @@
           var menu = target.parents(menuSelector).data('menu');
           menu.items.selectItem(position);
           // funnel through as an action
-          (handler.bind(menu))({data: {key:'action'}});
+          (handler.bind(menu))('action');
       }
 
       // Start Game
@@ -1030,8 +1030,8 @@
       }
 
       // Command menu keyboard input
-      function comMenuKeyInputHandler(keyEvent) {
-        switch(keyEvent.data.key) {
+      function comMenuKeyInputHandler(key) {
+        switch(key) {
           case 'left':
             commandCarousel.moveRight();
             break;
@@ -1058,15 +1058,15 @@
         }
       }
 
-      function itemMenuKeyInputHandler(keyEvent) {
+      function itemMenuKeyInputHandler(key) {
         // FIXME: too-fast keyboard input can have an action processed multiple
         // times by the client... need to figure out how to prevent this.
-        switch(keyEvent.data.key) {
+        switch(key) {
           case 'left':
           case 'right':
           case 'up':
           case 'down':
-            this.items.moveCursor(keyEvent.data.key);
+            this.items.moveCursor(key);
             break;
           case 'action':
             // Action key
@@ -1089,13 +1089,13 @@
       }
 
       // Target menu keyboard input
-      function tarMenuKeyInputHandler(keyEvent) {
-        switch(keyEvent.data.key) {
+      function tarMenuKeyInputHandler(key) {
+        switch(key) {
           case 'left':
           case 'right':
           case 'up':
           case 'down':
-            this.items.moveCursor(keyEvent.data.key);
+            this.items.moveCursor(key);
             break;
           case 'action':
             // Action key
@@ -1118,10 +1118,11 @@
       }
 
       function keyInputHandler(keyEvent) {
-        if (!activeMenu) {
+        var key = keyEvent.data.key;
+        if (!activeMenu || !key) {
           return;
         }
-        activeMenu.onKeyInput(keyEvent);
+        activeMenu.onKeyInput(key);
         keyEvent.stopPropagation();
         return false;
       }
