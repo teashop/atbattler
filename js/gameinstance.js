@@ -269,17 +269,26 @@ GI.executeAction = function(action) {
   var actor = this.heroes[action.by];
   var target = this.heroes[action.target];
   var skillId = action.skillId;
-  // drop actions from non-ready actors
-  if (!actor) {
+  var skill = atb.Skill.get(skillId);
+
+  if (!skill) {
+    // drop invalid skills
+    console.log('GI: Unknown skillId [' + skillId + '], ignoring action request');
+    return;
+  } else if (!actor) {
+    // drop actions from no/invalid actor
     console.log('GI: no/invalid actor specified, ignoring action request');
+    return;
   } else if (!actor.statuses.ready) {
-    console.log('GI: ' + actor.name + ' is not ready; ignoring action request');
+    // drop actions from non-ready actors
+    console.log('GI: [' + actor.name + '] is not ready; ignoring action request');
     return;
   } else if (actor.statuses.dead) {
     // drop actions from dead actors
-    console.log('GI: ' + actor.name + ' is dead; ignoring action request');
+    console.log('GI: [' + actor.name + '] is dead; ignoring action request');
     return;
   }
+
   // TODO: these should be in handlers or something more organized
   switch(skillId) {
     case atb.Skill.ATTACK:
@@ -351,12 +360,10 @@ GI.executeAction = function(action) {
       break;
     default:
       // FIXME generically to dealing with 'everything else'
-      if (atb.Skill.isValid(skillId)) { 
-        var skill = atb.Skill[skillId];
-        var skillCost = skill[atb.Skill.field.cost];
+        var skillCost = skill.cost;
         // TODO: note the huge repetition with ATTACK.  Need to refactor this
         // into a proper 'engine'.
-        if (!atb.Skill.meetsPrereq(skillId, actor, target)) {
+        if (!skill.meetsPrereq(actor, target)) {
           // reject attacks on dead people or if insufficient SP
           this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
         } else {
@@ -374,7 +381,7 @@ GI.executeAction = function(action) {
           // construct the result message
           var skillEffect = {skillId: skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit};
           // decrement skill's cost from actor
-          var skillCostSp = atb.Skill.payCost(skillId, actor);
+          var skillCostSp = skill.payCost(actor);
           if (skillCostSp > 0) {
             skillEffect.cost = skillCostSp;
           }
@@ -385,9 +392,6 @@ GI.executeAction = function(action) {
             this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
           }
         }
-      } else {
-        console.log('GI: Unknown skillId ' + skillId);
-      }
       break;
   } // switch
 

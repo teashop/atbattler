@@ -151,6 +151,12 @@ GC.processEvent = function() {
       var objectId = args.objectId;
       var isCrit = args.isCrit ? args.isCrit : false;
       var skillId = args.skillId;
+      var skill = atb.Skill.get(skillId);
+
+      if (!skill) {
+        console.log('Client received unknown action.skillId: ' + skillId);
+        break;
+      }
 
       switch(true) {
         case (skillId == atb.Skill.ATTACK):
@@ -199,9 +205,8 @@ GC.processEvent = function() {
           break;
 
         // FIXME: everything else valid is a 'generic skill'
-        case (atb.Skill.isValid(skillId)):
-          var skill =  atb.Skill[skillId];
-          var msg = source.name + ' uses [' + skill[atb.Skill.field.name] + '] on ' + target.name + ' for ' + args.amount + ' damage.';
+        default:
+          var msg = source.name + ' uses [' + skill.name + '] on ' + target.name + ' for ' + args.amount + ' damage.';
           if (isCrit) {
             msg += ' (Critical Hit)';
           }
@@ -214,21 +219,18 @@ GC.processEvent = function() {
           // decrement cost of skill from source
           if (args.cost > 0) {
             source.attributes.sp -= args.cost;
-//            console.log(skill[atb.Skill.field.name] + ' cost ' + args.cost + '; ' + source.name + ' SP should be set to: ' + source.attributes.sp);
+//            console.log(skill.name + ' cost ' + args.cost + '; ' + source.name + ' SP should be set to: ' + source.attributes.sp);
           }
 
           this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.amount, isCrit]);
-          break;
-        default:
-          console.log('Client received unknown action.skillId: ' + skillId);
           break;
       }
       break;
     case GameEvent.type.heroes_invalid_action:
       // action was invalidated; turn consumed.
       var source = this.heroes[args.by];
-      var skillId = args.skillId;
-      var msg = source.name + ' could not complete ' + atb.Skill[skillId][atb.Skill.field.name];
+      var skill = atb.Skill.get(args.skillId);
+      var msg = source.name + ' could not complete ' + skill.name;
       this.log(msg);
       this.emitterCallback('clientResetHeroEvent', source);
       break;

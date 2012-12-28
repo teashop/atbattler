@@ -2,7 +2,7 @@
 
 var atb = atb || {};
 
-atb.Skill = [
+atb.SkillData = [
   [0, 'Attack', 'Attack with equipped weapon'],
   [1, 'Defend', 'Increases defenses by 25% for one turn'],
   [2, 'Item', 'Use an Item from your inventory'],
@@ -15,12 +15,79 @@ atb.Skill = [
 ];
 
 
+/** 
+ * Convenience encapsulation of SkillData.
+ */
+atb.Skill = function(id) {
+  this.id = id;
+  this.data = atb.SkillData[this.id];
+
+  if (!this.data) {
+    throw 'Invalid Skill id specified';
+  }
+  this.name = this.data[atb.Skill.field.name];
+  this.desc = this.data[atb.Skill.field.desc];
+  this.cost = this.data[atb.Skill.field.cost];
+}
+
 atb.Skill.field = {
   id: 0,
   name: 1,
   desc: 2,
   cost: 3
 }
+
+{
+  var SKILL = atb.Skill.prototype;
+
+  /**
+   * Determines if the given hero/target state satisfies the prerequisites to
+   * execute the given skill
+   * 
+   * @return {boolean} true iff the provided state satisfies skill prereqs.
+   */
+  SKILL.meetsPrereqCast = function(hero) {
+    // TODO: generalize for other skills, including items.
+    var skillCost = this.cost;
+    var skillCostSp = 0;
+    
+    if (skillCost && skillCost[1]) {
+      skillCostSp = skillCost[1];
+    }
+    return (!hero.statuses.dead 
+      && hero.attributes.sp >= skillCostSp);
+  }
+  SKILL.meetsPrereq = function(hero, target) {
+    return (this.meetsPrereqCast(hero)
+      && !target.statuses.dead);
+  }
+
+  /**
+   * Extracts the skill cost from the executing hero. Assumes hero meets 
+   * prerequisites to execute skill.
+   *
+   * @return {array} the extracted costs, analogous to the cost field in the 
+   *    Skill record.
+   */
+  SKILL.payCost = function(hero) {
+    var skillCost = this.cost;
+    var skillCostSp = skillCost && skillCost[1] ? skillCost[1] : 0;
+
+    // FIXME only doing SP...
+    hero.attributes.sp -= skillCostSp;
+    return skillCostSp; 
+  }
+}
+
+
+/**
+ * Retrieves a Skill object representing the Skill for the given id.
+ * @return {Skill} the Skill.  If no such Skill exists, return null;
+ */
+atb.Skill.get = function(id) {
+  return atb.Skill.isValid(id) ? new atb.Skill(id) : null;
+}
+
 
 // Convenience lookups for 'command' skills
 
@@ -34,44 +101,6 @@ atb.Skill.SKILLS_START = 4;
 
 
 atb.Skill.isValid = function(skillId) {
-  return (skillId >= 0 && skillId < atb.Skill.length);
+  return atb.SkillData[skillId] ? true : false; 
 }
 
-/**
- * Determines if the given hero/target state satisfies the prerequisites to
- * execute the given skill
- * 
- * @return {boolean} true iff the provided state satisfies skill prereqs.
- */
-atb.Skill.meetsPrereqCast = function(skillId, hero) {
-  // TODO: generalize for other skills, including items.
-  var skill = atb.Skill[skillId];
-  var skillCost = skill[atb.Skill.field.cost];
-  var skillCostSp = 0;
-  
-  if (skillCost && skillCost[1]) {
-    skillCostSp = skillCost[1];
-  }
-
-  return (!hero.statuses.dead 
-    && hero.attributes.sp >= skillCostSp);
-}
-atb.Skill.meetsPrereq = function(skillId, hero, target) {
-  return (atb.Skill.meetsPrereqCast(skillId, hero)
-    && !target.statuses.dead);
-}
-
-/**
- * Extracts the skill cost from the executing hero. Assumes hero meets 
- * prerequisites to execute skill.
- *
- * @return {array} the extracted costs, analogous to the cost field in the Skill
- *    record.
- */
-atb.Skill.payCost = function(skillId, hero) {
-  var skillCost = atb.Skill[skillId][atb.Skill.field.cost];
-  var skillCostSp = skillCost[1] ? skillCost[1] : 0;
-
-  hero.attributes.sp -= skillCostSp;
-  return skillCostSp; 
-}
