@@ -25,9 +25,21 @@ atb.Skill = function(id) {
   if (!this.data) {
     throw 'Invalid Skill id specified';
   }
+
+  function toCostObject(cost) {
+    if (cost) {
+      var theCost = {};
+      theCost.hp = cost[0];
+      theCost.sp = cost[1];
+      return theCost;
+    } else {
+      return undefined;
+    }
+  }
+
   this.name = this.data[atb.Skill.field.name];
   this.desc = this.data[atb.Skill.field.desc];
-  this.cost = this.data[atb.Skill.field.cost];
+  this.cost = toCostObject(this.data[atb.Skill.field.cost]);
 }
 
 atb.Skill.field = {
@@ -40,6 +52,7 @@ atb.Skill.field = {
 {
   var SKILL = atb.Skill.prototype;
 
+
   /**
    * Determines if the given hero/target state satisfies the prerequisites to
    * execute the given skill
@@ -51,8 +64,8 @@ atb.Skill.field = {
     var skillCost = this.cost;
     var skillCostSp = 0;
     
-    if (skillCost && skillCost[1]) {
-      skillCostSp = skillCost[1];
+    if (skillCost && skillCost.sp) {
+      skillCostSp = skillCost.sp;
     }
     return (!hero.statuses.dead 
       && hero.attributes.sp >= skillCostSp);
@@ -71,7 +84,7 @@ atb.Skill.field = {
    */
   SKILL.payCost = function(hero) {
     var skillCost = this.cost;
-    var skillCostSp = skillCost && skillCost[1] ? skillCost[1] : 0;
+    var skillCostSp = skillCost && skillCost.sp ? skillCost.sp : 0;
 
     // FIXME only doing SP...
     hero.attributes.sp -= skillCostSp;

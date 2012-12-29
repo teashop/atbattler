@@ -381,9 +381,9 @@ GI.executeAction = function(action) {
           // construct the result message
           var skillEffect = {skillId: skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit};
           // decrement skill's cost from actor
-          var skillCostSp = skill.payCost(actor);
-          if (skillCostSp > 0) {
-            skillEffect.cost = skillCostSp;
+          skill.payCost(actor);
+          if (skillCost.sp > 0) {
+            skillEffect.cost = skillCost.sp;
           }
           this.bufferOutbound(GameEvent.type.heroes_action, skillEffect);
           if (target.attributes.hp <= 0) {

@@ -586,7 +586,7 @@
         // fixme: this is HAXXX
         var skill = atb.Skill.get(skillId);
         var skillCost = skill.cost;
-        if (skillCost && skillCost[1]) {
+        if (skillCost && skillCost.sp) {
 //          console.log(hero.name + ' s SP should be set to: ' + hero.attributes.sp);
           incrementHeroHpSp(hero);
         }
@@ -982,7 +982,7 @@
           continue;
         }
 
-        // FIXME: here's that command list (shared instance!)
+        // FIXME: hero command list - randomly assign a special skill
         curHero.commands = _.clone(commands);
         curHero.commands[1] = _.random(atb.Skill.SKILLS_START, atb.SkillData.length-1);
         var isPlayer = curHero.player == gameClient.me;
