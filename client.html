@@ -795,13 +795,13 @@
 
       function onCommandCarouselMoveStart(id) {
         if (id) {
-          $('#hero_'+ id).removeClass('selected');
+          heroRows[id].removeClass('selected');
           hideCommandNavButtons();
         }
       }
       function onCommandCarouselMoveEnd(id) {
         if (id) {
-          $('#hero_'+ id).addClass('selected');
+          heroRows[id].addClass('selected');
           setActiveMenu(commandCarousel.getPaneInFocus().data('menu'));
           if (commandCarousel.numPanes > 1) {
             showCommandNavButtons();

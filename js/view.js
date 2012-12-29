@@ -204,7 +204,7 @@ atb.CommandCarousel = function(container) {
     // first pane = show tray && inform focus
     if (this.numPanes == 0) {
       this.tray.slideToggle(100);
-      this.onMoveEnd(item.id);
+      this.onMoveEnd(this.getPaneOrigId(item.id));
     }
     this.numPanes++;
     this.onAdd(this.numPanes);
