@@ -26,14 +26,18 @@ atb.Skill = function(id) {
     throw 'Invalid Skill id specified';
   }
 
+  /**
+   * Converts cost field array into key-value object.  If cost DNE, returns 
+   * null. 
+   */
   function toCostObject(cost) {
     if (cost) {
       var theCost = {};
-      theCost.hp = cost[0];
-      theCost.sp = cost[1];
+      theCost.hp = cost[0] ? cost[0] : 0;
+      theCost.sp = cost[1] ? cost[1] : 0;
       return theCost;
     } else {
-      return undefined;
+      return null;
     }
   }
 
@@ -42,6 +46,7 @@ atb.Skill = function(id) {
   this.cost = toCostObject(this.data[atb.Skill.field.cost]);
 }
 
+// Field enumeration for SkillData attay
 atb.Skill.field = {
   id: 0,
   name: 1,
@@ -52,10 +57,9 @@ atb.Skill.field = {
 {
   var SKILL = atb.Skill.prototype;
 
-
   /**
    * Determines if the given hero/target state satisfies the prerequisites to
-   * execute the given skill
+   * execute the given skill.  Assumes nothing about the target(s).
    * 
    * @return {boolean} true iff the provided state satisfies skill prereqs.
    */
@@ -64,37 +68,39 @@ atb.Skill.field = {
     var skillCost = this.cost;
     var skillCostSp = 0;
     
-    if (skillCost && skillCost.sp) {
-      skillCostSp = skillCost.sp;
+    var meetsPrereqs = true;
+
+    if (skillCost) {
+      meetsPrereqs = (hero.attributes.sp >= skillCost.sp 
+        && hero.attributes.hp >= skillCost.hp);
     }
-    return (!hero.statuses.dead 
-      && hero.attributes.sp >= skillCostSp);
+    return (meetsPrereqs && !hero.statuses.dead);
   }
+
   SKILL.meetsPrereq = function(hero, target) {
     return (this.meetsPrereqCast(hero)
       && !target.statuses.dead);
   }
 
   /**
-   * Extracts the skill cost from the executing hero. Assumes hero meets 
+   * Deducts the skill cost from the executing hero. Assumes hero meets 
    * prerequisites to execute skill.
    *
-   * @return {array} the extracted costs, analogous to the cost field in the 
-   *    Skill record.
+   * @param {Hero} hero to deduct Skill cost from.
    */
   SKILL.payCost = function(hero) {
     var skillCost = this.cost;
-    var skillCostSp = skillCost && skillCost.sp ? skillCost.sp : 0;
-
-    // FIXME only doing SP...
-    hero.attributes.sp -= skillCostSp;
-    return skillCostSp; 
+    if (skillCost) {
+      hero.attributes.hp -= skillCost.hp;
+      hero.attributes.sp -= skillCost.sp;
+    }
   }
 }
 
 
 /**
  * Retrieves a Skill object representing the Skill for the given id.
+ *
  * @return {Skill} the Skill.  If no such Skill exists, return null;
  */
 atb.Skill.get = function(id) {
@@ -103,7 +109,6 @@ atb.Skill.get = function(id) {
 
 
 // Convenience lookups for 'command' skills
-
 atb.Skill.ATTACK = 0;
 atb.Skill.DEFEND = 1;
 atb.Skill.ITEM = 2;
