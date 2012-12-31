@@ -66,6 +66,10 @@ GIDM[GameEvent.type.player_ready] = function(from, args) {
   }
 }
 
+/**
+ * hero.speed * this factor = gauge update per tick (at 30 FPS);
+ */
+atb.SPEED_FACTOR = 100.00 * 30.00;
 
 /** Game Instance (Server) **/
 function GameInstance(clock) {
@@ -91,6 +95,7 @@ function GameInstance(clock) {
 
   // Game clock
   this.clock = clock;
+
   // 'Real Clock' Duration clock (500ms ticks)
   this.durationClock = new Clock(500);
 
@@ -102,6 +107,11 @@ function GameInstance(clock) {
   // Msg Factory
   this.msgFactory = GameEvent.getFactory('GI'); // FIXME (instance ID)
 
+  // Speed factor based on game clock tick size
+  this.speedFactor = atb.SPEED_FACTOR / this.clock.tickSize;
+
+  console.log(this.speedFactor);
+  console.log(this.clock.tickSize);
   // duration based events to keep track of
   this.durationEventTracker = [];
 
@@ -446,7 +456,7 @@ GI.update = function() {
   // hero ready condition
   var newlyReady = _.filter(this.heroes, function(curHero) {
       if (curHero && !curHero.statuses.dead && !curHero.statuses.ready) {
-        curHero.turnGauge += curHero.attributes.speed / 100.00;
+        curHero.turnGauge += curHero.attributes.speed / this.speedFactor;
         if (curHero.turnGauge >= 100) {
           curHero.statuses.ready = true;
           curHero.turnGauge = 100.00;
@@ -454,7 +464,7 @@ GI.update = function() {
         }
       }
       return false;
-    });
+    }, this);
   // broadcast new ready heroes to clients
   // TODO
   if(newlyReady.length > 0) {

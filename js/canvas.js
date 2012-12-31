@@ -57,17 +57,15 @@ atb.anim = {};
  *
  * @param {Function} anim The function (or name of animation function)
  * @param {Function} onComplete callback when animation completes
- * @param {Array} onCompleteArgs args to be passed to the callback 
- *                function (optional)
  * @param {...} args to be passed to the animation function (optional)
  */
-atb.anim.run = function(anim, onComplete, onCompleteArgs) {
+atb.anim.run = function(anim, onComplete) {
   if (arguments.length < 2 || !_.isFunction(onComplete)) {
     throw 'Illegal arguments provided';
   }
-  var animArgs = Array.prototype.slice.call(arguments, 3);
+  var animArgs = Array.prototype.slice.call(arguments, 2);
   var fn = _.isFunction(anim) ? anim : atb.anim[anim];
-  return fn.apply({callback: onComplete, args: onCompleteArgs}, animArgs);
+  return fn.apply({callback: onComplete}, animArgs);
 }
 
 /**
@@ -95,7 +93,7 @@ atb.anim.playHitHero = function(target, num) {
       atb.stage.removeChild(anim);
       // call callback, if it exists
       if (this.callback) {
-        this.callback.apply(this, this.args); 
+        this.callback.call(); 
       }
       return;
     }

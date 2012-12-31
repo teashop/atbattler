@@ -25,7 +25,7 @@
 
   <!-- EaselJS setup -->
   <script type="text/javascript">
-    var FPS = 30;
+    var FPS = 60;
     var SECOND = 1000;  // a second is 1000ms
     var msPerFrame = SECOND/FPS; // approximate
     var HERO_BASE_X = 150;
@@ -548,7 +548,7 @@
                 atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, sprite.origX);
                 effectNumGen.generate(amount, isCrit, sprite);
               },
-              null, sprite, 3);
+              sprite, 3);
             break;
           case atb.Skill.ITEM:
             if (effectType == 'heal_sp') {

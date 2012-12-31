@@ -69,7 +69,10 @@ GC.update = function() {
   if (!this.isGameOver) {
     var toUpdate = _.filter(this.heroes, function(curHero) {
         if (!curHero.statuses.dead && !curHero.statuses.ready) {
-          curHero.turnGauge += curHero.attributes.speed / 100.00;
+          // TODO: the 180 should be drawn from something tied to the 
+          // clock speed of the server - maybe this can be part of the 
+          // setup prcoess.
+          curHero.turnGauge += curHero.attributes.speed / 180.00;
           if (curHero.turnGauge >= 100) {
             curHero.turnGauge = 100.00;
           }
