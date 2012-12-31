@@ -101,38 +101,13 @@
         curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
         curSprite.origY = curSprite.y;
         curSprite.scaleX = curSprite.scaleY = atb.HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
-        curSprite.gotoAndPlay("idle");
+        curSprite.gotoAndPlay("idle_r");
         atb.stage.addChild(curSprite);
       }
       // enemy sprites
-      var badguySheet = new createjs.SpriteSheet({
-        "animations": {
-          "idle": [43],
-          "walk": [42,44, "walk", 5]
-          },
-          "images": ["img/chara01.png"],
-          "frames": {
-              "height": 32,
-              "width":24,
-              "regX": 12,
-              "regY": 16,
-              "count": 96
-            }
-       });
-      var wagsSheet = new createjs.SpriteSheet({
-        "animations": {
-          "idle": [37],
-          "walk": [36,38, "walk", 5]
-          },
-          "images": ["img/chara01.png"],
-          "frames": {
-              "height": 32,
-              "width":24,
-              "regX": 12,
-              "regY": 16,
-              "count": 96
-            }
-       });
+      var badguySheet = atb.sheet.createHeroSheet('chara01.png', 2);
+      var wagsSheet = atb.sheet.createHeroSheet('chara01.png', 0);
+ 
       enemySprites.push(new createjs.BitmapAnimation(badguySheet));
       enemySprites.push(new createjs.BitmapAnimation(wagsSheet));
       for (var i = 0, len = enemySprites.length; i < len; i++) {
@@ -142,7 +117,7 @@
         curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
         curSprite.origY = curSprite.y;
         curSprite.scaleX = curSprite.scaleY = atb.HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
-        curSprite.gotoAndPlay("idle");
+        curSprite.gotoAndPlay("idle_l");
         atb.stage.addChild(curSprite);
       }
 

@@ -110,8 +110,6 @@ function GameInstance(clock) {
   // Speed factor based on game clock tick size
   this.speedFactor = atb.SPEED_FACTOR / this.clock.tickSize;
 
-  console.log(this.speedFactor);
-  console.log(this.clock.tickSize);
   // duration based events to keep track of
   this.durationEventTracker = [];
 

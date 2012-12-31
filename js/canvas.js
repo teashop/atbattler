@@ -79,8 +79,10 @@ atb.sheet.createHeroSheet = function(imageFile, index) {
   var theSheet = new createjs.SpriteSheet({
     animations: {
       // 2nd row, 2nd column of hero block
-      idle: [rows[1]+1],
-      walk: [rows[1], rows[1]+2, 'walk', 5]
+      idle_r: [rows[1]+1],
+      idle_l: [rows[3]+1],
+      walk_r: [rows[1], rows[1]+2, 'walk_r', 5],
+      walk_l: [rows[3], rows[3]+2, 'walk_l', 5]
       },
       images: [atb.imagePath + imageFile],
       frames: {
