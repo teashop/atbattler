@@ -13,8 +13,26 @@ atb.HERO_BASE_SCALE = 3;
 // The easeljs stage. MUST be set otherwise none of the animations will work.
 atb.stage = {};
 
-// path to image assets; defaults to './img/'
-atb.imagePath = 'img/';
+
+/**
+ * @namespace pertaining to image assets
+ */
+atb.img = {
+  // path to image assets; defaults to './img/'
+  path: 'img/',
+
+  type: {
+    'hero': 0, // hero spritesheets
+    'bg': 1,   // backdrops
+    'anim': 2  // (battle) animation spritesheets
+  },
+
+  typePath: {
+    0: 'hero/', 
+    1: 'bg/',   
+    2: 'anim/'
+  }
+}
 
 /**
  * @namespace Collection of sprite sheets.
@@ -36,6 +54,8 @@ atb.sheet.HERO_SLOTS = 8; // i.e. 8 heroes per sheet
 atb.sheet.HERO_ROW_SPAN = 4;
 atb.sheet.HERO_COL_SPAN = 3;
 
+
+
 // ******* BATTLE ANIMATIONS ********
 
 /**
@@ -46,7 +66,7 @@ atb.sheet.hit = new createjs.SpriteSheet({
         'strike': [0,3, 'strike', 2],
         'slowStrike': [0,3, 'slowStrike', 5],
       },
-    images: [atb.imagePath + 'attack.png'],
+    images: [atb.img.path + 'attack.png'],
     frames: {
         height: atb.sheet.BATTLE_ANIM_FRAME_HEIGHT,
         width: atb.sheet.BATTLE_ANIM_FRAME_WIDTH,
@@ -84,7 +104,7 @@ atb.sheet.createHeroSheet = function(imageFile, index) {
       walk_r: [rows[1], rows[1]+2, 'walk_r', 5],
       walk_l: [rows[3], rows[3]+2, 'walk_l', 5]
       },
-      images: [atb.imagePath + imageFile],
+      images: [atb.img.path + atb.img.typePath[atb.img.type.hero] + imageFile],
       frames: {
           height: atb.sheet.HERO_FRAME_HEIGHT,
           width:atb.sheet.HERO_FRAME_WIDTH,
