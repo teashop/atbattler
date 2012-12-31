@@ -21,6 +21,7 @@
   <script src="js/gameinstance.js"></script>
   <script src="js/gameclient.js"></script>
   <script src="js/view.js"></script>
+  <script src="js/canvas.js"></script>
 
   <!-- EaselJS setup -->
   <script type="text/javascript">
@@ -29,13 +30,11 @@
     var msPerFrame = SECOND/FPS; // approximate
     var HERO_BASE_X = 150;
     var HERO_BASE_Y = 150;
-    var HERO_BASE_SCALE = 3;
     var HERO_SPACE_X = 15;
     var HERO_SPACE_Y = 65;
     var HERO_PERSPECTIVE_SCALE = 0.15;
 
     var backdrop;
-    var stage;
     var runningRate = 2.5;
     var w, h;
     var counter = 0;  // duration of game (temp)
@@ -48,7 +47,8 @@
         "img/plains.png",
         "img/amber.png",
         "img/jergens.png",
-        "img/chara01.png"
+        "img/chara01.png",
+        "img/attack.png"
       ];
     preload.onComplete = init;
     preload.loadManifest(manifest);
@@ -62,7 +62,7 @@
     function init() {
       // create a new stage and point it at our canvas:
       var canvas =document.getElementById("main-canvas");
-      stage = new createjs.Stage(canvas);
+      atb.stage = new createjs.Stage(canvas);
     
       // grab canvas width and height for later calculations:
       w = canvas.width;
@@ -75,11 +75,11 @@
       backdrop =  new createjs.Shape(new createjs.Graphics().beginBitmapFill(bgImage, 'no-repeat').drawRect(0,0,bgImage.width,bgImage.height));
       backdrop.scaleX = Math.ceil(w/bgImage.width);
       backdrop.scaleY = Math.ceil(h/bgImage.height);
-      stage.addChild(backdrop);
+      atb.stage.addChild(backdrop);
 
       // add elapsed time counter to stage
       elapsedLabel = new createjs.Text("0s","bold 14px Arial","#FFF");
-      stage.addChild(elapsedLabel);
+      atb.stage.addChild(elapsedLabel);
       elapsedLabel.x = 10;
       elapsedLabel.y = 10;
 
@@ -151,9 +151,9 @@
         curSprite.origX = curSprite.x;
         curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
         curSprite.origY = curSprite.y;
-        curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
+        curSprite.scaleX = curSprite.scaleY = atb.HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
         curSprite.gotoAndPlay("idle");
-        stage.addChild(curSprite);
+        atb.stage.addChild(curSprite);
       }
       // enemy sprites
       var badguySheet = new createjs.SpriteSheet({
@@ -192,9 +192,9 @@
         curSprite.origX = curSprite.x;
         curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
         curSprite.origY = curSprite.y;
-        curSprite.scaleX = curSprite.scaleY = HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
+        curSprite.scaleX = curSprite.scaleY = atb.HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
         curSprite.gotoAndPlay("idle");
-        stage.addChild(curSprite);
+        atb.stage.addChild(curSprite);
       }
 
       heroIdToSprite[1] = heroSprites[0];
@@ -204,8 +204,8 @@
       heroIdToSprite[100] = enemySprites[0];
       heroIdToSprite[200] = enemySprites[1];
 
-      effectNumGen = new atb.EffectNumberGenerator(stage);
-      stage.update();
+      effectNumGen = new atb.EffectNumberGenerator(atb.stage);
+      atb.stage.update();
     }
 
     // the view's game loop
@@ -219,7 +219,7 @@
         }
       }
       elapsedLabel.text = counter + "s";
-      stage.update();
+      atb.stage.update();
     }
   </script>
 
@@ -542,8 +542,13 @@
         var skill = atb.Skill.get(skillId);
         switch (skillId) {
           case atb.Skill.ATTACK:
-            atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
-            effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
+            var sprite = heroIdToSprite[hero.id];
+            atb.anim.run('playHitHero',
+              function() { 
+                atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, sprite.origX);
+                effectNumGen.generate(amount, isCrit, sprite);
+              },
+              null, sprite, 3);
             break;
           case atb.Skill.ITEM:
             if (effectType == 'heal_sp') {
@@ -911,10 +916,10 @@
             // FIXME: arbitrary 1s for animations to complete
             _.delay(function() { createjs.Ticker.setPaused(true); }, 1000);
             gameOverLabel = new createjs.Text(msg, "bold 40px Arial","#FFF");
-            stage.addChild(gameOverLabel);
+            atb.stage.addChild(gameOverLabel);
             gameOverLabel.x = 50;
             gameOverLabel.y = 100;
-            stage.update();
+            atb.stage.update();
             break;
           case 'clientSetupCompleteEvent':
             $('#start').show();

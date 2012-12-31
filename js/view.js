@@ -82,52 +82,6 @@ atb.GradualIncrementer = function(theTarget, theCurrent, onUpdate, duration) {
   }
 }
 
-// REQUIRE: easeljs, tweenjs
-
-/** 
- * Adds one of those cute 'popping' numbers so beloved for showing damage
- * and healing.  Requires an 'anchor' (target DisplayObject) for placement.
- */
-atb.EffectNumberGenerator = function(stage) {
-	this.stage = stage;
-
-	this.generate = function(num, isCrit, anchor, type) {
-		var theNum = num;
-		var isHeal = type && type == 'heal';
-		var theColor = isCrit ? '#ff3' : '#fff';	  
-		if (type) {
-			switch(type) {
-				case 'heal':
-					theColor = isCrit ? '#3f7' : '#2e6';
-					theNum = '+' + num;
-					break;
-				case 'heal_sp':
-					theColor = isCrit ? '#8df' : '#7cf';
-					theNum = '+' + num;
-					break;
-				default:
-					break;
-			} // switch
-		}
-		var theFont = isCrit ? 'bold 20px Arial' : '20px Arial';
-		var effectNum = new createjs.Text(theNum, theFont, theColor);      
-		effectNum.x = anchor.x - anchor.regX + (_.random(-5,5));
-		effectNum.y = anchor.y - anchor.regY + (_.random(-10,0));
-		effectNum.regY = 0;
-		effectNum.textAlign = "center";
-//		effectNum.shadow = new createjs.Shadow('#333', -2, 2, 2);
-
-		this.stage.addChild(effectNum);
-
-		// runs the 'pop' and once complete removes the number
-		var numTween = createjs.Tween.get(effectNum, {loop:false})
-			.to({y:effectNum.y-60, scaleX: effectNum.scaleX*1.5, scaleY: effectNum.scaleY*1.5}, 300)
-			.to({y:effectNum.y+20, x:effectNum.x + _.random(-25,25), scaleX: effectNum.scaleX, scaleY: effectNum.scaleY, alpha:0.2 }, 400, createjs.Ease.circIn)
-			.call(function(tween) { stage.removeChild(effectNum); });
-
-	};
-}
-
 /** 
  * Carousel for 'command panes' (command list for ready heroes)
  */
@@ -405,34 +359,4 @@ atb.Menu = function(template, templateParams, parentMenu) {
   M.deregisterChild = function(child) {
     delete this.childMenus[child.id];
   }
-}
-
-
-/** TWEENS **/
-
-atb.tweenHeroHit = function(target, reverse, origX) {
-	var curPosX = origX ? origX : target.x;
-	var dirX = reverse ? -1 : 1;
-	var tween = createjs.Tween.get(target, {loop:false})
-		.to({x:curPosX-20*dirX, skewX:-5*dirX}, 200, createjs.Ease.bounceOut)
-		.to({x:curPosX, skewX:0}, 200, createjs.Ease.bounceIn);
-	return tween;
-}
-
-atb.tweenHeroDead = function(target, reverse, origX, origY) {
-	var curPosX = origX ? origX : target.x;
-	var curPosY = origY ? origY : target.Y;
-	var dirX = reverse ? -1 : 1;
-	var tween = createjs.Tween.get(target, {loop:false})
-		.to({rotation: 90*dirX, y:curPosY+20}, 200, createjs.Ease.bounceOut);
-	return tween;
-}
-
-atb.tweenHeroRez = function(target, reverse, origX, origY) {
-	var curPosX = origX ? origX : target.x;
-	var curPosY = origY ? origY : target.Y;
-	var dirX = reverse ? -1 : 1;
-	var tween = createjs.Tween.get(target, {loop:false})
-		.to({rotation: 0, y:origY}, 200, createjs.Ease.bounceOut);
-	return tween;
 }
