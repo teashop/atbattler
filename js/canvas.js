@@ -96,6 +96,15 @@ atb.sheet.createHeroSheet = function(imageFile, index) {
   return theSheet;
 }
 
+atb.sheet.heroImage = [
+  'amber.png', 
+  'jergens.png', 
+  'chara01.png'
+];
+
+atb.sheet.getHeroSheet = function(heroImageId, slotId) {
+  return atb.sheet.createHeroSheet(atb.sheet.heroImage[heroImageId], slotId);
+}
 
 /** 
  * @namespace Collection of animation sequences. 

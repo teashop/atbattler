@@ -100,10 +100,10 @@
 
       // TODO: hero sprites should be tied to their domain counterparts
       // properly.  We're just arbitrarily mapping them here.
-      var jergensSheet = atb.sheet.createHeroSheet('jergens.png', 3);
-      var miltonSheet = atb.sheet.createHeroSheet('jergens.png', 0);
-      var harukaSheet = atb.sheet.createHeroSheet('amber.png', 4);
-      var leenaSheet = atb.sheet.createHeroSheet('jergens.png', 4);
+      var jergensSheet = atb.sheet.getHeroSheet(1, 3);
+      var miltonSheet = atb.sheet.getHeroSheet(1, 0);
+      var harukaSheet = atb.sheet.getHeroSheet(0, 4);
+      var leenaSheet = atb.sheet.getHeroSheet(1, 4);
 
       heroSprites.push(new createjs.BitmapAnimation(jergensSheet));
       heroSprites.push(new createjs.BitmapAnimation(miltonSheet));
@@ -120,8 +120,8 @@
         atb.stage.addChild(curSprite);
       }
       // enemy sprites
-      var badguySheet = atb.sheet.createHeroSheet('chara01.png', 2);
-      var wagsSheet = atb.sheet.createHeroSheet('chara01.png', 0);
+      var badguySheet = atb.sheet.getHeroSheet(2, 2);
+      var wagsSheet = atb.sheet.getHeroSheet(2, 0);
  
       enemySprites.push(new createjs.BitmapAnimation(badguySheet));
       enemySprites.push(new createjs.BitmapAnimation(wagsSheet));
