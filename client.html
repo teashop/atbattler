@@ -41,10 +41,25 @@
     var effectNumGen; // dem popping numbers
 
     // TODO: have this determined by the game
+    var backdropFile = null;
+    switch(_.random(0,3)) {
+      case 0:
+        backdropFile = 'img/bg/plains.png';
+        break;
+      case 1:
+        backdropFile = 'img/bg/arena.png';
+        break;
+      case 2:
+        backdropFile = 'img/bg/forest1.png';
+        break;
+      case 3:
+        backdropFile = 'img/bg/strange.png';
+        break;
+    }
     // Use tag loading for now.
     var preload = new createjs.PreloadJS(false);
     var manifest = [
-        "img/plains.png",
+        backdropFile,
         "img/amber.png",
         "img/jergens.png",
         "img/chara01.png",
@@ -69,7 +84,7 @@
       h = canvas.height;
 
       var bgImage = new Image();
-      bgImage.src = 'img/plains.png';
+      bgImage.src = backdropFile;
 
       // Add backdrop to the stage
       backdrop =  new createjs.Shape(new createjs.Graphics().beginBitmapFill(bgImage, 'no-repeat').drawRect(0,0,bgImage.width,bgImage.height));
