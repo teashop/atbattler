@@ -85,62 +85,11 @@
 
       // TODO: hero sprites should be tied to their domain counterparts
       // properly.  We're just arbitrarily mapping them here.
-      var jergensSheet = new createjs.SpriteSheet({
-        "animations": {
-          "idle": [22],
-          "walk": [21,23, "walk", 5]
-          },
-          "images": ["img/jergens.png"],
-          "frames": {
-              "height": 32,
-              "width":24,
-              "regX": 16,
-              "regY": 12,
-              "count": 96
-            }
-       });
-      var miltonSheet = new createjs.SpriteSheet({
-        "animations": {
-          "idle": [13],
-          "walk": [12,14, "walk", 5]
-          },
-          "images": ["img/jergens.png"],
-          "frames": {
-              "height": 32,
-              "width":24,
-              "regX": 16,
-              "regY": 12,
-              "count": 96
-            }
-       });
-      var harukaSheet = new createjs.SpriteSheet({
-        "animations": {
-          "idle": [64],
-          "walk": [63,65, "walk", 5]
-          },
-          "images": ["img/amber.png"],
-          "frames": {
-              "height": 32,
-              "width":24,
-              "regX": 16,
-              "regY": 12,
-              "count": 96
-            }
-       });
-      var leenaSheet = new createjs.SpriteSheet({
-        "animations": {
-          "idle": [61],
-          "walk": [60,62, "walk", 5]
-          },
-          "images": ["img/jergens.png"],
-          "frames": {
-              "height": 32,
-              "width":24,
-              "regX": 16,
-              "regY": 12,
-              "count": 96
-            }
-       });
+      var jergensSheet = atb.sheet.createHeroSheet('jergens.png', 3);
+      var miltonSheet = atb.sheet.createHeroSheet('jergens.png', 0);
+      var harukaSheet = atb.sheet.createHeroSheet('amber.png', 4);
+      var leenaSheet = atb.sheet.createHeroSheet('jergens.png', 4);
+
       heroSprites.push(new createjs.BitmapAnimation(jergensSheet));
       heroSprites.push(new createjs.BitmapAnimation(miltonSheet));
       heroSprites.push(new createjs.BitmapAnimation(harukaSheet));
@@ -165,8 +114,8 @@
           "frames": {
               "height": 32,
               "width":24,
-              "regX": 16,
-              "regY": 12,
+              "regX": 12,
+              "regY": 16,
               "count": 96
             }
        });
@@ -179,8 +128,8 @@
           "frames": {
               "height": 32,
               "width":24,
-              "regX": 16,
-              "regY": 12,
+              "regX": 12,
+              "regY": 16,
               "count": 96
             }
        });

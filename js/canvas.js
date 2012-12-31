@@ -26,6 +26,18 @@ atb.sheet.BATTLE_ANIM_FRAME_WIDTH = 96;
 atb.sheet.BATTLE_ANIM_REG_X = 48;
 atb.sheet.BATTLE_ANIM_REG_Y = 48;
 
+atb.sheet.HERO_FRAME_HEIGHT = 32;
+atb.sheet.HERO_FRAME_WIDTH = 24;
+atb.sheet.HERO_REG_X = 12;
+atb.sheet.HERO_REG_Y = 16;
+atb.sheet.HERO_FRAMES_PER_HERO = 12;
+atb.sheet.HERO_FRAMES_PER_SHEET = 96; 
+atb.sheet.HERO_SLOTS = 8; // i.e. 8 heroes per sheet
+atb.sheet.HERO_ROW_SPAN = 4;
+atb.sheet.HERO_COL_SPAN = 3;
+
+// ******* BATTLE ANIMATIONS ********
+
 /**
  * Spritesheet - Hit animations
  */
@@ -43,6 +55,44 @@ atb.sheet.hit = new createjs.SpriteSheet({
         count: 15
       }
   });
+
+// ******* HEROES ********
+
+/**
+ * Under the assumption that there are 8 hero 'slots' per sheet, and that
+ * a hero takes up a 3 x 4 block of frames.
+ */
+atb.sheet.createHeroSheet = function(imageFile, index) {
+  // rows: 0, 4
+  var rowOffset = (index < atb.sheet.HERO_SLOTS/2) ? 0 : atb.sheet.HERO_ROW_SPAN;
+
+  // columns: 0, 3, 6, 9
+  var colOffset = (index % 4) * 3;
+
+  // intermediate row designations: FIXME: this is ugly
+  // keeps track of the 'start' frame of each hero-centric row.
+  var rows = [];
+  _.times(atb.sheet.HERO_ROW_SPAN, function(index) {
+      rows.push((rowOffset+index)*12+colOffset);
+    });
+
+  var theSheet = new createjs.SpriteSheet({
+    animations: {
+      // 2nd row, 2nd column of hero block
+      idle: [rows[1]+1],
+      walk: [rows[1], rows[1]+2, 'walk', 5]
+      },
+      images: [atb.imagePath + imageFile],
+      frames: {
+          height: atb.sheet.HERO_FRAME_HEIGHT,
+          width:atb.sheet.HERO_FRAME_WIDTH,
+          regX: atb.sheet.HERO_REG_X,
+          regY: atb.sheet.HERO_REG_Y,
+          count: atb.sheet.HERO_FRAMES_PER_SHEET
+        }
+   });
+  return theSheet;
+}
 
 
 /** 
@@ -121,7 +171,7 @@ atb.tweenHeroDead = function(target, reverse, origX, origY) {
   var curPosY = origY ? origY : target.Y;
   var dirX = reverse ? -1 : 1;
   var tween = createjs.Tween.get(target, {loop:false})
-    .to({x:curPosX-40, rotation: -60*dirX}, 0)
+    .to({x:curPosX-20, rotation: -60*dirX}, 0)
     .to({rotation: -90*dirX, y:curPosY+20}, 200, createjs.Ease.linear);
   return tween;
 }
