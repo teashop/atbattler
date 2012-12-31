@@ -74,7 +74,7 @@
       var bgImage = new Image();
       bgImage.src = manifest[0];
 
-      // Add backdrop to the stage
+      // Add backdrop to the stage (stretch to fit)
       backdrop =  new createjs.Shape(new createjs.Graphics().beginBitmapFill(bgImage, 'no-repeat').drawRect(0,0,bgImage.width,bgImage.height));
       backdrop.scaleX = Math.ceil(w/bgImage.width);
       backdrop.scaleY = Math.ceil(h/bgImage.height);
@@ -102,10 +102,11 @@
           heroIdToSprite[hero.id] = registerHeroSprite(hero, index, partyLength, 'left');
         });
 
+      // Number popping thing.
       effectNumGen = new atb.EffectNumberGenerator(atb.stage);
-      atb.stage.update();
 
-      // once canvas setup complete, allow game start
+      // canvas setup complete, allow game to be started
+      atb.stage.update();
       $('#start').show();
     }
 
@@ -1020,6 +1021,8 @@
       enemyParty.heroes[0].img = [2, 2];
       enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
       enemyParty.heroes[1].img = [2, 0];
+      enemyParty.setHero(rollPlayerHero(201, 'Shopgirl 10K'));
+      enemyParty.heroes[2].img = [2, 7];
       enemy.setParty(enemyParty);
       enemy.sendMessage = function(message) {
 //        console.log('CPU got msg: ' + message);
