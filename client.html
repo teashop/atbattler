@@ -34,30 +34,33 @@
     var HERO_SPACE_Y = 65;
     var HERO_PERSPECTIVE_SCALE = 0.15;
 
+    var manifest = null; // FIXME: don't like this being global...
     var backdrop;
     var runningRate = 2.5;
     var w, h;
     var counter = 0;  // duration of game (temp)
     var effectNumGen; // dem popping numbers
 
-    // TODO: have this determined by the game
-    var bgId = _.random(0,3);
-    // Use tag loading for now.
-    var preload = new createjs.PreloadJS(false);
-    var manifest = atb.img.toPreloadManifest([
-        [1, bgId],
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [2, 0]
-      ]);
-    preload.onComplete = init;
-    preload.loadManifest(manifest);
-
-    var heroSprites = [];
-    var enemySprites = [];
-
     var heroIdToSprite = [];  // maps heroes to sprites
+
+    function registerHeroSprite(hero, index, numHeroes, dir) {
+      var sheet = atb.sheet.getHeroSheet(hero.img[0], hero.img[1]);
+      var sprite = new createjs.BitmapAnimation(sheet);
+      // add hero to stage 
+      if (dir == 'left') {
+        sprite.x = w-HERO_BASE_X + HERO_SPACE_X*index + 10*index;
+        sprite.gotoAndPlay("idle_l");
+      } else {
+        sprite.x = HERO_BASE_X - HERO_SPACE_X*index - 10*index;
+        sprite.gotoAndPlay("idle_r");
+      }
+      sprite.origX = sprite.x;
+      sprite.y = HERO_BASE_Y + HERO_SPACE_Y*index;
+      sprite.origY = sprite.y;
+      sprite.scaleX = sprite.scaleY = atb.HERO_BASE_SCALE-((numHeroes-index)*HERO_PERSPECTIVE_SCALE);
+      atb.stage.addChild(sprite);
+      return sprite;
+    }
 
     function init() {
       // create a new stage and point it at our canvas:
@@ -83,53 +86,27 @@
       elapsedLabel.x = 10;
       elapsedLabel.y = 10;
 
-      // TODO: hero sprites should be tied to their domain counterparts
-      // properly.  We're just arbitrarily mapping them here.
-      var jergensSheet = atb.sheet.getHeroSheet(1, 3);
-      var miltonSheet = atb.sheet.getHeroSheet(1, 0);
-      var harukaSheet = atb.sheet.getHeroSheet(0, 4);
-      var leenaSheet = atb.sheet.getHeroSheet(1, 4);
+      // player sprites 
+      var playerParty = gameClient.me.party;
+      var partyLength = playerParty.heroes.length;
+      _.each(playerParty.heroes, function(hero, index) {
+          // store sprite for later reference
+          heroIdToSprite[hero.id] = registerHeroSprite(hero, index, partyLength, 'right');
+        });
 
-      heroSprites.push(new createjs.BitmapAnimation(jergensSheet));
-      heroSprites.push(new createjs.BitmapAnimation(miltonSheet));
-      heroSprites.push(new createjs.BitmapAnimation(harukaSheet));
-      heroSprites.push(new createjs.BitmapAnimation(leenaSheet));
-      for (var i = 0, len = heroSprites.length; i < len; i++) {
-        var curSprite = heroSprites[i];
-        curSprite.x = HERO_BASE_X - HERO_SPACE_X*i - 10*i;
-        curSprite.origX = curSprite.x;
-        curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
-        curSprite.origY = curSprite.y;
-        curSprite.scaleX = curSprite.scaleY = atb.HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
-        curSprite.gotoAndPlay("idle_r");
-        atb.stage.addChild(curSprite);
-      }
       // enemy sprites
-      var badguySheet = atb.sheet.getHeroSheet(2, 2);
-      var wagsSheet = atb.sheet.getHeroSheet(2, 0);
- 
-      enemySprites.push(new createjs.BitmapAnimation(badguySheet));
-      enemySprites.push(new createjs.BitmapAnimation(wagsSheet));
-      for (var i = 0, len = enemySprites.length; i < len; i++) {
-        var curSprite = enemySprites[i];
-        curSprite.x = w-HERO_BASE_X + HERO_SPACE_X*i + 10*i;
-        curSprite.origX = curSprite.x;
-        curSprite.y = HERO_BASE_Y + HERO_SPACE_Y*i;
-        curSprite.origY = curSprite.y;
-        curSprite.scaleX = curSprite.scaleY = atb.HERO_BASE_SCALE-((len-i)*HERO_PERSPECTIVE_SCALE);
-        curSprite.gotoAndPlay("idle_l");
-        atb.stage.addChild(curSprite);
-      }
-
-      heroIdToSprite[1] = heroSprites[0];
-      heroIdToSprite[2] = heroSprites[1];
-      heroIdToSprite[3] = heroSprites[2];
-      heroIdToSprite[4] = heroSprites[3];
-      heroIdToSprite[100] = enemySprites[0];
-      heroIdToSprite[200] = enemySprites[1];
+      var enemyParty = gameClient.enemy.party;
+      partyLength = enemyParty.heroes.length;
+      _.each(enemyParty.heroes, function(hero, index, list) {
+          // store sprite for later reference
+          heroIdToSprite[hero.id] = registerHeroSprite(hero, index, partyLength, 'left');
+        });
 
       effectNumGen = new atb.EffectNumberGenerator(atb.stage);
       atb.stage.update();
+
+      // once canvas setup complete, allow game start
+      $('#start').show();
     }
 
     // the view's game loop
@@ -789,36 +766,6 @@
 
       /** END MOUSE INPUT HANDLING */
       
-
-      // TODO: much of this should be 'server side'.
-      var clock = new Clock(msPerFrame);
-      var gameInstance = new GameInstance(clock);
-      // *YOU
-      var player = new Player(1, 'You');
-      var party = new Party(1, 4);
-      party.setHero(rollPlayerHero(1, 'Jergens'));
-      party.setHero(rollPlayerHero(2, 'Milton'));
-      party.setHero(rollPlayerHero(3, 'Haruka'));
-      party.setHero(rollPlayerHero(4, 'Leena'));
-      player.setParty(party);
-      player.sendMessage = function(message) {
-//        console.log('Player got msg: ' + message);
-        gameClient.eventsIn.push(message);
-      };
-
-      // *OPPONENT
-      var enemy = new Player(2, 'Enemy');
-      var enemyParty = new Party(1, 4);
-      enemyParty.setHero(rollCpuHero(100, 'Teh Badguy'));
-      enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
-      enemy.setParty(enemyParty);
-      enemy.sendMessage = function(message) {
-//        console.log('CPU got msg: ' + message);
-        cpuGameClient.eventsIn.push(message);
-      }
-
-      gameInstance.addPlayers(player, enemy);
-
       function emitterCallback() {
         var type = arguments[0];
         var args = arguments[1] ? arguments[1] : null;
@@ -846,7 +793,32 @@
             atb.stage.update();
             break;
           case 'clientSetupCompleteEvent':
-            $('#start').show();
+            // based on heroes, load sprite assets
+            var heroAssets = {};
+            _.each(gameClient.heroes, function(curHero) {
+                var imgData = curHero.img;
+                if (imgData) {
+                  heroAssets[imgData[0]] = [atb.img.type.hero, imgData[0]];
+                }
+              });
+            heroAssets = _.values(heroAssets);
+
+            // image array to manifest
+            var images = [];
+
+            // background
+            // TODO: have this determined by the game
+            images.push([1, _.random(0,3)]);
+            // heroes
+            images = images.concat(heroAssets);
+            // animations
+            images.push([2, 0]);
+            manifest = atb.img.toPreloadManifest(images);
+
+            // Use tag loading for now.
+            var preload = new createjs.PreloadJS(false);
+            preload.onComplete = init;
+            preload.loadManifest(manifest);
             break;
           case 'clientGameStartEvent':
             createjs.Ticker.setFPS(FPS);
@@ -887,61 +859,6 @@
             break;
         }
       }
-
-      var gameClient = new GameClient(player.id, emitterCallback);
-      var cpuGameClient = new CpuGameClient(enemy.id);
-      
-      // Game instance initiates setup (Player Clients will need to
-      // respond)
-      gameInstance.setup();
-
-      // TODO: Command list needs to come down from server, separate instances
-      // for each Hero
-      var commands = [
-          atb.Skill.ATTACK,
-          null, 
-          atb.Skill.ITEM,
-          atb.Skill.DEFEND
-        ];
-
-      // TODO: this should be somewhere better 
-      for (var i = 0; i < gameClient.heroes.length; i++) {
-        var curHero = gameClient.heroes[i];
-        if (!curHero) { 
-          continue;
-        }
-
-        // FIXME: hero command list - randomly assign a special skill
-        curHero.commands = _.clone(commands);
-        curHero.commands[1] = _.random(atb.Skill.SKILLS_START, atb.SkillData.length-1);
-        var isPlayer = curHero.player == gameClient.me;
-        var heroDomId = 'hero_'+ curHero.id;
-        var heroHp = curHero.attributes.hp;
-        var heroSp = curHero.attributes.sp;
-
-        var heroPane = isPlayer ? $("#party > tbody") : $("#enemy > tbody");
-        heroPane.append(heroRowTemplate({heroDomId: heroDomId, position: i, hero: curHero}));
-
-        heroRows[curHero.id] = $('#' + heroDomId);
-        var onUpdate = function(val, isPositive) {
-          var percent = val/this.attrMax;
-          var rgb = '#fff';
-          if (isPositive) {	
-            rgb = '#2e6';
-          } else {
-            if (percent < 0.3) {
-              rgb = 'rgb(255,'+ (Math.round(percent/0.2*215)+40) + ',0)';
-            } else if (percent < 0.6) {
-              rgb = 'rgb(255,255,' + Math.round((percent-0.3)/0.3*255)+')';
-            }
-          }
-          this.holder.text(val);
-          this.holder.css('color', rgb);
-        };
-        hpIncrementers[curHero.id] = new atb.GradualIncrementer(heroHp, heroHp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), attrMax: curHero.attributes.maxHp }), 0.5);
-        spIncrementers[curHero.id] = new atb.GradualIncrementer(heroSp, heroSp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.sp'), attrMax: curHero.attributes.maxSp }), 0.5);
-      }
-
       // attach command carousel
       var commandCarousel = new atb.CommandCarousel($('#commands-anchor'));
       commandCarousel.paneWidth = 180;
@@ -1064,6 +981,107 @@
       $(document).on('keydown.return', {key:'action'}, keyInputHandler);
 
       /** END KEYBOARD INPUT SUPPORT */
+
+
+      // ***** GAME SETUP *****
+
+      // TODO: much of this should be 'server side'.
+      var clock = new Clock(msPerFrame);
+      var gameInstance = new GameInstance(clock);
+      // *YOU
+      var player = new Player(1, 'You');
+      var party = new Party(1, 4);
+
+      // FIXME: should have a consolidated hero generator/persistence.
+      var genHeroes= [];
+      genHeroes.push(rollPlayerHero(1, 'Jergens'));
+      genHeroes.push(rollPlayerHero(2, 'Milton'));
+      genHeroes.push(rollPlayerHero(3, 'Haruka'));
+      genHeroes.push(rollPlayerHero(4, 'Leena'));
+      // sprites for heroes
+      genHeroes[0].img = [1, 3];
+      genHeroes[1].img = [1, 0];
+      genHeroes[2].img = [0, 4];
+      genHeroes[3].img = [1, 4];
+
+      for (var i=0; i<genHeroes.length; i++) {
+        party.setHero(genHeroes[i]);
+      }
+      player.setParty(party);
+      player.sendMessage = function(message) {
+//        console.log('Player got msg: ' + message);
+        gameClient.eventsIn.push(message);
+      };
+
+      // *OPPONENT
+      var enemy = new Player(2, 'Enemy');
+      var enemyParty = new Party(1, 4);
+      enemyParty.setHero(rollCpuHero(100, 'Teh Badguy'));
+      enemyParty.heroes[0].img = [2, 2];
+      enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
+      enemyParty.heroes[1].img = [2, 0];
+      enemy.setParty(enemyParty);
+      enemy.sendMessage = function(message) {
+//        console.log('CPU got msg: ' + message);
+        cpuGameClient.eventsIn.push(message);
+      }
+
+      gameInstance.addPlayers(player, enemy);
+
+      var gameClient = new GameClient(player.id, emitterCallback);
+      var cpuGameClient = new CpuGameClient(enemy.id);
+      
+      // Game instance initiates setup (Player Clients will need to
+      // respond)
+      gameInstance.setup();
+
+      // TODO: Command list needs to come down from server, separate instances
+      // for each Hero
+      var commands = [
+          atb.Skill.ATTACK,
+          null, 
+          atb.Skill.ITEM,
+          atb.Skill.DEFEND
+        ];
+
+      // TODO: this should be somewhere better 
+      for (var i = 0; i < gameClient.heroes.length; i++) {
+        var curHero = gameClient.heroes[i];
+        if (!curHero) { 
+          continue;
+        }
+
+        // FIXME: hero command list - randomly assign a special skill
+        curHero.commands = _.clone(commands);
+        curHero.commands[1] = _.random(atb.Skill.SKILLS_START, atb.SkillData.length-1);
+        var isPlayer = curHero.player == gameClient.me;
+        var heroDomId = 'hero_'+ curHero.id;
+        var heroHp = curHero.attributes.hp;
+        var heroSp = curHero.attributes.sp;
+
+        var heroPane = isPlayer ? $("#party > tbody") : $("#enemy > tbody");
+        heroPane.append(heroRowTemplate({heroDomId: heroDomId, position: i, hero: curHero}));
+
+        heroRows[curHero.id] = $('#' + heroDomId);
+        var onUpdate = function(val, isPositive) {
+          var percent = val/this.attrMax;
+          var rgb = '#fff';
+          if (isPositive) {	
+            rgb = '#2e6';
+          } else {
+            if (percent < 0.3) {
+              rgb = 'rgb(255,'+ (Math.round(percent/0.2*215)+40) + ',0)';
+            } else if (percent < 0.6) {
+              rgb = 'rgb(255,255,' + Math.round((percent-0.3)/0.3*255)+')';
+            }
+          }
+          this.holder.text(val);
+          this.holder.css('color', rgb);
+        };
+        hpIncrementers[curHero.id] = new atb.GradualIncrementer(heroHp, heroHp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), attrMax: curHero.attributes.maxHp }), 0.5);
+        spIncrementers[curHero.id] = new atb.GradualIncrementer(heroSp, heroSp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.sp'), attrMax: curHero.attributes.maxSp }), 0.5);
+      }
+
     </script>
   </div>
   </body>

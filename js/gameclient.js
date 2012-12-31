@@ -14,7 +14,9 @@ function GameClient(myId, emitterCallback) {
 
 var GC = GameClient.prototype;
 
-// TODO: this should come 'down' from the server
+/**
+ * Sets up game state based on data sent from server
+ */
 GC.setup = function(gameState) {
   // TODO: here we are mimicking 'receiving' player data from server
   var gameStatePlayers = JSON.parse(gameState);
