@@ -31,6 +31,30 @@ atb.img = {
     0: 'hero/', 
     1: 'bg/',   
     2: 'anim/'
+  },
+
+  /**
+   * Converts array of image identifiers to preloadjs array manifest
+   */
+  toPreloadManifest: function(ids) {
+    return _.map(ids, function(id) {
+        var path = atb.img.path + atb.img.typePath[id[0]];
+        var file = null;
+        switch(id[0]){
+          case atb.img.type.hero:
+            file = atb.sheet.heroImage[id[1]];
+            break;
+          case atb.img.type.bg:
+            file = atb.sheet.bgImage[id[1]];
+            break;
+          case atb.img.type.anim:
+            file = atb.sheet.animImage[id[1]];
+            break;
+          default:
+            throw 'Invalid image type specified';
+        }
+        return path + file;
+      });
   }
 }
 
@@ -58,6 +82,10 @@ atb.sheet.HERO_COL_SPAN = 3;
 
 // ******* BATTLE ANIMATIONS ********
 
+atb.sheet.animImage = [
+  'attack.png'
+];
+
 /**
  * Spritesheet - Hit animations
  */
@@ -66,7 +94,7 @@ atb.sheet.hit = new createjs.SpriteSheet({
         'strike': [0,3, 'strike', 2],
         'slowStrike': [0,3, 'slowStrike', 5],
       },
-    images: [atb.img.path + 'attack.png'],
+    images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + 'attack.png'],
     frames: {
         height: atb.sheet.BATTLE_ANIM_FRAME_HEIGHT,
         width: atb.sheet.BATTLE_ANIM_FRAME_WIDTH,
@@ -125,6 +153,13 @@ atb.sheet.heroImage = [
 atb.sheet.getHeroSheet = function(heroImageId, slotId) {
   return atb.sheet.createHeroSheet(atb.sheet.heroImage[heroImageId], slotId);
 }
+
+atb.sheet.bgImage = [
+  'plains.png', 
+  'forest1.png', 
+  'arena.png', 
+  'strange.png'
+];
 
 /** 
  * @namespace Collection of animation sequences. 
