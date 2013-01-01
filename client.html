@@ -122,6 +122,7 @@
         }
       }
       elapsedLabel.text = counter + "s";
+      atb.anim.runCustomUpdates();
       atb.stage.update();
     }
   </script>
@@ -441,11 +442,11 @@
       }
 
       function showSkillResult(hero, skillId, amount, isCrit, effectType) {
-        // update hp
+        // play the skill animation
         var skill = atb.Skill.get(skillId);
+        var sprite = heroIdToSprite[hero.id];
         switch (skillId) {
           case atb.Skill.ATTACK:
-            var sprite = heroIdToSprite[hero.id];
             atb.anim.run('strike',
               function() { 
                 atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, sprite.origX);
@@ -454,14 +455,16 @@
               sprite, 3);
             break;
           case atb.Skill.ITEM:
-            if (effectType == 'heal_sp') {
-              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal_sp');
-            } else {
-              effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal');
-            }
+            atb.anim.run('sparklesUp', 
+              function() {
+                if (effectType == 'heal_sp') {
+                  effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal_sp');
+                } else {
+                  effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal');
+                }
+              }, sprite, 5, 'green');
             break;
           default:
-            var sprite = heroIdToSprite[hero.id];
             var afterSkill = function() {
               atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, sprite.origX);
               effectNumGen.generate(amount, isCrit, sprite);

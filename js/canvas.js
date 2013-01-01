@@ -105,6 +105,14 @@ atb.sheet.hit = new createjs.SpriteSheet({
       }
   });
 
+atb.sheet.sparkle = new createjs.SpriteSheet({
+    animations: {
+        'white': [0, 12, 'white', 1],
+        'green': [13,25, 'green', 1]
+      },
+    images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + "sparkle_21x23.png"],
+    frames: {width:21,height:23,regX:10,regY:11, count:26}
+  });
 // ******* HEROES ********
 
 /**
@@ -127,20 +135,20 @@ atb.sheet.createHeroSheet = function(imageFile, index) {
 
   var theSheet = new createjs.SpriteSheet({
     animations: {
-      // 2nd row, 2nd column of hero block
-      idle_r: [rows[1]+1],
-      idle_l: [rows[3]+1],
-      walk_r: [rows[1], rows[1]+2, 'walk_r', 5],
-      walk_l: [rows[3], rows[3]+2, 'walk_l', 5]
+        // 2nd row, 2nd column of hero block
+        idle_r: [rows[1]+1],
+        idle_l: [rows[3]+1],
+        walk_r: [rows[1], rows[1]+2, 'walk_r', 5],
+        walk_l: [rows[3], rows[3]+2, 'walk_l', 5]
       },
-      images: [atb.img.path + atb.img.typePath[atb.img.type.hero] + imageFile],
-      frames: {
-          height: atb.sheet.HERO_FRAME_HEIGHT,
-          width:atb.sheet.HERO_FRAME_WIDTH,
-          regX: atb.sheet.HERO_REG_X,
-          regY: atb.sheet.HERO_REG_Y,
-          count: atb.sheet.HERO_FRAMES_PER_SHEET
-        }
+    images: [atb.img.path + atb.img.typePath[atb.img.type.hero] + imageFile],
+    frames: {
+        height: atb.sheet.HERO_FRAME_HEIGHT,
+        width:atb.sheet.HERO_FRAME_WIDTH,
+        regX: atb.sheet.HERO_REG_X,
+        regY: atb.sheet.HERO_REG_Y,
+        count: atb.sheet.HERO_FRAMES_PER_SHEET
+      }
    });
   return theSheet;
 }
@@ -166,6 +174,42 @@ atb.sheet.bgImage = [
  * @namespace Collection of animation sequences. 
  */
 atb.anim = {};
+
+atb.anim.Update = function(onTick, onComplete) {
+  this.id = _.uniqueId();
+
+  this.onTick = onTick ? onTick : function() { console.log('Imma custom updatan'); return false; };
+  this.onComplete = onComplete ? onComplete : function() { };
+}
+
+/**
+ * Adds a custom update 'object' to be called by the EaselJS tick handler
+ * Update object must implement a function onTick().
+ */
+atb.anim.addUpdateOnTick = function(update) {
+  atb.stage.customUpdates = atb.stage.customUpdates || [];
+  atb.stage.customUpdates.push(update);
+}
+
+/**
+ * Should be called by the tick handler function to update all registered
+ * Update objects
+ */
+atb.anim.runCustomUpdates = function() {
+  var updates = atb.stage.customUpdates || [];
+  _.each(updates, function(up, index, list) {
+      if (!up.onTick()) {        
+        // completed updates, delete from stage list
+        up.onComplete();
+        list[index] = null;
+      }
+    });
+
+  // discard completed updates, if any
+  if (updates.length > 0) {
+    atb.stage.customUpdates = _.compact(updates);
+  }
+}
 
 
 /**
@@ -240,6 +284,52 @@ atb.anim.bigStrike = function(target) {
   }).bind(this);
   atb.anim.adjustChannels(hitTarget, 600, 1, 0.7, 0, 1);
   hit.gotoAndPlay("bigStrike");
+}
+
+atb.anim.sparklesUp = function(target, numSparkles, type) {
+  var sparkles = [];
+  var num = numSparkles ? numSparkles : 1;
+  var sparkType = type && atb.sheet.sparkle.getAnimation(type) ? type : 'white';
+  var thresholdY = target.y > 100 ? target.y-100 : 0;
+  
+  atb.anim.adjustChannels(target, 500, 0.6, 1, 0.3, 1);
+  // add the desired number of sparkles, positioned randomly
+  var sparkleAnim = new createjs.BitmapAnimation(atb.sheet.sparkle);
+  for (var i=0; i<num; i++) {
+    sparkle = sparkleAnim.clone();
+    sparkle.x = target.x+_.random(-30,20);
+    sparkle.y = target.y+_.random(30,50);
+    sparkle.vY = _.random(12,25) / 3;
+    sparkle.vA = _.random(2,4) / 150;
+    sparkle.scaleX = sparkle.scaleY = _.random(3,6) / 2;
+    sparkle.gotoAndPlay(sparkType);
+    atb.stage.addChild(sparkle);
+    sparkles.push(sparkle);
+  }
+
+  // custom update function
+  var up = new atb.anim.Update();
+  up.sparkles = sparkles;
+  if (this.callback) {
+    up.onComplete = this.callback;
+  }
+  up.onTick = function() {
+    _.each(this.sparkles, function(sparkle, index) {
+      if (!sparkle) {
+        return;
+      }
+      sparkle.y -= sparkle.vY;
+      sparkle.alpha -= sparkle.vA;
+      sparkle.scaleX = sparkle.scaleY -= sparkle.vA;
+      if (sparkle.alpha <= 0.15 || sparkle.y < thresholdY) {
+        atb.stage.removeChild(sparkle);
+        this.sparkles[index] = null;
+      }
+    }, this);
+    this.sparkles = _.compact(this.sparkles);
+    return (this.sparkles.length > 0);
+  }
+  atb.anim.addUpdateOnTick(up);
 }
 
 /**
