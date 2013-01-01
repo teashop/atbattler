@@ -260,6 +260,7 @@ atb.EffectNumberGenerator = function(stage) {
 
   this.generate = function(num, isCrit, anchor, type) {
     var theNum = num;
+    var scaleFactor = isCrit ? 2.0 : 1.5;
     var isHeal = type && type == 'heal';
     var theColor = isCrit ? '#ff3' : '#fff';
     if (type) {
@@ -269,17 +270,17 @@ atb.EffectNumberGenerator = function(stage) {
           theNum = '+' + num;
           break;
         case 'heal_sp':
-          theColor = isCrit ? '#8df' : '#7cf';
+          theColor = isCrit ? '#0df' : '#0cf';
           theNum = '+' + num;
           break;
         default:
           break;
       } // switch
     }
-    var theFont = isCrit ? 'bold 20px Arial' : '20px Arial';
+    var theFont = isCrit ? 'bold 22px Arial' : 'bold 20px Arial';
     var effectNum = new createjs.Text(theNum, theFont, theColor);
     effectNum.x = anchor.x - anchor.regX + (_.random(-5,5));
-    effectNum.y = anchor.y - anchor.regY + (_.random(-10,0));
+    effectNum.y = anchor.y - anchor.regY + (_.random(-15,-5));
     effectNum.regY = 0;
     effectNum.textAlign = "center";
 //    effectNum.shadow = new createjs.Shadow('#333', -2, 2, 2);
@@ -288,7 +289,7 @@ atb.EffectNumberGenerator = function(stage) {
 
     // runs the 'pop' and once complete removes the number
     var numTween = createjs.Tween.get(effectNum, {loop:false})
-      .to({y:effectNum.y-60, scaleX: effectNum.scaleX*1.5, scaleY: effectNum.scaleY*1.5}, 300)
+      .to({y:effectNum.y-40*scaleFactor, scaleX: effectNum.scaleX*scaleFactor, scaleY: effectNum.scaleY*scaleFactor}, 300)
       .to({y:effectNum.y+20, x:effectNum.x + _.random(-25,25), scaleX: effectNum.scaleX, scaleY: effectNum.scaleY, alpha:0.2 }, 400, createjs.Ease.circIn)
       .call(function(tween) { stage.removeChild(effectNum); });
 
