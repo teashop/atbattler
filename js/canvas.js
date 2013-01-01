@@ -68,8 +68,8 @@ atb.sheet.BATTLE_ANIM_FRAME_WIDTH = 96;
 atb.sheet.BATTLE_ANIM_REG_X = 48;
 atb.sheet.BATTLE_ANIM_REG_Y = 48;
 
-atb.sheet.HERO_FRAME_HEIGHT = 32;
 atb.sheet.HERO_FRAME_WIDTH = 24;
+atb.sheet.HERO_FRAME_HEIGHT = 32;
 atb.sheet.HERO_REG_X = 12;
 atb.sheet.HERO_REG_Y = 16;
 atb.sheet.HERO_FRAMES_PER_HERO = 12;
@@ -217,7 +217,34 @@ atb.anim.playHitHero = function(target, num) {
     hit.y = hitTarget.y+_.random(-10,30);
     hit.scaleX = hit.scaleY = _.random(1,3);
   }).bind(this);
+  atb.anim.adjustChannels(hitTarget, 600, 1, 0.7, 0.3, 1);
   hit.gotoAndPlay("strike");
+}
+
+/**
+ * Adjusts R,G,B and alpha channels for target DisplayObject via a ColorFilter.
+ * Will revert to original after duration has elapsed.
+ */
+atb.anim.adjustChannels = function(target, duration, r, g, b, a) {
+  // FIXME: hardcoded to work only vs. hero sprites
+  var adjFilter = new createjs.ColorFilter(r,g,b,a);
+  target.filters ? target.filters.push(adjFilter) : target.filters = [adjFilter];
+  target.cache(-atb.sheet.HERO_REG_X, -atb.sheet.HERO_REG_Y, atb.sheet.HERO_FRAME_WIDTH, atb.sheet.HERO_FRAME_HEIGHT);
+
+  _.delay(function(target) { 
+      if (!target.filters) {
+        // if for some reason, the filters were purged.
+        return;
+      }
+      for (var i=0; i<target.filters.length; i++) {
+        if (target.filters[i] == adjFilter) {
+          target.filters[i] = null;
+          target.filters = _.compact(target.filters);
+          break;
+        }
+      }
+      target.updateCache();
+    }, duration, target);
 }
 
 
