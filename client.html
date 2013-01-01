@@ -446,7 +446,7 @@
         switch (skillId) {
           case atb.Skill.ATTACK:
             var sprite = heroIdToSprite[hero.id];
-            atb.anim.run('playHitHero',
+            atb.anim.run('strike',
               function() { 
                 atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, sprite.origX);
                 effectNumGen.generate(amount, isCrit, sprite);
@@ -461,8 +461,19 @@
             }
             break;
           default:
-            atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, heroIdToSprite[hero.id].origX);
-            effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id]);
+            var sprite = heroIdToSprite[hero.id];
+            var afterSkill = function() {
+              atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, sprite.origX);
+              effectNumGen.generate(amount, isCrit, sprite);
+            };
+            switch(skillId) {
+              case 4:
+              case 8:
+                atb.anim.run('bigStrike', afterSkill, sprite);
+                break;
+              default:
+                afterSkill();
+            }
             break;
         }
       }

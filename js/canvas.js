@@ -93,6 +93,7 @@ atb.sheet.hit = new createjs.SpriteSheet({
     animations: {
         'strike': [0,3, 'strike', 2],
         'slowStrike': [0,3, 'slowStrike', 5],
+        'bigStrike': [4,7, 'bigStrike', 4],
       },
     images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + 'attack.png'],
     frames: {
@@ -190,7 +191,7 @@ atb.anim.run = function(anim, onComplete) {
  * @param {createjs.DisplayObject} target for animation
  * @param {number} number of hits
  */
-atb.anim.playHitHero = function(target, num) {
+atb.anim.strike = function(target, num) {
   var hitTarget = target;
   var hitChain = [];
   var numHits = num ? num : 1;
@@ -198,7 +199,7 @@ atb.anim.playHitHero = function(target, num) {
   hit = new createjs.BitmapAnimation(atb.sheet.hit);
   hit.x = hitTarget.x+_.random(-30,20);
   hit.y = hitTarget.y+_.random(-10,30);
-  hit.scaleX = hit.scaleY = _.random(1,3);
+  hit.scaleX = hit.scaleY = _.random(2,4) / 2;
   atb.stage.addChild(hit);
 
   hit.onAnimationEnd = (function(anim, frame) {
@@ -217,13 +218,34 @@ atb.anim.playHitHero = function(target, num) {
     hit.y = hitTarget.y+_.random(-10,30);
     hit.scaleX = hit.scaleY = _.random(1,3);
   }).bind(this);
-  atb.anim.adjustChannels(hitTarget, 600, 1, 0.7, 0.3, 1);
+  atb.anim.adjustChannels(hitTarget, num*150, 1, 0.7, 0.3, 1);
   hit.gotoAndPlay("strike");
+}
+
+atb.anim.bigStrike = function(target) {
+  var hitTarget = target;
+  hit = new createjs.BitmapAnimation(atb.sheet.hit);
+  hit.x = hitTarget.x;
+  hit.y = hitTarget.y;
+  hit.scaleX = hit.scaleY = 3;
+  atb.stage.addChild(hit);
+
+  hit.onAnimationEnd = (function(anim, frame) {
+    anim.stop();
+    // delete oneself
+    atb.stage.removeChild(anim);
+    if (this.callback) {
+      this.callback.call(); 
+    }
+  }).bind(this);
+  atb.anim.adjustChannels(hitTarget, 600, 1, 0.7, 0, 1);
+  hit.gotoAndPlay("bigStrike");
 }
 
 /**
  * Adjusts R,G,B and alpha channels for target DisplayObject via a ColorFilter.
- * Will revert to original after duration has elapsed.
+ * Will revert to original after duration has elapsed. Should not interfere
+ * with any other filters.
  */
 atb.anim.adjustChannels = function(target, duration, r, g, b, a) {
   // FIXME: hardcoded to work only vs. hero sprites
@@ -310,7 +332,7 @@ atb.EffectNumberGenerator = function(stage) {
     effectNum.y = anchor.y - anchor.regY + (_.random(-15,-5));
     effectNum.regY = 0;
     effectNum.textAlign = "center";
-//    effectNum.shadow = new createjs.Shadow('#333', -2, 2, 2);
+    effectNum.shadow = new createjs.Shadow('#333', -2, 2, 0);
 
     this.stage.addChild(effectNum);
 
