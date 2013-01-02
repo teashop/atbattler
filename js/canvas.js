@@ -83,7 +83,7 @@ atb.sheet.HERO_COL_SPAN = 3;
 // ******* BATTLE ANIMATIONS ********
 
 atb.sheet.animImage = [
-  'attack.png'
+  'strike.png'
 ];
 
 /**
@@ -93,9 +93,9 @@ atb.sheet.hit = new createjs.SpriteSheet({
     animations: {
         'strike': [0,3, 'strike', 2],
         'slowStrike': [0,3, 'slowStrike', 5],
-        'bigStrike': [4,7, 'bigStrike', 4],
+        'bigStrike': [5,8, 'bigStrike', 4],
       },
-    images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + 'attack.png'],
+    images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + 'strike.png'],
     frames: {
         height: atb.sheet.BATTLE_ANIM_FRAME_HEIGHT,
         width: atb.sheet.BATTLE_ANIM_FRAME_WIDTH,
