@@ -455,14 +455,12 @@
               sprite, 3);
             break;
           case atb.Skill.ITEM:
+            var healType = effectType == 'heal_sp' ? effectType : 'heal';
+            var animType = healType == 'heal_sp' ? 'blue' : 'green';
             atb.anim.run('sparklesUp', 
               function() {
-                if (effectType == 'heal_sp') {
-                  effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal_sp');
-                } else {
-                  effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], 'heal');
-                }
-              }, sprite, 5, 'green');
+                effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], healType);
+              }, sprite, 5, animType);
             break;
           default:
             var afterSkill = function() {

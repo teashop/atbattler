@@ -321,7 +321,14 @@ atb.anim.sparklesUp = function(target, numSparkles, type) {
   var sparkType = type && atb.sheet.sparkle.getAnimation(type) ? type : 'white';
   var thresholdY = target.y > 100 ? target.y-100 : 0;
   
-  atb.anim.adjustChannels(target, 500, 0.6, 1, 0.3, 1);
+  switch (sparkType) {
+    case 'blue':
+      atb.anim.adjustChannels(target, 500, 0.6, 0.3, 1, 1);
+      break;
+    default:
+      atb.anim.adjustChannels(target, 500, 0.6, 1, 0.3, 1);
+      break;
+  }
   // add the desired number of sparkles, positioned randomly
   var sparkleAnim = new createjs.BitmapAnimation(atb.sheet.sparkle);
   for (var i=0; i<num; i++) {
@@ -381,7 +388,7 @@ atb.anim.bolt = function(target, duration) {
 
   // set positions
   boltAnim.x = target.x;
-  boltAnim.y = target.y + 20 - maskHeight/2;
+  boltAnim.y = target.y + 40 - maskHeight/2;
   boltMask.x = boltAnim.x;
   boltMask.y = boltMask.origY = boltAnim.y - maskHeight;
 
@@ -394,7 +401,7 @@ atb.anim.bolt = function(target, duration) {
     .to({y: boltMask.y + 2*maskHeight}, duration*0.6, createjs.Ease.cubicIn);
   var boltTween = createjs.Tween.get(boltAnim, {loop:false})
     .to({alpha: 1}, duration*0.8)
-    .call(atb.anim.adjustChannels, [target, duration/1.5, 1, 1, 0.3, 1])
+    .call(atb.anim.adjustChannels, [target, duration, 1, 1, 0.3, 1])
     .set({shadow: new createjs.Shadow('rgba(255,255,255,0.9)',0,0,25)}, boltAnim)
     .to({alpha: 0}, duration*1.2, createjs.Ease.cubicIn);
   var targetTween = createjs.Tween.get(target, {loop:false})
