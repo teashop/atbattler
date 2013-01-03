@@ -310,7 +310,8 @@
       <button id="resume"/>Resume Game</button>
       <button id="start"/>Start Game</button>
     </div>
-    <div> 
+    <div style="position:relative"> 
+      <div id="skill-name-pane" class="base-pane" style="position:absolute; top:10px; left:10px; width:200px; height:20px;"/></div>
       <canvas id="main-canvas" height="460" width="960">
       </canvas>
       <div style="position:relative;height:165px;">
@@ -461,6 +462,7 @@
               function() {
                 effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], healType);
               }, sprite, 5, animType);
+            $('#skill-name-pane').html(skill.name);
             break;
           default:
             var afterSkill = function() {
@@ -480,6 +482,7 @@
               default:
                 afterSkill();
             }
+            $('#skill-name-pane').html(skill.name);
             break;
         }
       }
