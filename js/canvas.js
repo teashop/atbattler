@@ -83,7 +83,8 @@ atb.sheet.HERO_COL_SPAN = 3;
 // ******* BATTLE ANIMATIONS ********
 
 atb.sheet.animImage = [
-  'strike.png'
+  'strike.png',
+  'sparkle_21x23.png'
 ];
 
 /**
@@ -107,11 +108,17 @@ atb.sheet.hit = new createjs.SpriteSheet({
 
 atb.sheet.sparkle = new createjs.SpriteSheet({
     animations: {
+        // White only loop
         'white': [0, 12, 'white', 1],
-        'green': [13,25, 'green', 1]
+        // Green-white loop
+        'green': [13,25, 'green-white', 1],
+        'green-white': [0, 12, 'green', 1],
+        // Blue-white loop
+        'blue': [26,38, 'blue-white', 1],
+        'blue-white': [0, 12, 'blue', 1]
       },
     images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + "sparkle_21x23.png"],
-    frames: {width:21,height:23,regX:10,regY:11, count:26}
+    frames: {width:21,height:23,regX:10,regY:11}
   });
 // ******* HEROES ********
 
@@ -243,7 +250,7 @@ atb.anim.strike = function(target, num) {
   hit = new createjs.BitmapAnimation(atb.sheet.hit);
   hit.x = hitTarget.x+_.random(-30,20);
   hit.y = hitTarget.y+_.random(-10,30);
-  hit.scaleX = hit.scaleY = _.random(2,4) / 2;
+  hit.scaleX = hit.scaleY = _.random(1,4) / 3;
   atb.stage.addChild(hit);
 
   hit.onAnimationEnd = (function(anim, frame) {
@@ -301,7 +308,7 @@ atb.anim.sparklesUp = function(target, numSparkles, type) {
     sparkle.y = target.y+_.random(30,50);
     sparkle.vY = _.random(12,25) / 3;
     sparkle.vA = _.random(2,4) / 150;
-    sparkle.scaleX = sparkle.scaleY = _.random(3,6) / 2;
+    sparkle.scaleX = sparkle.scaleY = _.random(4,8) / 2;
     sparkle.gotoAndPlay(sparkType);
     atb.stage.addChild(sparkle);
     sparkles.push(sparkle);
