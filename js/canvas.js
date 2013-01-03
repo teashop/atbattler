@@ -88,7 +88,7 @@ atb.sheet.animImage = [
 ];
 
 /**
- * Spritesheet - Hit animations
+ * SpriteSheet - Hit animations
  */
 atb.sheet.hit = new createjs.SpriteSheet({
     animations: {
@@ -106,20 +106,42 @@ atb.sheet.hit = new createjs.SpriteSheet({
       }
   });
 
+/**
+ * SpriteSheet - Lightning Bolt
+ */
 atb.sheet.sparkle = new createjs.SpriteSheet({
     animations: {
         // White only loop
         'white': [0, 12, 'white', 1],
         // Green-white loop
-        'green': [13,25, 'green-white', 1],
-        'green-white': [0, 12, 'green', 1],
+        'green': [13,25, 'greenWhite', 1],
+        'greenWhite': [0, 12, 'green', 1],
         // Blue-white loop
-        'blue': [26,38, 'blue-white', 1],
-        'blue-white': [0, 12, 'blue', 1]
+        'blue': [26,38, 'blueWhite', 1],
+        'blueWhite': [0, 12, 'blue', 1]
       },
     images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + "sparkle_21x23.png"],
     frames: {width:21,height:23,regX:10,regY:11}
   });
+
+/**
+ * SpriteSheet - Lightning Bolt
+ */
+atb.sheet.bolt = new createjs.SpriteSheet({
+    animations: {
+        'boltSmall': [0],
+        'boltBig': [1],
+        'ballLightning': [2,5,'ballLightning',1]
+      },
+    images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + 'bolt1.png'],
+    frames: {
+        height: atb.sheet.BATTLE_ANIM_FRAME_HEIGHT,
+        width: atb.sheet.BATTLE_ANIM_FRAME_WIDTH,
+        regX: atb.sheet.BATTLE_ANIM_REG_X,
+        regY: atb.sheet.BATTLE_ANIM_REG_Y,
+      }
+  });
+
 // ******* HEROES ********
 
 /**
@@ -337,6 +359,50 @@ atb.anim.sparklesUp = function(target, numSparkles, type) {
     return (this.sparkles.length > 0);
   }
   atb.anim.addUpdateOnTick(up);
+}
+
+
+atb.anim.bolt = function(target, duration) {
+  var boltAnim = new createjs.BitmapAnimation(atb.sheet.bolt);
+
+  boltAnim.gotoAndPlay('boltSmall');
+  boltAnim.scaleX = 2;
+  boltAnim.scaleY = 3;
+  boltAnim.alpha = 0.5;
+  boltAnim.shadow = new createjs.Shadow('rgba(255,255,255,0.9)',0,0,5);
+
+  var duration = 300;
+  var boltMask = new createjs.Shape();
+  var maskWidth = atb.sheet.BATTLE_ANIM_FRAME_WIDTH * boltAnim.scaleX;
+  var maskHeight = atb.sheet.BATTLE_ANIM_FRAME_HEIGHT * boltAnim.scaleY;
+  boltMask.graphics.drawRect(0, 0, maskWidth, maskHeight).closePath();
+  boltMask.regX = maskWidth/2;
+  boltMask.regY = maskHeight/2;
+
+  // set positions
+  boltAnim.x = target.x;
+  boltAnim.y = target.y + 20 - maskHeight/2;
+  boltMask.x = boltAnim.x;
+  boltMask.y = boltMask.origY = boltAnim.y - maskHeight;
+
+  boltAnim.mask = boltMask;
+
+  atb.stage.addChild(boltAnim);
+
+  var boltMaskTween = createjs.Tween.get(boltMask, {loop:false})
+    .to({y: boltMask.y + maskHeight}, duration*1.4, createjs.Ease.cubicOut)
+    .to({y: boltMask.y + 2*maskHeight}, duration*0.6, createjs.Ease.cubicIn);
+  var boltTween = createjs.Tween.get(boltAnim, {loop:false})
+    .to({alpha: 1}, duration*0.8)
+    .call(atb.anim.adjustChannels, [target, duration/1.5, 1, 1, 0.3, 1])
+    .set({shadow: new createjs.Shadow('rgba(255,255,255,0.9)',0,0,25)}, boltAnim)
+    .to({alpha: 0}, duration*1.2, createjs.Ease.cubicIn);
+  var targetTween = createjs.Tween.get(target, {loop:false})
+    .wait(duration*0.8)
+    .to({x: target.x-10}, duration*0.3, createjs.Ease.elasticOut)
+    .to({x: target.x+10}, duration*0.3, createjs.Ease.elasticOut)
+    .to({x: target.origX}, duration*0.3, createjs.Ease.elasticIn)
+    .call(this.callback ? this.callback : function(){});
 }
 
 /**

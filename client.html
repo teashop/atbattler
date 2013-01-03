@@ -472,7 +472,12 @@
             switch(skillId) {
               case 4:
               case 8:
+                // Mighty Swing and Shockwave
                 atb.anim.run('bigStrike', afterSkill, sprite);
+                break;
+              case 6:
+                // Arc Impulse
+                atb.anim.run('bolt', afterSkill, sprite, 300);
                 break;
               default:
                 afterSkill();
