@@ -78,9 +78,26 @@ atb.sheet.HERO_SLOTS = 8; // i.e. 8 heroes per sheet
 atb.sheet.HERO_ROW_SPAN = 4;
 atb.sheet.HERO_COL_SPAN = 3;
 
+// ******* VECTOR ASSETS ********
+
+/**
+ * @namespace Collection of sprite sheets.
+ */
+atb.vector= {};
+
+/**
+ * Vector Asset - fireball
+ */
+atb.vector.fireball = new createjs.Shape();
+atb.vector.fireball.graphics.setStrokeStyle(1, "round", "round")
+  .beginLinearGradientFill(["#ff0","#c30"],[0,0.7],0,100,100,100)
+  .moveTo(90,10)
+  .lineTo(0,20)
+  .arc(0,10, 10,0.5*Math.PI, -0.5*Math.PI, false)
+  .lineTo(90, 10);
 
 
-// ******* BATTLE ANIMATIONS ********
+// ******* SPRITE SHEETS ********
 
 atb.sheet.animImage = [
   'strike.png',
@@ -95,6 +112,7 @@ atb.sheet.hit = new createjs.SpriteSheet({
         'strike': [0,3, 'strike', 2],
         'slowStrike': [0,3, 'slowStrike', 5],
         'bigStrike': [5,8, 'bigStrike', 4],
+        'fireball': [4]
       },
     images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + 'strike.png'],
     frames: {
@@ -141,6 +159,21 @@ atb.sheet.bolt = new createjs.SpriteSheet({
         regY: atb.sheet.BATTLE_ANIM_REG_Y,
       }
   });
+
+/** 
+ * SpriteSheet - Vector fireball
+ */
+atb.sheet.fireball = (function() {
+  var f = atb.vector.fireball;
+  f.regX = 60;
+  f.regY = 10;
+  f.bounds = new createjs.Rectangle(-60,-5,160,25);
+  var ssb = new createjs.SpriteSheetBuilder();
+  ssb.addAnimation('fireball', ssb.addFrame(f));
+  ssb.build();
+  return ssb.spriteSheet;
+})();
+
 
 // ******* HEROES ********
 
@@ -259,7 +292,7 @@ atb.anim.run = function(anim, onComplete) {
 }
 
 /**
- * Play Battle animation - basic hit(s)
+ * Animation Sequence - basic hit(s)
  *
  * @param {createjs.DisplayObject} target for animation
  * @param {number} number of hits
@@ -295,6 +328,9 @@ atb.anim.strike = function(target, num) {
   hit.gotoAndPlay("strike");
 }
 
+/**
+ * Animation Sequence: Large Physical Blow
+ */
 atb.anim.bigStrike = function(target) {
   var hitTarget = target;
   hit = new createjs.BitmapAnimation(atb.sheet.hit);
@@ -315,6 +351,9 @@ atb.anim.bigStrike = function(target) {
   hit.gotoAndPlay("bigStrike");
 }
 
+/**
+ * Animation Sequence: Sparkles floating up
+ */
 atb.anim.sparklesUp = function(target, numSparkles, type) {
   var sparkles = [];
   var num = numSparkles ? numSparkles : 1;
@@ -368,7 +407,9 @@ atb.anim.sparklesUp = function(target, numSparkles, type) {
   atb.anim.addUpdateOnTick(up);
 }
 
-
+/**
+ * Animation Sequence: Lightning Strike
+ */
 atb.anim.bolt = function(target, duration) {
   var boltAnim = new createjs.BitmapAnimation(atb.sheet.bolt);
 
@@ -403,13 +444,49 @@ atb.anim.bolt = function(target, duration) {
     .to({alpha: 1}, duration*0.8)
     .call(atb.anim.adjustChannels, [target, duration, 1, 1, 0.3, 1])
     .set({shadow: new createjs.Shadow('rgba(255,255,255,0.9)',0,0,25)}, boltAnim)
-    .to({alpha: 0}, duration*1.2, createjs.Ease.cubicIn);
+    .to({alpha: 0}, duration*1.2, createjs.Ease.cubicIn)
+    .call(function() { atb.stage.removeChild(boltAnim); });
   var targetTween = createjs.Tween.get(target, {loop:false})
     .wait(duration*0.8)
     .to({x: target.x-10}, duration*0.3, createjs.Ease.elasticOut)
     .to({x: target.x+10}, duration*0.3, createjs.Ease.elasticOut)
     .to({x: target.origX}, duration*0.3, createjs.Ease.elasticIn)
     .call(this.callback ? this.callback : function(){});
+}
+
+/**
+ * Animation Sequence: Rain of Fire
+ */
+atb.anim.rainOfFire = function(target, num, duration) {
+  var totalDuration = num*40+duration;
+  var aoe = 35;
+
+  fireAnim = new createjs.BitmapAnimation(atb.sheet.hit);
+  fireVector = new createjs.BitmapAnimation(atb.sheet.fireball);
+
+  function dropFireball(target, source) {
+    var fireball = source.clone();
+    fireball.gotoAndPlay('fireball');
+
+    fireball.x = target.x - _.random(120, 150);
+    fireball.y = target.y - _.random(245, 285);
+    fireball.scaleX = fireball.scaleY = _.random(30,40)/40;
+    fireball.rotation = -160;
+    fireball.alpha = 0.7 + _.random(0,10)/10;
+    atb.stage.addChild(fireball);
+
+    var tween = createjs.Tween.get(fireball, {loop:false})
+      .to({x: target.x-10+_.random(-aoe,aoe), y:target.y+_.random(-aoe,aoe), rotation: -100}, duration, createjs.Ease.circIn)
+      .to({alpha: 0}, duration/4)
+      .call(function() { atb.stage.removeChild(fireball); });
+  }
+
+  atb.anim.adjustChannels(target, totalDuration, 1, 0.7, 0.3, 1);
+  var tween = createjs.Tween.get(this, {loop:false});
+  for (var i=0; i<num; i++) {
+    tween.wait(_.random(30+i,50+i)).call(dropFireball, [target, (i%2==0) ? fireAnim: fireVector])
+  }
+  tween.wait(duration).call(this.callback ? this.callback : function(){});
 }
 
 /**
