@@ -174,6 +174,25 @@ atb.sheet.fireball = (function() {
   return ssb.spriteSheet;
 })();
 
+/**
+ * SpriteSheet - Ice
+ */
+atb.sheet.ice = new createjs.SpriteSheet({
+    animations: {
+        'crystal': [0],
+        'frost': [1],
+        'spike': [2,4,false,3],
+        'shatter': [5],
+        'blizzard': [6]
+      },
+    images: [atb.img.path + atb.img.typePath[atb.img.type.anim] + 'ice1.png'],
+    frames: {
+        height: atb.sheet.BATTLE_ANIM_FRAME_HEIGHT,
+        width: atb.sheet.BATTLE_ANIM_FRAME_WIDTH,
+        regX: atb.sheet.BATTLE_ANIM_REG_X,
+        regY: atb.sheet.BATTLE_ANIM_REG_Y,
+      }
+  });
 
 // ******* HEROES ********
 
@@ -487,6 +506,30 @@ atb.anim.rainOfFire = function(target, num, duration) {
     tween.wait(_.random(30+i,50+i)).call(dropFireball, [target, (i%2==0) ? fireAnim: fireVector])
   }
   tween.wait(duration).call(this.callback ? this.callback : function(){});
+}
+
+atb.anim.frostSpike = function(target) {
+  var duration = 370;
+  var iceBase = new createjs.BitmapAnimation(atb.sheet.ice);
+  iceBase.x = target.x;
+  iceBase.alpha = 0.6;
+
+  for (var i=0; i<3; i++) {
+    var iceAnim = iceBase.clone();
+    iceAnim.y = target.y -50 - 20*i;
+    iceAnim.scaleX = iceAnim.scaleY = 2+i/2;
+    iceAnim.shadow = new createjs.Shadow('rgba(60,190,255,1)',0,0,10*i);
+    iceAnim.gotoAndPlay('spike');
+    atb.stage.addChild(iceAnim);
+    var tween = createjs.Tween.get(iceAnim, {loop:false})
+      .wait(duration-100)
+      .call(atb.anim.sparklesUp, [target, 6, 'blue'])
+      .to({alpha: 0, scaleX: 6, scaleY: 5, y:iceAnim.y-100}, duration-i*120)
+      .call(function() { atb.stage.removeChild(iceAnim); })
+  }
+  createjs.Tween.get(this, {loop:false})
+    .wait(duration*2)
+    .call(this.callback ? this.callback : function(){});
 }
 
 /**
