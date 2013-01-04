@@ -360,3 +360,11 @@ atb.Menu = function(template, templateParams, parentMenu) {
     delete this.childMenus[child.id];
   }
 }
+
+atb.showSkillName = function(content) {
+  $('#skill-name-pane').html(content);
+  var dialogTween= createjs.Tween.get(document.getElementById('skill-name-pane'), {loop:false})
+   .to({opacity: 1}, 0)
+   .wait(800)
+   .to({opacity: 0}, 500, createjs.Ease.cubicOut);
+}
