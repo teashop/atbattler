@@ -151,11 +151,12 @@ GC.processEvent = function() {
       break;
     case GameEvent.type.heroes_action:
       // execute action
-      var source = this.heroes[args.by];
-      var target = this.heroes[args.target];
-      var objectId = args.objectId;
-      var isCrit = args.isCrit ? args.isCrit : false;
-      var skillId = args.skillId;
+      var action = args;
+      var source = this.heroes[action.by];
+      var target = this.heroes[action.target];
+      var objectId = action.objectId;
+      var isCrit = action.isCrit ? action.isCrit : false;
+      var skillId = action.skillId;
       var skill = atb.Skill.get(skillId);
 
       if (!skill) {
@@ -165,42 +166,45 @@ GC.processEvent = function() {
 
       switch(true) {
         case (skillId == atb.Skill.ATTACK):
-          var msg = source.name + ' attacks ' + target.name + ' for ' + args.amount + ' damage.';
+          var msg = source.name + ' attacks ' + target.name + ' for ' + action.amount + ' damage.';
           if (isCrit) {
             msg += ' (Critical Hit)';
           }
           this.log(msg);
-          target.attributes.hp -= args.amount;
+          target.attributes.hp -= action.amount;
           if (target.attributes.hp < 0) {
             target.attributes.hp = 0;
           }
-          this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.amount, isCrit]);
+          this.emitterCallback('clientHeroActionEvent', action);
           break;
         case (skillId == atb.Skill.ITEM):
           var item = atb.Item[objectId];
           var itemName = item[atb.Item.field.name];
 
           this.log(source.name + ' uses ['+ itemName +'] on ' + target.name);
-          if (args.isRez) {
+          if (action.isRez) {
             target.statuses.dead = false;
             this.log(target.name + ' was revived!');
             this.emitterCallback('clientHeroRezEvent', target);
           }
-          if (args.hp > 0) {
-            this.log(target.name + ' was healed for ' + args.hp);
-            target.attributes.hp += args.hp;
+          if (action.hp > 0) {
+            this.log(target.name + ' was healed for ' + action.hp);
+            target.attributes.hp += action.hp;
             if (target.attributes.hp > target.attributes.maxHp) {
               target.attributes.hp = target.attributes.maxHp;
             }
-            this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.hp, isCrit]);
+            action.amount = action.hp;
+            this.emitterCallback('clientHeroActionEvent', action);
           }
-          if (args.sp > 0) {
-            this.log(target.name + ' recovered ' + args.sp + ' SP');
-            target.attributes.sp += args.sp;
+          if (action.sp > 0) {
+            this.log(target.name + ' recovered ' + action.sp + ' SP');
+            target.attributes.sp += action.sp;
             if (target.attributes.sp > target.attributes.maxSp) {
               target.attributes.sp = target.attributes.maxSp;
             }
-            this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.sp, isCrit, 'heal_sp']);
+            action.effectType = 'heal_sp';
+            action.amount = action.sp;
+            this.emitterCallback('clientHeroActionEvent', action);
           }
           break;
         case (skillId == atb.Skill.DEFEND):
@@ -211,23 +215,22 @@ GC.processEvent = function() {
 
         // FIXME: everything else valid is a 'generic skill'
         default:
-          var msg = source.name + ' uses [' + skill.name + '] on ' + target.name + ' for ' + args.amount + ' damage.';
+          var msg = source.name + ' uses [' + skill.name + '] on ' + target.name + ' for ' + action.amount + ' damage.';
           if (isCrit) {
             msg += ' (Critical Hit)';
           }
           this.log(msg);
-          target.attributes.hp -= args.amount;
+          target.attributes.hp -= action.amount;
           if (target.attributes.hp < 0) {
             target.attributes.hp = 0;
           }
 
           // decrement cost of skill from source
-          if (args.cost > 0) {
-            source.attributes.sp -= args.cost;
-//            console.log(skill.name + ' cost ' + args.cost + '; ' + source.name + ' SP should be set to: ' + source.attributes.sp);
+          if (action.cost > 0) {
+            source.attributes.sp -= action.cost;
+//            console.log(skill.name + ' cost ' + action.cost + '; ' + source.name + ' SP should be set to: ' + source.attributes.sp);
           }
-
-          this.emitterCallback('clientHeroActionEvent', [source, target, skillId, args.amount, isCrit]);
+          this.emitterCallback('clientHeroActionEvent', action);
           break;
       }
       break;

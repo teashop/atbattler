@@ -454,35 +454,39 @@
         }
       }
 
-      function showSkillResult(hero, skillId, amount, isCrit, effectType) {
+      function showSkillResult(action) {
+        var target =  gameClient.heroes[action.target];
+
         // play the skill animation
-        var skill = atb.Skill.get(skillId);
-        var sprite = heroIdToSprite[hero.id];
-        switch (skillId) {
+        var skill = atb.Skill.get(action.skillId);
+        var sprite = heroIdToSprite[target.id];
+        switch (skill.id) {
           case atb.Skill.ATTACK:
             atb.anim.run('strike',
               function() { 
-                atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, sprite.origX);
-                effectNumGen.generate(amount, isCrit, sprite);
+                atb.tweenHeroHit(sprite, target.player != gameClient.me, sprite.origX);
+                effectNumGen.generate(action.amount, action.isCrit, sprite);
               },
               sprite, 3);
             break;
           case atb.Skill.ITEM:
-            var healType = effectType == 'heal_sp' ? effectType : 'heal';
+            var healType = action.effectType == 'heal_sp' ? action.effectType : 'heal';
             var animType = healType == 'heal_sp' ? 'blue' : 'green';
-            atb.showSkillName(skill.name);
+            var item = atb.Item[action.objectId];
+            var itemName = item[atb.Item.field.name];
+            atb.showSkillName(itemName);
             atb.anim.run('sparklesUp', 
               function() {
-                effectNumGen.generate(amount, isCrit, heroIdToSprite[hero.id], healType);
+                effectNumGen.generate(action.amount, action.isCrit, sprite, healType);
               }, sprite, 5, animType);
             break;
           default:
             var afterSkill = function() {
-              atb.tweenHeroHit(heroIdToSprite[hero.id], hero.player != gameClient.me, sprite.origX);
-              effectNumGen.generate(amount, isCrit, sprite);
+              atb.tweenHeroHit(sprite, target.player != gameClient.me, sprite.origX);
+              effectNumGen.generate(action.amount, action.isCrit, sprite);
             };
             atb.showSkillName(skill.name);
-            switch(skillId) {
+            switch(skill.id) {
               case 4:
               case 8:
                 // Mighty Swing and Shockwave
@@ -529,17 +533,20 @@
       }
 
       // take action => reset hero & update targets 
-      function takeAction(hero, target, skillId, amount, isCrit, effectType) {
+      function takeAction(action) {
+        var hero = gameClient.heroes[action.by];
+        var target =  gameClient.heroes[action.target];
+
         resetHero(hero);
-        // fixme: this is HAXXX
-        var skill = atb.Skill.get(skillId);
+
+        // if Skill incurs a cost, reflect that update to the actor's HP/SP.
+        var skill = atb.Skill.get(action.skillId);
         var skillCost = skill.cost;
         if (skillCost && skillCost.sp) {
-//          console.log(hero.name + ' s SP should be set to: ' + hero.attributes.sp);
           incrementHeroHpSp(hero);
         }
         incrementHeroHpSp(target);
-        showSkillResult(target, skillId, amount, isCrit, effectType);
+        showSkillResult(action);
       }
 
       function resetHero(hero) {
@@ -888,8 +895,7 @@
             rezHero(hero);
             break;
           case 'clientHeroActionEvent':
-            // source, target, skillId, amount, isCrit, effectType
-            takeAction(args[0], args[1], args[2], args[3], args[4], args[5]); 
+            takeAction(args);
             break;
           case 'clientResetHeroEvent':
 //            console.log('resetting hero ' + args.name);
