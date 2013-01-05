@@ -982,6 +982,9 @@
               openTargetMenu(hero, atb.Skill.ITEM, itemId, this);
             }
             break;
+          case 'cancel':
+            this.cascadeClose();
+            break;
           default:
             // ignore
         }
@@ -1011,6 +1014,9 @@
               executeCommandOnTarget(skillId, actionArgs, actorId, targetId);
             }
             break;
+          case 'cancel':
+            cancelTargetPane();
+            break;
           default:
             // ignore
         }
@@ -1032,6 +1038,7 @@
       $(document).on('keydown.down', {key:'down'}, keyInputHandler);
       $(document).on('keydown.space', {key:'action'}, keyInputHandler);
       $(document).on('keydown.return', {key:'action'}, keyInputHandler);
+      $(document).on('keydown.esc', {key:'cancel'}, keyInputHandler);
 
       /** END KEYBOARD INPUT SUPPORT */
 

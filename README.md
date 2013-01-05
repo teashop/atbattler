@@ -39,3 +39,5 @@ ATBattler runs on any relatively up-to-date version of Chrome or Firefox.  It al
 * 	Caolan McMahon's Async Utils
 
 	https://github.com/caolan/async
+
+*   John Resig's jQuery Hotkeys Plugin
