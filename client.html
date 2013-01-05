@@ -179,9 +179,13 @@
     .menu-pane a:hover, .menu-pane li.selected a {
       background-color: rgba(38,128,208,0.8);
     }
-
     .menu-pane a.disabled {
       color: #888;
+    }
+    .menu-pane .cancel {
+      color: #ccc;
+      font-size: 0.9em;
+      font-weight: normal;
     }
 
     .menu-pane .pane-title {
@@ -997,10 +1001,10 @@
             var selected = this.items.curSelected.find('a');
             var skillId = selected.data('skill-id');
             var actorId = selected.data('hero-id');
+            var isCancel = selected.prop('class') == 'cancel';
             var targetId = selected.data('target-id');
             var actionArgs = this.container.data('args');
-            // TODO: fix cancel.
-            if (skillId == 'cancel') {
+            if (isCancel) {
               // backtrack to command menu
               cancelTargetPane();
             } else {
