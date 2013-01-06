@@ -302,7 +302,7 @@ GC.gameOver = function(theWinner) {
     msg = 'Game Over!';
   }
   this.log(msg);
-  this.emitterCallback('clientGameOverEvent', msg);
+  this.emitterCallback('clientGameOverEvent', winner);
 }
 
 // a simple message log.  Allows listener to pickup and handle logging

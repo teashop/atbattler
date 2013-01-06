@@ -307,13 +307,18 @@
       left: 394px;
     }
 
-    #skill-name-pane {
+    /** Skill names and status messages at top of canvas */
+    #skill-name-pane, #status-pane {
       height:20px;
-      left:10px; 
+      margin:10px; 
       opacity: 0;
       position:absolute; 
       padding: 10px 18px 12px 18px;
-      top:10px; 
+      z-index: 900;
+    }
+    #status-pane {
+      width: 900px;
+      z-index: 901;
     }
     /* Canvas targeting pointer */
     #pointer {
@@ -337,6 +342,7 @@
     </div>
     <div style="position:relative"> 
       <div id="pointer"></div>
+      <div id="status-pane" class="base-pane"></div>
       <div id="skill-name-pane" class="base-pane"></div>
       <canvas id="main-canvas" height="460" width="960">
       </canvas>
@@ -414,7 +420,6 @@
       var heroItemMenuTemplate = _.template('<div id="item_menu_<%= hero.id %>"  heroId="<%= hero.id %>" class="item-menu menu-pane"><div class="tooltip"></div><div id="item_list_<%= hero.id %>" class="item-list"></div></div>');
       // Item Menu list item
       var heroItemTemplate =  _.template('<a href="#" id="it_<%= item[atb.Item.field.id] %>" data-hero-id="<%= heroId %>"><%= item[atb.Item.field.name] %><div class="qty"><%= qty %></div></a>');
-
       /** END Templates **/
 
       /** INVENTORY **/
@@ -577,7 +582,6 @@
           targetMenu.close();
         }
       }
-
 
       function executeCommandOnTarget(skillId, actionArgs, actorId, targetId) {
         var hero = gameClient.heroes[actorId];
@@ -857,16 +861,28 @@
     //        combatLog.scrollTop(combatLogList.height());
             break;
           case 'clientGameOverEvent':
-            var msg = args;
+            var winner = args;
+            // teardown
             commandCarousel.clear();
             $('tr', '#party').removeClass('selected');
+
+            // display victory message
+            var msg = null; 
+            if (winner == this.me) {
+              msg = 'You have won the battle!';
+            } else {
+              msg = 'Player ' + winner.name + ' has won the battle!';
+            }
             // FIXME: arbitrary 1s for animations to complete
-            _.delay(function() { createjs.Ticker.setPaused(true); }, 1000);
-            gameOverLabel = new createjs.Text(msg, "bold 40px Arial","#FFF");
-            atb.stage.addChild(gameOverLabel);
-            gameOverLabel.x = 50;
-            gameOverLabel.y = 100;
-            atb.stage.update();
+            _.delay(function() { 
+                atb.showStatusMessage(msg);
+                var furtherDelay = 0;
+                if (createjs.Tween.hasActiveTweens()) {
+                  furtherDelay = 1000;
+                }
+                _.delay(function() { createjs.Ticker.setPaused(true); }, furtherDelay); 
+              }, 1000);
+
             break;
           case 'clientSetupCompleteEvent':
             // based on heroes, load sprite assets

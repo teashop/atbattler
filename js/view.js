@@ -368,3 +368,15 @@ atb.showSkillName = function(content) {
    .wait(800)
    .to({opacity: 0}, 500, createjs.Ease.cubicOut);
 }
+
+atb.showStatusMessage = function(content) {
+  var statusPane = $('#status-pane');
+  statusPane.html(content);
+  statusPane.css('opacity', 1);
+}
+atb.hideStatusMessage = function() {
+  var dialogTween= createjs.Tween.get(document.getElementById('status-pane'), {loop:false})
+   .to({opacity: 1}, 0)
+   .wait(800)
+   .to({opacity: 0}, 500, createjs.Ease.cubicOut);
+}
