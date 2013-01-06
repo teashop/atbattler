@@ -315,6 +315,15 @@
       padding: 10px 18px 12px 18px;
       top:10px; 
     }
+    /* Canvas targeting pointer */
+    #pointer {
+      background-image : url('img/pointer.png');
+      display: none;
+      height: 28px;
+      position: absolute;
+      width: 28px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
@@ -327,6 +336,7 @@
       <button id="start"/>Start Game</button>
     </div>
     <div style="position:relative"> 
+      <div id="pointer"></div>
       <div id="skill-name-pane" class="base-pane"></div>
       <canvas id="main-canvas" height="460" width="960">
       </canvas>
@@ -721,10 +731,25 @@
           tarToMenuItems.push(heroCancelTemplate({heroId: hero.id}));
           tarMenu.addMenuItems('.target-list');
           tarMenu.items.isWrapAround = true;
+          tarMenu.items.onSelect = function(selected) {
+            var targetId = selected.find('a').data('target-id');
+            var pointer = $('#pointer');
+            if (targetId) {
+              var sprite = heroIdToSprite[targetId];
+              pointer.show();
+              pointer.css('top', (sprite.y) + 'px');
+              pointer.css('left', (sprite.x - 45) +'px');
+            } else {
+              pointer.hide();
+            }
+          }
           tarMenu.items.addItems(tarToMenuItems);
 
           tarMenu.onKeyInput = tarMenuKeyInputHandler.bind(tarMenu);
-          tarMenu.onClose = (function() { setActiveMenu(this.parentMenu) }).bind(tarMenu);
+          tarMenu.onClose = (function() { 
+              setActiveMenu(this.parentMenu);
+              $('#pointer').hide();
+            }).bind(tarMenu);
           tarMenu.container.data('menu', tarMenu);
           if (actionArgs) {
             tarMenu.container.data('args', actionArgs);
