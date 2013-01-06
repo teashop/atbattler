@@ -123,7 +123,7 @@ GC.processEvent = function() {
           //                console.log('Client: gauge correction for: ' + theHero.id + ', local='+theHero.turnGauge + ', server='+heroesSync[i][1]);
           theHero.turnGauge -= diff;
         }
-        this.emitterCallback('clientUpdateHeroEvent', theHero);
+        this.emitterCallback('clientHeroUpdateEvent', theHero);
       }
       this.emitterCallback('clientSyncHeroEvent', theHero);
       break;
@@ -133,7 +133,7 @@ GC.processEvent = function() {
         var theHero = this.heroes[readyHeroes[i]];
         theHero.statuses.ready = true;
         theHero.turnGauge = 100.00;
-        this.emitterCallback('clientUpdateHeroEvent', theHero);
+        this.emitterCallback('clientHeroUpdateEvent', theHero);
       }
       break;
     case GameEvent.type.heroes_dead:
@@ -145,8 +145,8 @@ GC.processEvent = function() {
         theHero.statuses.ready = false;
         theHero.turnGauge = 0.00;
         theHero.attributes.hp = 0;
+        this.emitterCallback('clientHeroUpdateEvent', theHero);
         this.emitterCallback('clientHeroDeadEvent', theHero);
-        this.emitterCallback('clientUpdateHeroEvent', theHero);
       }
       break;
     case GameEvent.type.heroes_action:

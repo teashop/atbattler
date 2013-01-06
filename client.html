@@ -441,8 +441,6 @@
         var player = hero.player;
         var heroRow = heroRows[hero.id];
         heroRow.addClass('dead');
-        var heroSprite = heroIdToSprite[hero.id];
-        atb.tweenHeroDead(heroSprite, hero.player != gameClient.me, heroSprite.origX, heroSprite.origY);
         resetHero(hero);
         forceHeroHpSp(hero);
         // close all menus
@@ -478,8 +476,8 @@
           case atb.Skill.ATTACK:
             atb.anim.run('strike',
               function() { 
-                atb.tweenHeroHit(sprite, target.player != gameClient.me, sprite.origX);
                 effectNumGen.generate(action.amount, action.isCrit, sprite);
+                atb.tweenHeroHitOrDead(sprite, target.player != gameClient.me, sprite.origX, sprite.origY, target.statuses.dead);
               },
               sprite, 3);
             break;
@@ -496,8 +494,8 @@
             break;
           default:
             var afterSkill = function() {
-              atb.tweenHeroHit(sprite, target.player != gameClient.me, sprite.origX);
               effectNumGen.generate(action.amount, action.isCrit, sprite);
+              atb.tweenHeroHitOrDead(sprite, target.player != gameClient.me, sprite.origX, sprite.origY, target.statuses.dead);
             };
             atb.showSkillName(skill.name);
             switch(skill.id) {
@@ -911,7 +909,7 @@
           case 'clientGameResumeEvent':
             createjs.Ticker.setPaused(false);
             break;
-          case 'clientUpdateHeroEvent':
+          case 'clientHeroUpdateEvent':
             var hero = args;
             updateHero(hero);
             break;

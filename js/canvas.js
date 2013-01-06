@@ -581,6 +581,19 @@ atb.tweenHeroDead = function(target, reverse, origX, origY) {
   return tween;
 }
 
+
+/**
+ * Convenience method that, if the 'hit' is to a now dead hero, show the
+ * death tween instead of the hit tween.  Otherwise, use the hit tween.
+ */
+atb.tweenHeroHitOrDead = function(target, reverse, origX, origY, isDead) {
+  if (isDead) {
+    atb.tweenHeroDead(target, reverse, origX, origY);
+  } else {
+    atb.tweenHeroHit(target, reverse, origX, origY);
+  }
+}
+
 atb.tweenHeroRez = function(target, reverse, origX, origY) {
   var curPosX = origX ? origX : target.x;
   var curPosY = origY ? origY : target.Y;
