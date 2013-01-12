@@ -175,12 +175,10 @@ atb.CommandCarousel = function(container) {
         this.onMoveStart(this.getPaneOrigId(curPane.prop('id')));
         requiresMove = true;
       }
-      target.slideToggle(100, (function() {
-        target.detach(); 
-        if (requiresMove) {
-          this.onMoveEnd(this.getInFocusOrigId());
-        }
-      }).bind(this));
+      target.detach(); 
+      if (requiresMove) {
+        this.onMoveEnd(this.getInFocusOrigId());
+      }
       this.numPanes--;
       this.onRemove(this.numPanes);
       // last pane removed, so hide
@@ -346,13 +344,11 @@ atb.Menu = function(template, templateParams, parentMenu) {
   M.cascadeClose = function() {
     _.each(this.childMenus, (function(menu) {
       menu.cascadeClose();
-      this.deregisterChild(menu);
     }).bind(this));
     this.close();
   }
 
   M.registerChild = function(child) {
-    //console.log('registering ' + child.id + ' as child of: ' + this.id);
     this.childMenus[child.id] = child;
   }
 
