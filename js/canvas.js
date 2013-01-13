@@ -525,7 +525,7 @@ atb.anim.frostSpike = function(target) {
       .wait(duration-100)
       .call(atb.anim.sparklesUp, [target, 6, 'blue'])
       .to({alpha: 0, scaleX: 6, scaleY: 5, y:iceAnim.y-100}, duration-i*120)
-      .call(function() { atb.stage.removeChild(iceAnim); })
+      .call(function() { atb.stage.removeChild(iceAnim); });
   }
   createjs.Tween.get(this, {loop:false})
     .wait(duration*2)
@@ -557,6 +557,18 @@ atb.anim.adjustChannels = function(target, duration, r, g, b, a) {
       }
       target.updateCache();
     }, duration, target);
+}
+
+atb.anim.flashScreen = function(colour, duration, intensity) {
+  var flashScreen = new createjs.Shape();
+  flashScreen.graphics.beginFill(colour).drawRect(0, 0, atb.stage.canvas.width, atb.stage.canvas.height).endFill();
+  flashScreen.alpha = 0.0;
+  atb.stage.addChild(flashScreen);
+
+  createjs.Tween.get(flashScreen, {loop:false})
+    .to({alpha: intensity}, duration/2,  createjs.Ease.cubicOut)
+    .to({alpha: 0}, duration/2,  createjs.Ease.cubicIn)
+    .call(function() { atb.stage.removeChild(flashScreen); });
 }
 
 
