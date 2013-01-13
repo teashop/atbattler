@@ -8,14 +8,16 @@
 <body>
   <div id="qunit"></div>
   <script src="resources/qunit-1.10.0.js"></script>
-  <script src="../js/vendor/underscore-min.js"></script>
-  <script src="../js/vendor/state-machine.min.js"></script>
-  <script src="../js/vendor/jquery-1.8.2.min.js"></script>
+  <script src="../assets/js/vendor/underscore-min.js"></script>
+  <script src="../assets/js/vendor/state-machine.min.js"></script>
+  <script src="../assets/js/vendor/jquery-1.8.2.min.js"></script>
 
-  <script src="../js/util.js"></script>
-  <script src="../js/domain.js"></script>
-  <script src="../js/gameevent.js"></script>
-  <script src="../js/gameinstance.js"></script>
+  <script src="../assets/js/util.js"></script>
+  <script src="../assets/js/domain.js"></script>
+  <script src="../assets/js/gameevent.js"></script>
+  <script src="../assets/js/item.js"></script>
+  <script src="../assets/js/skill.js"></script>
+  <script src="../assets/js/gameinstance.js"></script>
   <script>
     // Scaffolding
     function rollHero(id) {
@@ -62,6 +64,7 @@
   </script>
   <script>
   test( "gameOverDefault()", function() {
+  
     var instance = generateInstance();
         
     // everyone's alive, so not game over.

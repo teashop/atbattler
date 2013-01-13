@@ -19,7 +19,7 @@ atb.stage = {};
  */
 atb.img = {
   // path to image assets; defaults to './img/'
-  path: 'img/',
+  path: 'assets/img/',
 
   type: {
     'hero': 0, // hero spritesheets
