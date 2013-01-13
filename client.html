@@ -27,9 +27,8 @@
 
   <!-- EaselJS setup -->
   <script type="text/javascript">
-    var FPS = 60;
     var SECOND = 1000;  // a second is 1000ms
-    var msPerFrame = SECOND/FPS; // approximate
+    var msPerFrame = SECOND/atb.TARGET_FPS; // approximate
     var HERO_BASE_X = 150;
     var HERO_BASE_Y = 150;
     var HERO_SPACE_X = 15;
@@ -85,7 +84,7 @@
       atb.stage.addChild(backdrop);
 
       // add elapsed time counter to stage
-      elapsedLabel = new createjs.Text("0s","bold 14px Arial","#FFF");
+      elapsedLabel = new createjs.Text("0.0s","bold 14px Arial","#FFF");
       atb.stage.addChild(elapsedLabel);
       elapsedLabel.x = 10;
       elapsedLabel.y = 10;
@@ -115,16 +114,17 @@
     }
 
     // the view's game loop
-    function tick() {
+    function tick(timeElapsed) {
       //fpsLabel.text = Math.round(createjs.Ticker.getMeasuredFPS())+" fps";
-      var toUpdate = gameClient.update();
+      var speedFactor = atb.BASE_SPEED_FACTOR / timeElapsed;
+      var toUpdate = gameClient.update(speedFactor);
       if (toUpdate && toUpdate.length > 0) {
         // _.each(toUpdate, updateHero);
         for (var i = 0, len = toUpdate.length; i < len; i++) {
           updateHero(toUpdate[i]);
         }
       }
-      elapsedLabel.text = counter + "s";
+      elapsedLabel.text = counter.toFixed(1) + "s";
       atb.anim.runCustomUpdates();
       atb.stage.update();
     }
@@ -158,7 +158,7 @@
     }
     /* Selected Menu Item pointer */
     .menu-pane li.selected:before {
-      content: url('img/pointer.png');
+      content: url('assets/img/pointer.png');
       left: -18px;
       top: 2px;
       z-index: 1000;
@@ -878,10 +878,10 @@
                 atb.showStatusMessage(msg);
                 var furtherDelay = 0;
                 if (createjs.Tween.hasActiveTweens()) {
-                  furtherDelay = 1000;
+                  furtherDelay = SECOND;
                 }
                 _.delay(function() { createjs.Ticker.setPaused(true); }, furtherDelay); 
-              }, 1000);
+              }, SECOND);
 
             break;
           case 'clientSetupCompleteEvent':
@@ -914,7 +914,7 @@
             preload.loadManifest(manifest);
             break;
           case 'clientGameStartEvent':
-            createjs.Ticker.setFPS(FPS);
+            createjs.Ticker.setFPS(atb.TARGET_FPS);
             createjs.Ticker.useRAF = true;
             createjs.Ticker.addListener(window);
             $('#pause').show();

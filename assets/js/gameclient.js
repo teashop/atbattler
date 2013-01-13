@@ -65,7 +65,7 @@ GC.resume = function() {
 
 // TODO: should this even be here?
 // to be called by the view's game loop
-GC.update = function() {
+GC.update = function(speedFactor) {
   // client-side 'smooth gauge'.  Use client speed values to
   // extrapolate gauge, subject to server-sync.
   if (!this.isGameOver) {
@@ -74,7 +74,7 @@ GC.update = function() {
           // TODO: the 180 should be drawn from something tied to the 
           // clock speed of the server - maybe this can be part of the 
           // setup prcoess.
-          curHero.turnGauge += curHero.attributes.speed / 180.00;
+          curHero.turnGauge += curHero.attributes.speed / speedFactor;
           if (curHero.turnGauge >= 100) {
             curHero.turnGauge = 100.00;
           }

@@ -9,6 +9,9 @@ var atb = atb || {};
  */
 atb.HERO_BASE_SCALE = 3;
 
+atb.TARGET_FPS = 60;
+atb.BASE_SPEED_FACTOR = 100.00 * 30.00;
+
 
 // The easeljs stage. MUST be set otherwise none of the animations will work.
 atb.stage = {};
