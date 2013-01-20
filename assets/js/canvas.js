@@ -562,6 +562,9 @@ atb.anim.adjustChannels = function(target, duration, r, g, b, a) {
     }, duration, target);
 }
 
+/**
+ * Simulates a screen flash with an alpha-adjusted solid-fill shape.
+ */
 atb.anim.flashScreen = function(colour, duration, intensity) {
   var flashScreen = new createjs.Shape();
   flashScreen.graphics.beginFill(colour).drawRect(0, 0, atb.stage.canvas.width, atb.stage.canvas.height).endFill();
@@ -572,6 +575,23 @@ atb.anim.flashScreen = function(colour, duration, intensity) {
     .to({alpha: intensity}, duration/2,  createjs.Ease.cubicOut)
     .to({alpha: 0}, duration/2,  createjs.Ease.cubicIn)
     .call(function() { atb.stage.removeChild(flashScreen); });
+}
+
+/**
+ * Animation of a hero taking an action
+ */
+atb.anim.heroAction = function(target, reverse, origX, origY) {
+  var walkAnim = reverse ? "walk_r" : "walk_l";
+  var idleAnim = reverse ? "idle_l" : "idle_r";
+  var dir = reverse ? -1 : 1;
+
+  createjs.Tween.get(target, {loop:false})
+    .to({x: origX+20*dir, y: origY-20}, 100)
+    .to({x: origX+30*dir, y: origY}, 100)
+    .wait(200)
+    .call(target.gotoAndPlay, [walkAnim])
+    .to({x: origX, y: origY}, 100)
+    .call(target.gotoAndPlay, [idleAnim]);
 }
 
 

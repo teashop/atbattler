@@ -473,6 +473,11 @@
 
       function showSkillResult(action) {
         var target =  gameClient.heroes[action.target];
+        var actor = gameClient.heroes[action.by];
+        var isActorReverse = actor.player != gameClient.me;
+
+        var actorSprite = heroIdToSprite[actor.id];
+        atb.anim.heroAction(actorSprite, isActorReverse, actorSprite.origX, actorSprite.origY);
 
         // play the skill animation
         var skill = atb.Skill.get(action.skillId);
