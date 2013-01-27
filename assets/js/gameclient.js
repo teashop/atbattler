@@ -9,7 +9,7 @@ function GameClient(myId, emitterCallback) {
   this.eventsIn = new EventQueue(this['processEvent'].bind(this));
   this.emitterCallback = emitterCallback || function(){};
 
-  this.msgFactory = GameEvent.getFactory(myId);
+  this.msgFactory = atb.GameEvent.getFactory(myId);
 }
 
 var GC = GameClient.prototype;
@@ -45,7 +45,7 @@ GC.setup = function(gameState) {
   this.emitterCallback('clientSetupCompleteEvent');
 }
 GC.ready = function() {
-  this.sendToServer(this.msgFactory.create(GameEvent.type.player_ready));
+  this.sendToServer(this.msgFactory.create(atb.GameEvent.type.player_ready));
 }
 
 GC.start = function() {
@@ -99,19 +99,19 @@ GC.processEvent = function() {
     return;
   }
   switch (theEvent.type) {
-    case GameEvent.type.game_setup_state:
+    case atb.GameEvent.type.game_setup_state:
       this.setup(args);
       break;
-    case GameEvent.type.game_start:
+    case atb.GameEvent.type.game_start:
       this.start();
       break;
-    case GameEvent.type.game_pause:
+    case atb.GameEvent.type.game_pause:
       this.pause();
       break;
-    case GameEvent.type.game_resume:
+    case atb.GameEvent.type.game_resume:
       this.resume();
       break;
-    case GameEvent.type.heroes_sync:
+    case atb.GameEvent.type.heroes_sync:
       // sync player/hero timing. Use as sanity check for gauge.
       // FIXME: for 'smooth' behaviour, only override with sync value
       // if current value is *really* out of whack (+/- 15% )
@@ -127,7 +127,7 @@ GC.processEvent = function() {
       }
       this.emitterCallback('clientSyncHeroEvent', theHero);
       break;
-    case GameEvent.type.heroes_ready:
+    case atb.GameEvent.type.heroes_ready:
       var readyHeroes = args;
       for (var i = 0; i < readyHeroes.length; i++) {
         var theHero = this.heroes[readyHeroes[i]];
@@ -136,7 +136,7 @@ GC.processEvent = function() {
         this.emitterCallback('clientHeroUpdateEvent', theHero);
       }
       break;
-    case GameEvent.type.heroes_dead:
+    case atb.GameEvent.type.heroes_dead:
       var deadHeroes = args;
       for (var i = 0; i < deadHeroes.length; i++) {
         var theHero = this.heroes[deadHeroes[i]];
@@ -149,7 +149,7 @@ GC.processEvent = function() {
         this.emitterCallback('clientHeroDeadEvent', theHero);
       }
       break;
-    case GameEvent.type.heroes_action:
+    case atb.GameEvent.type.heroes_action:
       // execute action
       var action = args;
       var source = this.heroes[action.by];
@@ -234,7 +234,7 @@ GC.processEvent = function() {
           break;
       }
       break;
-    case GameEvent.type.heroes_invalid_action:
+    case atb.GameEvent.type.heroes_invalid_action:
       // action was invalidated; turn consumed.
       var source = this.heroes[args.by];
       var skill = atb.Skill.get(args.skillId);
@@ -242,13 +242,13 @@ GC.processEvent = function() {
       this.log(msg);
       this.emitterCallback('clientResetHeroEvent', source);
       break;
-    case GameEvent.type.player_action:
-    case GameEvent.type.player_request_pause:
-    case GameEvent.type.player_request_resume:
+    case atb.GameEvent.type.player_action:
+    case atb.GameEvent.type.player_request_pause:
+    case atb.GameEvent.type.player_request_resume:
       // send to server
       this.sendToServer(theEvent);
       break;
-    case GameEvent.type.game_over:
+    case atb.GameEvent.type.game_over:
       this.gameOver(args);
       break;
     default:
@@ -278,11 +278,11 @@ GC.sendToServer = function(theEvent) {
 }
 
 GC.requestPause = function() {
-  this.queueEvent(GameEvent.type.player_request_pause);
+  this.queueEvent(atb.GameEvent.type.player_request_pause);
 }
 
 GC.requestResume = function() {
-  this.queueEvent(GameEvent.type.player_request_resume);
+  this.queueEvent(atb.GameEvent.type.player_request_resume);
 }
 
 GC.gameOver = function(theWinner) {
@@ -331,13 +331,13 @@ CPUGC.processEvent = function() {
   var theEvent = this.eventsIn.shift();
   var args = theEvent.content;
   switch (theEvent.type) {
-    case GameEvent.type.game_setup_state:
+    case atb.GameEvent.type.game_setup_state:
       console.log('CPU Player[' + this.myId + '] setting up state...');
       this.setup(args);
       console.log('CPU Player[' + this.myId + '] is ready!');
       this.ready();
       break;
-    case GameEvent.type.heroes_ready:
+    case atb.GameEvent.type.heroes_ready:
       var readyHeroes = args;
       var myReadyHeroes = [];
       for (var i = 0; i < readyHeroes.length; i++) {
@@ -360,10 +360,10 @@ CPUGC.processEvent = function() {
           console.log('CPU Player[' + this.myId + '] ERROR! Could not identify any valid targets. Hero dump follows:');
           console.dir(enemyHeroes);
         }
-        this.sendToServer(this.msgFactory.create(GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: myReadyHeroes[i].id, target: target.id}));
+        this.sendToServer(this.msgFactory.create(atb.GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: myReadyHeroes[i].id, target: target.id}));
       }
       break;
-    case GameEvent.type.heroes_action:
+    case atb.GameEvent.type.heroes_action:
       // TODO: for now, we only care about actions that rez heroes.
       var source = this.heroes[args.by];
       var target = this.heroes[args.target];
@@ -382,7 +382,7 @@ CPUGC.processEvent = function() {
           break;
       }
       break;
-    case GameEvent.type.heroes_dead:                                                  var deadHeroes = args;
+    case atb.GameEvent.type.heroes_dead:                                                  var deadHeroes = args;
       for (var i = 0; i < deadHeroes.length; i++) {
         var theHero = this.heroes[deadHeroes[i]];
         theHero.statuses.dead = true;

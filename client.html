@@ -595,15 +595,15 @@
         if (skill) {
           switch (skillId) {
             case atb.Skill.ATTACK:
-              gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: hero.id, target: target.id});
+              gameClient.queueEvent(atb.GameEvent.type.player_action, {skillId: atb.Skill.ATTACK, by: hero.id, target: target.id});
               break;
             case atb.Skill.ITEM:
               // Item takes the Item ID as an argument
               var itemId = actionArgs;
-              gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.ITEM, objectId: itemId, by: hero.id, target: target.id});
+              gameClient.queueEvent(atb.GameEvent.type.player_action, {skillId: atb.Skill.ITEM, objectId: itemId, by: hero.id, target: target.id});
               break;
             default:
-              gameClient.queueEvent(GameEvent.type.player_action, {skillId: skillId, by: hero.id, target: target.id});
+              gameClient.queueEvent(atb.GameEvent.type.player_action, {skillId: skillId, by: hero.id, target: target.id});
               break;
           }
         } else {
@@ -628,7 +628,7 @@
             openItemMenu(hero, activeMenu);
             break;
           case atb.Skill.DEFEND:
-            gameClient.queueEvent(GameEvent.type.player_action, {skillId: atb.Skill.DEFEND, by: hero.id});
+            gameClient.queueEvent(atb.GameEvent.type.player_action, {skillId: atb.Skill.DEFEND, by: hero.id});
             var menuToClose = commandCarousel.getPaneInFocus().data('menu'); 
             menuToClose.cascadeClose();
             break;

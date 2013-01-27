@@ -25,7 +25,7 @@ var atb = atb || {};
     return false;
   }
 
-  // dispatches based on GameEvent type.
+  // dispatches based on atb.GameEvent type.
   exports.GameInstanceDispatcher = {
       methods: {},
 
@@ -35,31 +35,31 @@ var atb = atb || {};
   };
   var GIDM = exports.GameInstanceDispatcher.methods;
 
-  GIDM[GameEvent.type.game_tick] = function(from, args) {
+  GIDM[atb.GameEvent.type.game_tick] = function(from, args) {
     // update real-tick-based stuff
     this.doTickUpkeep();
   }
-  GIDM[GameEvent.type.game_duration_tick] = function(from, args) {
+  GIDM[atb.GameEvent.type.game_duration_tick] = function(from, args) {
     // update duration-based stuff.  Filter out completed events.
   //     this.durationEventTracker = this.durationEventTracker.filter(this.updateDurationEvent(theEvent));
     var sync = _.map(this.heroes, function(theHero) {
       return [theHero.id, theHero.turnGauge];
     });
-    this.queueOutbound(GameEvent.type.heroes_sync, sync);
+    this.queueOutbound(atb.GameEvent.type.heroes_sync, sync);
   }
-  GIDM[GameEvent.type.player_action] = function(from, args) {
+  GIDM[atb.GameEvent.type.player_action] = function(from, args) {
     // execute action
     this.executeAction(args);
   }
-  GIDM[GameEvent.type.player_request_pause] = function(from, args) {
+  GIDM[atb.GameEvent.type.player_request_pause] = function(from, args) {
     // FIXME: blind pause, no consensus required
     this.fsm.triggerPause();
   }
-  GIDM[GameEvent.type.player_request_resume] = function(from, args) {
+  GIDM[atb.GameEvent.type.player_request_resume] = function(from, args) {
     // FIXME: blind resume, no consensus required
     this.fsm.triggerResume();
   }
-  GIDM[GameEvent.type.player_ready] = function(from, args) {
+  GIDM[atb.GameEvent.type.player_ready] = function(from, args) {
     // FIXME: need to id msgs with a proper 'sender', which would be inherent from the receiving communication
     // for now, any 'ready' message starts the game.
     console.log('GI: player_ready received from Player [' + from + '].');
@@ -109,7 +109,7 @@ var atb = atb || {};
     this.eventsOut = new EventQueue(this['processOutbound'].bind(this));
 
     // Msg Factory
-    this.msgFactory = GameEvent.getFactory('GI'); // FIXME (instance ID)
+    this.msgFactory = atb.GameEvent.getFactory('GI'); // FIXME (instance ID)
 
     // Speed factor based on game clock tick size
     this.speedFactor = atb.SPEED_FACTOR / this.clock.tickSize;
@@ -174,14 +174,14 @@ var atb = atb || {};
     // TODO: deal with possibility of timeouts
     this.registerReadyPlayer = _.after(this.players.length, this.fsm.triggerAllReady);
     // Push state to players.
-    this.queueOutbound(GameEvent.type.game_setup_state, JSON.stringify(this.players));
+    this.queueOutbound(atb.GameEvent.type.game_setup_state, JSON.stringify(this.players));
   }
 
   // start game when all players are ready
   GI.ontriggerAllReady = function() {
     console.log('GI: All Players ready, starting game NOW!');
     this.start();
-    this.queueOutbound(GameEvent.type.game_start);
+    this.queueOutbound(atb.GameEvent.type.game_start);
     }
 
   GI.onpaused = function() {
@@ -192,7 +192,7 @@ var atb = atb || {};
     // any pending events are buffered (stashed) as leaving them in the queue
     // would cause them to be dropped when the game is paused.
     this.eventsIn.stash();
-    this.queueOutbound(GameEvent.type.game_pause);
+    this.queueOutbound(atb.GameEvent.type.game_pause);
   }
   GI.ontriggerResume = function() {
     console.log('GI: Game is resumed.');
@@ -200,14 +200,14 @@ var atb = atb || {};
     this.dispatch = this.dispatchInbound;
     this.eventsIn.flush();
     this.start();
-    this.queueOutbound(GameEvent.type.game_resume);
+    this.queueOutbound(atb.GameEvent.type.game_resume);
   }
 
   GI.ongameOver = function(evt, from, to, winner) {
     this.stop();
     this.isGameOver = true;
     this.eventsIn.clear();
-    this.queueOutbound(GameEvent.type.game_over, winner ? winner : '');
+    this.queueOutbound(atb.GameEvent.type.game_over, winner ? winner : '');
     $(this.clock).off('tick');
     $(this.durationClock).off('tick');
   }
@@ -224,10 +224,10 @@ var atb = atb || {};
     this.durationClock.stop();
   }
   GI.onTick = function() {
-    this.queueInbound(GameEvent.type.game_tick);
+    this.queueInbound(atb.GameEvent.type.game_tick);
   }
   GI.onDurationTick = function() {
-    this.queueInbound(GameEvent.type.game_duration_tick);
+    this.queueInbound(atb.GameEvent.type.game_duration_tick);
   }
   // TODO: this is a hack to allow local comms from client.
   GI.queueAction = function(action) {
@@ -242,7 +242,7 @@ var atb = atb || {};
   // The only Event that will be dispatched are 'resume' events.
   // TODO: expand this to other 'game control messages' (e.g. quit)
   GI.filterInbound = function(theEvent) {
-    if (theEvent.type == GameEvent.type.player_request_resume) {
+    if (theEvent.type == atb.GameEvent.type.player_request_resume) {
       this.dispatchInbound(theEvent);
     } else {
       console.log('GI: filtering inbound events, dropping: ' + theEvent.type);
@@ -306,7 +306,7 @@ var atb = atb || {};
       case atb.Skill.ATTACK:
         if (target.statuses.dead) {
           // reject attacks on dead people.
-          this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
+          this.bufferOutbound(atb.GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
         } else {
           var dmg = actor.attributes.attack * (_.random(95, 105)/100); //5% variance for now.
           // 5% crit chance for now
@@ -317,11 +317,11 @@ var atb = atb || {};
           dmg = Math.round(dmg);
           var overkill = 0;
           target.attributes.hp -= dmg;
-          this.bufferOutbound(GameEvent.type.heroes_action, {skillId: skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
+          this.bufferOutbound(atb.GameEvent.type.heroes_action, {skillId: skillId, by: actor.id, target: target.id, amount: dmg, isCrit: isCrit});
           if (target.attributes.hp <= 0) {
             overkill = -(target.attributes.hp);
             this.killHero(target);
-            this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
+            this.bufferOutbound(atb.GameEvent.type.heroes_dead, [target.id]);
           }
         }
         break;
@@ -342,7 +342,7 @@ var atb = atb || {};
         }
         // non rezzing items can't be used on dead targets
         if (!isRez && target.statuses.dead) {
-          this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
+          this.bufferOutbound(atb.GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
           break;
         }
         var attr = atb.Item[itemId][atb.Item.field.attr]; 
@@ -364,11 +364,11 @@ var atb = atb || {};
         if (isRez) {
           itemEffects.isRez = true;
         }
-        this.bufferOutbound(GameEvent.type.heroes_action, itemEffects);
+        this.bufferOutbound(atb.GameEvent.type.heroes_action, itemEffects);
         break;
       case atb.Skill.DEFEND:
         // FIXME: Defend = skip a turn for now :)
-        this.bufferOutbound(GameEvent.type.heroes_action, {skillId: skillId, by: actor.id});
+        this.bufferOutbound(atb.GameEvent.type.heroes_action, {skillId: skillId, by: actor.id});
         break;
       default:
         // FIXME generically to dealing with 'everything else'
@@ -377,7 +377,7 @@ var atb = atb || {};
           // into a proper 'engine'.
           if (!skill.meetsPrereq(actor, target)) {
             // reject attacks on dead people or if insufficient SP
-            this.bufferOutbound(GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
+            this.bufferOutbound(atb.GameEvent.type.heroes_invalid_action, {skillId: skillId, by: actor.id, target: target.id});
           } else {
             var dmg = actor.attributes.attack * (_.random(120, 150)/100); //1.35x multiplier, with 0.15 variance 
             // 5% crit chance for now
@@ -397,11 +397,11 @@ var atb = atb || {};
             if (skillCost.sp > 0) {
               skillEffect.cost = skillCost.sp;
             }
-            this.bufferOutbound(GameEvent.type.heroes_action, skillEffect);
+            this.bufferOutbound(atb.GameEvent.type.heroes_action, skillEffect);
             if (target.attributes.hp <= 0) {
               overkill = -(target.attributes.hp);
               this.killHero(target);
-              this.bufferOutbound(GameEvent.type.heroes_dead, [target.id]);
+              this.bufferOutbound(atb.GameEvent.type.heroes_dead, [target.id]);
             }
           }
         break;
@@ -470,7 +470,7 @@ var atb = atb || {};
     // broadcast new ready heroes to clients
     // TODO
     if(newlyReady.length > 0) {
-      this.queueOutbound(GameEvent.type.heroes_ready, _.pluck(newlyReady, 'id'));
+      this.queueOutbound(atb.GameEvent.type.heroes_ready, _.pluck(newlyReady, 'id'));
     }
   }
 
