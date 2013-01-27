@@ -28,15 +28,15 @@
          hp: theHp,
          maxHp: theHp
       };
-      return new Hero(id, name, attributes);
+      return new atb.Hero(id, name, attributes);
     }
 
     function generateInstance() {
       var ctr = 1;
       // player 1, id=1
-      var player1 = new Player(1, 'player1');
+      var player1 = new atb.Player(1, 'player1');
       // heroes 1-4 belong to player1
-      var party1 = new Party(1, 4);
+      var party1 = new atb.Party(1, 4);
       party1.setHero(rollHero(ctr++));
       party1.setHero(rollHero(ctr++));
       party1.setHero(rollHero(ctr++));
@@ -44,9 +44,9 @@
       player1.setParty(party1);
 
       // player 2, id=2
-      var player2 = new Player(2, 'player2');
+      var player2 = new atb.Player(2, 'player2');
       // heroes 5-8 belong to player2
-      var party2 = new Party(2, 4);
+      var party2 = new atb.Party(2, 4);
       party2.setHero(rollHero(ctr++));
       party2.setHero(rollHero(ctr++));
       party2.setHero(rollHero(ctr++));
@@ -57,7 +57,7 @@
       var clock = new Clock(33);
 
       // create brand new instance.
-      var instance = new GameInstance(clock);
+      var instance = new atb.GameInstance(clock);
       instance.addPlayers(player1, player2);
       return instance;
     }
@@ -68,24 +68,24 @@
     var instance = generateInstance();
         
     // everyone's alive, so not game over.
-    ok( !gameOverDefault(instance), "No hero is dead yet" );
+    ok( !atb.gameOverDefault(instance), "No hero is dead yet" );
 
     // kill off hero 1
     instance.heroes[1].statuses.dead = true;
     // still not game over
-    ok( !gameOverDefault(instance), "hero1 is dead, but other party members live" );
+    ok( !atb.gameOverDefault(instance), "hero1 is dead, but other party members live" );
 
     // kill off the rest of the party
     instance.heroes[2].statuses.dead = true;
     instance.heroes[3].statuses.dead = true;
     instance.heroes[4].statuses.dead = true;
     // game over, player2 (ID = 2) wins
-    equal( gameOverDefault(instance).id, 2, "player1's party is dead, player2 wins!" );
+    equal( atb.gameOverDefault(instance).id, 2, "player1's party is dead, player2 wins!" );
 
     // revive hero 1
     instance.heroes[1].statuses.dead = false;
     // not game over anymore!
-    ok( !gameOverDefault(instance), "hero1 revived, game's not over!" );
+    ok( !atb.gameOverDefault(instance), "hero1 revived, game's not over!" );
   });
   </script>
 </body>
