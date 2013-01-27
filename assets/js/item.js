@@ -1,4 +1,5 @@
 /** Items and Item Database **/
+var atb = atb || {};
 
 (function(exports) {
   exports.Item = [
@@ -20,5 +21,4 @@
   }
 
 })((typeof process === 'undefined' || !process.versions)
-  ? atb = atb || {}
-  : exports);
+  ? atb : exports);

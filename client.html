@@ -1094,15 +1094,15 @@
       var clock = new Clock(msPerFrame);
       var gameInstance = new GameInstance(clock);
       // *YOU
-      var player = new Player(1, 'You');
-      var party = new Party(1, 4);
+      var player = new atb.Player(1, 'You');
+      var party = new atb.Party(1, 4);
 
       // FIXME: should have a consolidated hero generator/persistence.
       var genHeroes= [];
-      genHeroes.push(rollPlayerHero(1, 'Jergens'));
-      genHeroes.push(rollPlayerHero(2, 'Milton'));
-      genHeroes.push(rollPlayerHero(3, 'Haruka'));
-      genHeroes.push(rollPlayerHero(4, 'Leena'));
+      genHeroes.push(atb.rollPlayerHero(1, 'Jergens'));
+      genHeroes.push(atb.rollPlayerHero(2, 'Milton'));
+      genHeroes.push(atb.rollPlayerHero(3, 'Haruka'));
+      genHeroes.push(atb.rollPlayerHero(4, 'Leena'));
       // sprites for heroes
       genHeroes[0].img = [1, 3];
       genHeroes[1].img = [1, 0];
@@ -1119,13 +1119,13 @@
       };
 
       // *OPPONENT
-      var enemy = new Player(2, 'Enemy');
-      var enemyParty = new Party(1, 4);
-      enemyParty.setHero(rollCpuHero(100, 'Teh Badguy'));
+      var enemy = new atb.Player(2, 'Enemy');
+      var enemyParty = new atb.Party(1, 4);
+      enemyParty.setHero(atb.rollCpuHero(100, 'Teh Badguy'));
       enemyParty.heroes[0].img = [2, 2];
-      enemyParty.setHero(rollCpuHero(200, 'Wagglerstein'));
+      enemyParty.setHero(atb.rollCpuHero(200, 'Wagglerstein'));
       enemyParty.heroes[1].img = [2, 0];
-      enemyParty.setHero(rollPlayerHero(201, 'Shopgirl 10K'));
+      enemyParty.setHero(atb.rollPlayerHero(201, 'Shopgirl 10K'));
       enemyParty.heroes[2].img = [2, 7];
       enemy.setParty(enemyParty);
       enemy.sendMessage = function(message) {

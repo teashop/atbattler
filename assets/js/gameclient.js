@@ -26,10 +26,10 @@ GC.setup = function(gameState) {
     // empty instance of the Domain Player class.
     var rawPlayer = gameStatePlayers[i];
     // this is ugly as sin.
-    var playerToAdd = new Player(rawPlayer.id, rawPlayer.name);
-    var party = new Party(rawPlayer.party.id, rawPlayer.party.maxSize);
+    var playerToAdd = new atb.Player(rawPlayer.id, rawPlayer.name);
+    var party = new atb.Party(rawPlayer.party.id, rawPlayer.party.maxSize);
     _.each(rawPlayer.party.heroes, function(rawHero) {
-        party.setHero(_.extend(new Hero(), rawHero));
+        party.setHero(_.extend(new atb.Hero(), rawHero));
         });
     playerToAdd.setParty(party);
     this.addPlayers(playerToAdd);
