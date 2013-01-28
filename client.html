@@ -37,6 +37,7 @@
 
     var manifest = null; // FIXME: don't like this being global...
     var backdrop;
+    var infoLabel;
     var runningRate = 2.5;
     var w, h;
     var counter = 0;  // duration of game (temp)
@@ -78,16 +79,17 @@
       bgImage.src = manifest[0];
 
       // Add backdrop to the stage (stretch to fit)
-      backdrop =  new createjs.Shape(new createjs.Graphics().beginBitmapFill(bgImage, 'no-repeat').drawRect(0,0,bgImage.width,bgImage.height));
+      backdrop =  new createjs.Bitmap(bgImage);
       backdrop.scaleX = Math.ceil(w/bgImage.width);
       backdrop.scaleY = Math.ceil(h/bgImage.height);
       atb.stage.addChild(backdrop);
 
-      // add elapsed time counter to stage
-      elapsedLabel = new createjs.Text("0.0s","bold 14px Arial","#FFF");
-      atb.stage.addChild(elapsedLabel);
-      elapsedLabel.x = 10;
-      elapsedLabel.y = 10;
+      // add FPS counter to stage
+      infoLabel = new createjs.Text("0.0 fps","bold 14px Arial","#FFF");
+      infoLabel.textAlign = 'right';
+      atb.stage.addChild(infoLabel);
+      infoLabel.x = w-10;
+      infoLabel.y = 10;
 
       // player sprites 
       var playerParty = gameClient.me.party;
@@ -115,7 +117,7 @@
 
     // the view's game loop
     function tick(timeElapsed) {
-      //fpsLabel.text = Math.round(createjs.Ticker.getMeasuredFPS())+" fps";
+      infoLabel.text = Math.round(createjs.Ticker.getMeasuredFPS())+" fps";
       var speedFactor = atb.BASE_SPEED_FACTOR / timeElapsed;
       var toUpdate = gameClient.update(speedFactor);
       if (toUpdate && toUpdate.length > 0) {
@@ -124,7 +126,7 @@
           updateHero(toUpdate[i]);
         }
       }
-      elapsedLabel.text = counter.toFixed(1) + "s";
+//      infoLabel.text = counter.toFixed(1) + "s";
       atb.anim.runCustomUpdates();
       atb.stage.update();
     }
