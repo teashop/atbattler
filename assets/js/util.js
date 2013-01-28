@@ -1,4 +1,9 @@
 var atb = atb || {};
+var _ = _ || {};
+
+if (typeof require !== 'undefined') {
+  _ = require('underscore');
+}
 
 (function(exports) {
 

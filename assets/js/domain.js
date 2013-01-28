@@ -1,9 +1,15 @@
 /** === DOMAIN === **/
 var atb = atb || {};
+var _ = _ || {};
+
+// node portability
+if (typeof require !== 'undefined') {
+  _ = require('underscore');
+}
 
 (function(exports) {
 
-  atb.rollPlayerHero = function(id, name) {
+  exports.rollPlayerHero = function(id, name) {
     var theHp =  _.random(1000, 1300);
     var theSp =  _.random(100, 300);
     var attributes = {
@@ -16,7 +22,7 @@ var atb = atb || {};
     };
     return new exports.Hero(id, name, attributes);
   }
-  atb.rollCpuHero = function(id, name) {
+  exports.rollCpuHero = function(id, name) {
     var theHp = _.random(1200, 1700);
     var theSp =  _.random(300, 500);
     var attributes = {

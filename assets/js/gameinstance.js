@@ -1,4 +1,20 @@
 var atb = atb || {};
+var StateMachine = StateMachine || {};
+var _ = _ || {};
+var async = async || {};
+
+if (typeof require !== 'undefined') { 
+  var atbGameEvent = require('./gameevent'); 
+  var atbUtil = require('./util'); 
+
+  atb.GameEvent = atbGameEvent.GameEvent;
+  atb.EventQueue = atbUtil.EventQueue;
+  atb.Clock = atbUtil.Clock;
+
+  StateMachine = require('./vendor/state-machine.min.js').StateMachine;
+  _ = require('underscore');
+  async = require('async');
+}
 
 (function(exports) {
 
