@@ -13,12 +13,12 @@
 
   <script src="../assets/js/util.js"></script>
   <script>
-  test( "EventQueue - basic success cases", function() {
+  test( "atb.EventQueue - basic success cases", function() {
     var numElements = 0;
     function cb(num) {
       numElements = num;
     }
-    var eq = new EventQueue(cb);
+    var eq = new atb.EventQueue(cb);
         
     // is empty
     equal( eq.length(), 0, "Queue is empty" );
@@ -45,12 +45,12 @@
 
   });
 
-  test( "EventQueue - the buffer", function() {
+  test( "atb.EventQueue - the buffer", function() {
     var numElements = 0;
     function cb(num) {
       numElements = num;
     }
-    var eq = new EventQueue(cb);
+    var eq = new atb.EventQueue(cb);
 
     // add some stuff to the buffer
     eq.buffer('1', '2', '3');
@@ -99,12 +99,12 @@
 
   });
 
-  test( "EventQueue - error cases", function() {
+  test( "atb.EventQueue - error cases", function() {
     var theEx = null;
 
     // callback is a required parameter 
     try {
-      var eq = new EventQueue();
+      var eq = new atb.EventQueue();
       eq.push('1');
     } catch (exception) {
       theEx = exception;
@@ -115,7 +115,7 @@
     function cb(num) {
       numElements = num;
     }
-    var eq = new EventQueue(cb);
+    var eq = new atb.EventQueue(cb);
 
     // shift on empty queue
     var result = eq.shift();
@@ -127,8 +127,8 @@
     ok( result.length == 0, "the result should be empty []");
   });
 
-  asyncTest("Clock - regular ticks", 1, function() {
-    var clock = new Clock(100);
+  asyncTest("atb.Clock - regular ticks", 1, function() {
+    var clock = new atb.Clock(100);
     var ticks = 0;
     function countTicks() {
       ticks++;
@@ -142,8 +142,8 @@
       }, 550);
   });
 
-  asyncTest("Clock - start()/stop()", 1, function() {
-    var clock = new Clock(200);
+  asyncTest("atb.Clock - start()/stop()", 1, function() {
+    var clock = new atb.Clock(200);
     var ticks = 0;
     function countTicks() {
       ticks++;
@@ -157,8 +157,8 @@
       }, 300);
   });
 
-  asyncTest("Clock - pause", 1, function() {
-    var clock = new Clock(1000);
+  asyncTest("atb.Clock - pause", 1, function() {
+    var clock = new atb.Clock(1000);
 
     clock.start();
     setTimeout(function() { 
