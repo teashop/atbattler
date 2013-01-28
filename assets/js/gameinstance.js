@@ -132,7 +132,7 @@ if (typeof require !== 'undefined') {
     this.msgFactory = atb.GameEvent.getFactory('GI'); // FIXME (instance ID)
 
     // Speed factor based on game clock tick size
-    this.speedFactor = atb.SPEED_FACTOR / this.clock.tickSize;
+    this.speedFactor = exports.SPEED_FACTOR / this.clock.tickSize;
 
     // duration based events to keep track of
     this.durationEventTracker = [];
