@@ -101,12 +101,12 @@ var atb = atb || {};
     this.clock = clock;
 
     // 'Real Clock' Duration clock (500ms ticks)
-    this.durationClock = new Clock(500);
+    this.durationClock = new atb.Clock(500);
 
     // Event Queues
-    this.eventsIn = new EventQueue(this['processInbound'].bind(this));
+    this.eventsIn = new atb.EventQueue(this['processInbound'].bind(this));
     this.dispatch = this['dispatchInbound'].bind(this);
-    this.eventsOut = new EventQueue(this['processOutbound'].bind(this));
+    this.eventsOut = new atb.EventQueue(this['processOutbound'].bind(this));
 
     // Msg Factory
     this.msgFactory = atb.GameEvent.getFactory('GI'); // FIXME (instance ID)

@@ -6,7 +6,7 @@ function GameClient(myId, emitterCallback) {
   this.me = null;
   this.enemy = null;
 
-  this.eventsIn = new EventQueue(this['processEvent'].bind(this));
+  this.eventsIn = new atb.EventQueue(this['processEvent'].bind(this));
   this.emitterCallback = emitterCallback || function(){};
 
   this.msgFactory = atb.GameEvent.getFactory(myId);
