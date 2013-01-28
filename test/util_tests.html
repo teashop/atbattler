@@ -133,7 +133,7 @@
     function countTicks() {
       ticks++;
     }
-    $(clock).on('tick', countTicks);
+    clock.onTick = countTicks;
     clock.start();
     setTimeout(function() { 
         clock.stop(); 
@@ -148,7 +148,7 @@
     function countTicks() {
       ticks++;
     }
-    $(clock).on('tick', countTicks);
+    clock.onTick = countTicks;
     clock.start();
     clock.stop(); 
     setTimeout(function() { 

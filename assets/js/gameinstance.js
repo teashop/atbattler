@@ -118,8 +118,8 @@ var atb = atb || {};
     this.durationEventTracker = [];
 
     // handlers
-    $(this.clock).on('tick', this['onTick'].bind(this));
-    $(this.durationClock).on('tick', this['onDurationTick'].bind(this));
+    this.clock.onTick = this['onTick'].bind(this);
+    this.durationClock.onTick = this['onDurationTick'].bind(this);
   }
 
   var GI = exports.GameInstance.prototype;
@@ -208,8 +208,6 @@ var atb = atb || {};
     this.isGameOver = true;
     this.eventsIn.clear();
     this.queueOutbound(atb.GameEvent.type.game_over, winner ? winner : '');
-    $(this.clock).off('tick');
-    $(this.durationClock).off('tick');
   }
 
   /**

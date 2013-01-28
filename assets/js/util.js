@@ -13,6 +13,7 @@ var atb = atb || {};
     this.timer = null;
     // prevents additional ticks after stop() is called
     this.stopNextTick = false;
+    this.onTick = function(){};
   }
 
   var C = Clock.prototype;
@@ -26,7 +27,7 @@ var atb = atb || {};
     var adjustment = this.getAdjustment((new Date()).getTime());
     // TODO: convert to Node event emit
     if (!this.stopNextTick) {
-      $(this).trigger('tick');
+      this.onTick();
       // start next tick
       this.start(adjustment);
     } else {
