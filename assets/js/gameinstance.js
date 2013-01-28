@@ -6,10 +6,14 @@ var async = async || {};
 if (typeof require !== 'undefined') { 
   var atbGameEvent = require('./gameevent'); 
   var atbUtil = require('./util'); 
+  var atbSkill = require('./skill');
+  var atbItem = require('./item');
 
   atb.GameEvent = atbGameEvent.GameEvent;
   atb.EventQueue = atbUtil.EventQueue;
   atb.Clock = atbUtil.Clock;
+  atb.Skill = atbSkill.Skill;
+  atb.Item = atbItem.Item;
 
   StateMachine = require('./vendor/state-machine.min.js').StateMachine;
   _ = require('underscore');
@@ -223,6 +227,7 @@ if (typeof require !== 'undefined') {
     this.stop();
     this.isGameOver = true;
     this.eventsIn.clear();
+    console.log('GI: Game Over! Winner: ' + (winner ? winner.name : '?'));
     this.queueOutbound(atb.GameEvent.type.game_over, winner ? winner : '');
   }
 

@@ -1135,8 +1135,10 @@
 
       gameInstance.addPlayers(player, enemy);
 
-      var gameClient = new GameClient(player.id, emitterCallback);
-      var cpuGameClient = new CpuGameClient(enemy.id);
+      var gameClient = new atb.GameClient(player.id, emitterCallback);
+      gameClient.gameInstance = gameInstance;
+      var cpuGameClient = new atb.CpuGameClient(enemy.id);
+      cpuGameClient.gameInstance = gameInstance;
       
       // Game instance initiates setup (Player Clients will need to
       // respond)
