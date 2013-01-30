@@ -14,6 +14,7 @@
   <script src="assets/js/vendor/easeljs/CSSPlugin.js"></script>
   <script src="assets/js/vendor/preloadjs-0.2.0.min.js"></script>
   <script src="assets/js/vendor/jquery.hotkeys-0.8.js"></script>
+  <script src="assets/js/vendor/sockjs-0.3.min.js"></script>
   <script src="assets/js/domain.js"></script>
   <script src="assets/js/util.js"></script>
   <script src="assets/js/durationevent.js"></script>
@@ -892,6 +893,7 @@
 
             break;
           case 'clientSetupCompleteEvent':
+            gameSetup();
             // based on heroes, load sprite assets
             var heroAssets = {};
             _.each(gameClient.heroes, function(curHero) {
@@ -1093,105 +1095,90 @@
       // ***** GAME SETUP *****
 
       // TODO: much of this should be 'server side'.
-      var clock = new atb.Clock(msPerFrame);
-      var gameInstance = new atb.GameInstance(clock);
-      // *YOU
-      var player = new atb.Player(1, 'You');
-      var party = new atb.Party(1, 4);
+//      var clock = new atb.Clock(msPerFrame);
+//      var gameInstance = new atb.GameInstance(clock);
 
-      // FIXME: should have a consolidated hero generator/persistence.
-      var genHeroes= [];
-      genHeroes.push(atb.rollPlayerHero(1, 'Jergens'));
-      genHeroes.push(atb.rollPlayerHero(2, 'Milton'));
-      genHeroes.push(atb.rollPlayerHero(3, 'Haruka'));
-      genHeroes.push(atb.rollPlayerHero(4, 'Leena'));
-      // sprites for heroes
-      genHeroes[0].img = [1, 3];
-      genHeroes[1].img = [1, 0];
-      genHeroes[2].img = [0, 4];
-      genHeroes[3].img = [1, 4];
+      // WEBSOCKET SETUP - TODO: abstract this properly
+      var myId = 1;
+      var gameClient = new atb.GameClient(myId, emitterCallback);
+      gameClient.gameInstance = {queueAction: function(theEvent) { sock.send(JSON.stringify(theEvent)); } };
 
-      for (var i=0; i<genHeroes.length; i++) {
-        party.setHero(genHeroes[i]);
-      }
-      player.setParty(party);
-      player.sendMessage = function(message) {
-//        console.log('Player got msg: ' + message);
-        gameClient.eventsIn.push(message);
-      };
+      var sockjs_url = 'http://localhost:8000/atb';
+      var sock = null;
 
-      // *OPPONENT
-      var enemy = new atb.Player(2, 'Enemy');
-      var enemyParty = new atb.Party(1, 4);
-      enemyParty.setHero(atb.rollCpuHero(100, 'Teh Badguy'));
-      enemyParty.heroes[0].img = [2, 2];
-      enemyParty.setHero(atb.rollCpuHero(200, 'Wagglerstein'));
-      enemyParty.heroes[1].img = [2, 0];
-      enemyParty.setHero(atb.rollPlayerHero(201, 'Shopgirl 10K'));
-      enemyParty.heroes[2].img = [2, 7];
-      enemy.setParty(enemyParty);
-      enemy.sendMessage = function(message) {
-//        console.log('CPU got msg: ' + message);
-        cpuGameClient.eventsIn.push(message);
+      function handleSockMessage(message) {
+        var data = message.data;
+//        console.log('Got new msg:', message.data);
+//        console.dir(data);
+        var gameEvent = JSON.parse(message.data);
+        gameClient.eventsIn.push(gameEvent);
       }
 
-      gameInstance.addPlayers(player, enemy);
+      // Create a new socket connection
+      function handleSockOpen() {
+        sock.send(myId);
+      }
 
-      var gameClient = new atb.GameClient(player.id, emitterCallback);
-      gameClient.gameInstance = gameInstance;
-      var cpuGameClient = new atb.CpuGameClient(enemy.id);
-      cpuGameClient.gameInstance = gameInstance;
-      
-      // Game instance initiates setup (Player Clients will need to
-      // respond)
-      gameInstance.setup();
+      function handleSockClose() {
+        console.log('Connection to the Server was closed');
+      }
 
-      // TODO: Command list needs to come down from server, separate instances
-      // for each Hero
-      var commands = [
-          atb.Skill.ATTACK,
-          null, 
-          atb.Skill.ITEM,
-          atb.Skill.DEFEND
-        ];
 
-      // TODO: this should be somewhere better 
-      for (var i = 0; i < gameClient.heroes.length; i++) {
-        var curHero = gameClient.heroes[i];
-        if (!curHero) { 
-          continue;
-        }
+      // Called when setup state msg received from server
+      function gameSetup() {
+        // TODO: Command list needs to come down from server, separate instances
+        // for each Hero
+        var commands = [
+            atb.Skill.ATTACK,
+            null, 
+            atb.Skill.ITEM,
+            atb.Skill.DEFEND
+          ];
 
-        // FIXME: hero command list - randomly assign a special skill
-        curHero.commands = _.clone(commands);
-        curHero.commands[1] = _.random(atb.Skill.SKILLS_START, atb.SkillData.length-1);
-        var isPlayer = curHero.player == gameClient.me;
-        var heroDomId = 'hero_'+ curHero.id;
-        var heroHp = curHero.attributes.hp;
-        var heroSp = curHero.attributes.sp;
-
-        var heroPane = isPlayer ? $("#party > tbody") : $("#enemy > tbody");
-        heroPane.append(heroRowTemplate({heroDomId: heroDomId, position: i, hero: curHero}));
-
-        heroRows[curHero.id] = $('#' + heroDomId);
-        var onUpdate = function(val, isPositive) {
-          var percent = val/this.attrMax;
-          var rgb = '#fff';
-          if (isPositive) {	
-            rgb = '#2e6';
-          } else {
-            if (percent < 0.3) {
-              rgb = 'rgb(255,'+ (Math.round(percent/0.2*215)+40) + ',0)';
-            } else if (percent < 0.6) {
-              rgb = 'rgb(255,255,' + Math.round((percent-0.3)/0.3*255)+')';
-            }
+        // TODO: this should be somewhere better 
+        for (var i = 0; i < gameClient.heroes.length; i++) {
+          var curHero = gameClient.heroes[i];
+          if (!curHero) { 
+            continue;
           }
-          this.holder.text(val);
-          this.holder.css('color', rgb);
-        };
-        hpIncrementers[curHero.id] = new atb.GradualIncrementer(heroHp, heroHp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), attrMax: curHero.attributes.maxHp }), 0.5);
-        spIncrementers[curHero.id] = new atb.GradualIncrementer(heroSp, heroSp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.sp'), attrMax: curHero.attributes.maxSp }), 0.5);
+
+          // FIXME: hero command list - randomly assign a special skill
+          curHero.commands = _.clone(commands);
+          curHero.commands[1] = _.random(atb.Skill.SKILLS_START, atb.SkillData.length-1);
+          var isPlayer = curHero.player == gameClient.me;
+          var heroDomId = 'hero_'+ curHero.id;
+          var heroHp = curHero.attributes.hp;
+          var heroSp = curHero.attributes.sp;
+
+          var heroPane = isPlayer ? $("#party > tbody") : $("#enemy > tbody");
+          heroPane.append(heroRowTemplate({heroDomId: heroDomId, position: i, hero: curHero}));
+
+          heroRows[curHero.id] = $('#' + heroDomId);
+          var onUpdate = function(val, isPositive) {
+            var percent = val/this.attrMax;
+            var rgb = '#fff';
+            if (isPositive) {	
+              rgb = '#2e6';
+            } else {
+              if (percent < 0.3) {
+                rgb = 'rgb(255,'+ (Math.round(percent/0.2*215)+40) + ',0)';
+              } else if (percent < 0.6) {
+                rgb = 'rgb(255,255,' + Math.round((percent-0.3)/0.3*255)+')';
+              }
+            }
+            this.holder.text(val);
+            this.holder.css('color', rgb);
+          };
+          hpIncrementers[curHero.id] = new atb.GradualIncrementer(heroHp, heroHp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.hp'), attrMax: curHero.attributes.maxHp }), 0.5);
+          spIncrementers[curHero.id] = new atb.GradualIncrementer(heroSp, heroSp, _.bind(onUpdate, { holder: heroRows[curHero.id].find('.sp'), attrMax: curHero.attributes.maxSp }), 0.5);
+        } // for
       }
+
+      // START GAME
+      sock = new SockJS(sockjs_url);
+      sock.onmessage = handleSockMessage;
+      sock.onopen = handleSockOpen;
+      sock.onclose = handleSockClose;
 
     </script>
   </div>
