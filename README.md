@@ -2,13 +2,29 @@
 
 An implementation of a mid-late 1990's "Active-Time Battle" engine, built with HTML5 Canvas and much Javascript.
 
+Currently, ATBattler can function as either a Node.js server/client app or as a pure-in-browser implementation with an emulated server.  
+
+In the pure browser case, the server operates within the browser, but the communication protocol between server and client is simulated by direct reads/writes to local 'message queues' (arrays).
+
 ## Instructions
 
-Currently, ATBattler is a pure-in-browser implementation with an emulated server.  The server does operate separately from the client, but the communication protocol between server and client is just reads/writes to local 'message queues' (arrays).
+Included implementation is for Node server/client only.
 
-To run, just open client.html in a browser and click the 'start game' button.
+1. Start server: `node server.js`
+2. Open `client.html` in a browser and click the 'start game' button.
 
 The game can be played with either mouse (click the menus) or keyboard (arrow keys to navigate, enter/space to select).
+
+Note that once the game is over, you will need to restart the server and refresh the client page to play again.
+
+### Node Dependencies
+
+Install the following Node dependencies via npm before running the server:
+
+* async 0.1.22
+* connect 2.7.2
+* sockjs 0.3.5
+* underscore 1.4.3
 
 ## Browser Support
 
@@ -16,7 +32,7 @@ ATBattler runs on any relatively up-to-date version of Chrome or Firefox.  It al
 
 ----
 
-## Libraries
+## Browser Libraries
 
 *	jQuery 1.8.2
 
@@ -41,3 +57,5 @@ ATBattler runs on any relatively up-to-date version of Chrome or Firefox.  It al
 	https://github.com/caolan/async
 
 *   John Resig's jQuery Hotkeys Plugin
+
+*   SockJS 0.3.5
