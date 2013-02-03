@@ -1,5 +1,5 @@
 var atb = {};
-var StateMachine = StateMachine || require('../assets/js/vendor/state-machine.min.js').StateMachine;
+var StateMachine = require('./vendor/state-machine').StateMachine;
 var _ = require('underscore');
 var async = require('async');
 
