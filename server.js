@@ -4,11 +4,11 @@ var events = require('events');
 var util = require('util');
 
 // ATB modules
-var atbDomain = require('./assets/js/domain');
-var atbItem = require('./assets/js/item');
-var atbUtil = require('./assets/js/util');
-var atbGameInstance = require('./assets/js/gameinstance');
-var atbGameClient = require('./assets/js/gameclient');
+var atbDomain = require('./src/domain');
+var atbItem = require('./src/item');
+var atbUtil = require('./src/util');
+var atbGameInstance = require('./src/gameinstance');
+var atbGameClient = require('./src/gameclient');
 
 var atb = atb || exports;
 

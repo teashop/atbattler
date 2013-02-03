@@ -8,4 +8,7 @@
   , "sockjs": "0.3.5"
   , "underscore": "1.4.3"
   }
+, "devDependencies": {
+    "stitch": "0.3.3"
+  }
 }

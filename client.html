@@ -15,19 +15,20 @@
   <script src="assets/js/vendor/preloadjs-0.2.0.min.js"></script>
   <script src="assets/js/vendor/jquery.hotkeys-0.8.js"></script>
   <script src="assets/js/vendor/sockjs-0.3.min.js"></script>
-  <script src="assets/js/domain.js"></script>
-  <script src="assets/js/util.js"></script>
-  <script src="assets/js/durationevent.js"></script>
-  <script src="assets/js/gameevent.js"></script>
-  <script src="assets/js/item.js"></script>
-  <script src="assets/js/skill.js"></script>
-  <script src="assets/js/gameinstance.js"></script>
-  <script src="assets/js/gameclient.js"></script>
+  <script src="dist/atb.js"></script>
   <script src="assets/js/view.js"></script>
   <script src="assets/js/canvas.js"></script>
 
   <!-- EaselJS setup -->
   <script type="text/javascript">
+    //TODO: Remove this shim to work with commonjs'd libs
+    var atb = atb || {};
+    atb.Item = require('item').Item;
+    atb.Skill = require('skill').Skill;
+    atb.SkillData = require('skill').SkillData;
+    atb.GameEvent = require('gameevent').GameEvent;
+    atb.GameClient = require('gameclient').GameClient;
+
     var SECOND = 1000;  // a second is 1000ms
     var msPerFrame = SECOND/atb.TARGET_FPS; // approximate
     var HERO_BASE_X = 150;
@@ -1095,8 +1096,6 @@
       // ***** GAME SETUP *****
 
       // TODO: much of this should be 'server side'.
-//      var clock = new atb.Clock(msPerFrame);
-//      var gameInstance = new atb.GameInstance(clock);
 
       // WEBSOCKET SETUP - TODO: abstract this properly
       var myId = 1;
