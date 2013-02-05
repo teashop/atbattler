@@ -392,7 +392,7 @@
       /** Templates **/
       // Hero Row (name, hp, gauge, etc)
       var heroRowTemplate = _.template('<tr id="<%= heroDomId %>" class="hero"'
-        + 'position="<%= position %>" data-hero-id="<%= hero.id %>"><td>'
+        + 'data-hero-id="<%= hero.id %>"><td>'
         + '<%= hero.name %></td><td class="hp"><%= hero.attributes.hp %></td>'
         + '<td class="sp"><%= hero.attributes.sp %></td><td class="gauge"><div class="gauge-container"><div class="gauge-bar"></div></div></td></tr>'
          );
@@ -1148,7 +1148,7 @@
           var heroSp = curHero.attributes.sp;
 
           var heroPane = isPlayer ? $("#party > tbody") : $("#enemy > tbody");
-          heroPane.append(heroRowTemplate({heroDomId: heroDomId, position: i, hero: curHero}));
+          heroPane.append(heroRowTemplate({heroDomId: heroDomId, hero: curHero}));
 
           heroRows[curHero.id] = $('#' + heroDomId);
           var onUpdate = function(val, isPositive) {
