@@ -8,23 +8,16 @@ In the pure browser case, the server operates within the browser, but the commun
 
 ## Instructions
 
-Included implementation is for Node server/client only.
+Included implementation is for Node server/client only. Requires Node.js v0.8.9 or later.
 
+1. Run `npm install` to install node dependencies.
 1. Start server: `node server.js`
-2. Open `client.html` in a browser and click the 'start game' button.
+1. Open `client.html` in a browser and click the 'start game' button.
 
 The game can be played with either mouse (click the menus) or keyboard (arrow keys to navigate, enter/space to select).
 
 Note that once the game is over, you will need to restart the server and refresh the client page to play again.
 
-### Node Dependencies
-
-Install the following Node dependencies via npm before running the server:
-
-* async 0.1.22
-* connect 2.7.2
-* sockjs 0.3.5
-* underscore 1.4.3
 
 ## Browser Support
 
@@ -49,6 +42,15 @@ A quick rundown on the implemented features in ATBattler:
 	* Game Pause/Resume
 
 ----
+
+### Node Dependencies
+
+
+* async 0.1.22
+* connect 2.7.2
+* sockjs 0.3.5
+* underscore 1.4.3
+* stitch 0.3.3 for generating client-side JS dist
 
 ## Browser Libraries
 
