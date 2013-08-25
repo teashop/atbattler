@@ -2,7 +2,7 @@
 
 An implementation of a mid-late 1990's "Active-Time Battle" engine, built with HTML5 Canvas and much Javascript.
 
-Currently, ATBattler can function as either a Node.js server/client app or as a pure-in-browser implementation with an emulated server.  
+Currently, ATBattler can function as either a Node.js server/client app or as a pure-in-browser implementation with an emulated server. 
 
 In the pure browser case, the server operates within the browser, but the communication protocol between server and client is simulated by direct reads/writes to local 'message queues' (arrays).
 
@@ -29,6 +29,24 @@ Install the following Node dependencies via npm before running the server:
 ## Browser Support
 
 ATBattler runs on any relatively up-to-date version of Chrome or Firefox.  It also runs in IE9+ (Console must be enabled for now).  It has not been tested in Opera or Safari.
+
+## Features
+
+A quick rundown on the implemented features in ATBattler:
+
+* Gameplay
+	* Player readiness gauge; ready status
+	* Player death status
+	* HP and SP
+	* Command input - Fight, Defend (skip turn), Skill, and Item
+	* Spells/Skills (currently as randomly-assigned commands)
+	* Items with rudiementary inventory (no quantity tracking)
+	* Stupid AI (randomly attacks non-dead players)
+	* Game over condition
+* Client-server gameplay via Websockets.
+	* Server hosts game instance and AI client instance
+	* Client connects to Server to start game
+	* Game Pause/Resume
 
 ----
 
