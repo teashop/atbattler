@@ -4,7 +4,7 @@
 , "private": true
 , "dependencies": {
     "async": "0.1.22"
-  , "connect": "2.7.2"
+  , "connect": "3.7.0"
   , "sockjs": "0.3.5"
   , "underscore": "1.4.3"
   }
